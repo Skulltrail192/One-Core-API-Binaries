@@ -59,6 +59,12 @@ typedef __int64 timeout_t;
 #define RTL_ATOM_MAXIMUM_NAME_LENGTH    255
 #define RTL_ATOM_PINNED 0x01
 
+#if defined(__i386__) || defined(__x86_64__) || defined(__arm__) || defined(__aarch64__)
+static const UINT_PTR page_size = 0x1000;
+#else
+extern UINT_PTR page_size DECLSPEC_HIDDEN;
+#endif
+
 /* Definitions *****************************************/
 
 typedef PVOID* PALPC_HANDLE;
@@ -1082,6 +1088,13 @@ typedef struct _TP_CALLBACK_ENVIRON_V3
     TP_CALLBACK_PRIORITY CallbackPriority;
     DWORD Size;
 } TP_CALLBACK_ENVIRON_V3;
+
+typedef struct _PROCESS_STACK_ALLOCATION_INFORMATION
+{
+    SIZE_T ReserveSize;
+    SIZE_T ZeroBits;
+    PVOID  StackBase;
+} PROCESS_STACK_ALLOCATION_INFORMATION, *PPROCESS_STACK_ALLOCATION_INFORMATION;
 
 typedef enum _EVENT_INFO_CLASS {
   EventProviderBinaryTrackInfo,

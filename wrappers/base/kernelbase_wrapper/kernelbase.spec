@@ -1137,6 +1137,7 @@
 @ stdcall GetConsoleScreenBufferInfoEx(ptr ptr)
 @ stdcall GetCurrentConsoleFontEx(ptr long ptr) 
 @ stdcall GetCurrencyFormatEx(wstr long wstr ptr wstr long)
+@ stdcall -stub GetCurrentTransaction()
 @ stdcall GetDateFormatEx(wstr long ptr wstr ptr long wstr)
 @ stdcall GetDurationFormat(long long ptr long long ptr ptr long) ;need test
 @ stdcall GetDurationFormatEx(wstr long ptr long long ptr ptr long) ;need test
@@ -1232,6 +1233,7 @@
 @ stdcall SetConsoleHistoryInfo(ptr)
 @ stdcall SetConsoleScreenBufferInfoEx(ptr ptr)
 @ stdcall SetCurrentConsoleFontEx(ptr long ptr)
+@ stdcall -stub SetCurrentTransaction(ptr)
 @ stdcall SetDynamicTimeZoneInformation(ptr)
 @ stdcall SetEventWhenCallbackReturns(ptr long) ntext.TpCallbackSetEventOnCompletion
 @ stdcall SetFileAttributesTransactedA(str long ptr)
@@ -1438,6 +1440,7 @@
 ; #Win10 functions
 ; @ stdcall GetThreadDescription(long ptr)
 ; @ stdcall SetThreadDescription(long ptr)
+@ stdcall AppPolicyGetMediaFoundationCodecLoading(ptr ptr)
 
 #Import from advapibase or registry function
 @ stdcall AccessCheck(ptr long long ptr ptr ptr ptr ptr) advapibase.AccessCheck

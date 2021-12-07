@@ -47,3 +47,34 @@ I_QueryTagInformation(PVOID Unused,
 									 InOutParams);
 	}    
 }
+
+/**********************************************************************
+ *  NotifyServiceStatusChangeW
+ *
+ * @unimplemented
+ */
+DWORD 
+WINAPI 
+DECLSPEC_HOTPATCH 
+NotifyServiceStatusChangeW( 
+	SC_HANDLE service, 
+	DWORD mask,
+    SERVICE_NOTIFYW *notify_buffer )
+{
+	return ERROR_SUCCESS;
+}	
+
+/**********************************************************************
+ *  NotifyServiceStatusChangeW
+ *
+ * @unimplemented
+ */
+DWORD 
+WINAPI 
+NotifyServiceStatusChangeA(
+	SC_HANDLE service, 
+	DWORD mask, 
+	PSERVICE_NOTIFYA notify_buffer)
+{
+	return ERROR_SUCCESS;
+}

@@ -84,10 +84,6 @@
 84 stdcall ConvertStringSDToSDDomainW(ptr long wstr long long long) ;need implement
 85 stdcall ConvertStringSDToSDRootDomainA(long long long long long)
 86 stdcall ConvertStringSDToSDRootDomainW(long long long long long)
-87 stdcall ConvertStringSecurityDescriptorToSecurityDescriptorA(str long ptr ptr)
-88 stdcall ConvertStringSecurityDescriptorToSecurityDescriptorW(wstr long ptr ptr)
-89 stdcall ConvertStringSidToSidA(ptr ptr)
-90 stdcall ConvertStringSidToSidW(ptr ptr)
 91 stdcall ConvertToAutoInheritPrivateObjectSecurity(ptr ptr ptr ptr long ptr)
 92 stdcall CopySid(long ptr ptr)
 93 stdcall CreateCodeAuthzLevel()
@@ -242,7 +238,6 @@
 245 stdcall GetInformationCodeAuthzPolicyW()
 246 stdcall GetInheritanceSourceA(str long long long ptr long ptr ptr ptr ptr)
 247 stdcall GetInheritanceSourceW(wstr long long long ptr long ptr ptr ptr ptr)
-248 stdcall GetKernelObjectSecurity(long long ptr long ptr) GetKernelObjectSecurityInternal
 249 stdcall GetLengthSid(ptr)
 250 stdcall GetLocalManagedApplicationData(wstr wstr wstr)
 251 stdcall GetLocalManagedApplications(long ptr ptr)
@@ -255,7 +250,6 @@
 258 stdcall GetNamedSecurityInfoA(str long long ptr ptr ptr ptr ptr)
 259 stdcall GetNamedSecurityInfoExA(str long long str str ptr ptr str str)
 260 stdcall GetNamedSecurityInfoExW(wstr long long wstr wstr ptr ptr wstr wstr)
-261 stdcall GetNamedSecurityInfoW(wstr long long ptr ptr ptr ptr ptr)
 262 stdcall GetNumberOfEventLogRecords(long ptr)
 263 stdcall GetOldestEventLogRecord(long ptr)
 264 stdcall GetOverlappedAccessResults(ptr long ptr ptr)
@@ -267,7 +261,6 @@
 270 stdcall GetSecurityDescriptorOwner(ptr ptr ptr)
 271 stdcall GetSecurityDescriptorRMControl(ptr ptr)
 272 stdcall GetSecurityDescriptorSacl(ptr ptr ptr ptr)
-273 stdcall GetSecurityInfo(long long long ptr ptr ptr ptr ptr)
 274 stdcall GetSecurityInfoExA(long long long str str ptr ptr ptr ptr)
 275 stdcall GetSecurityInfoExW(long long long wstr wstr ptr ptr ptr ptr)
 276 stdcall GetServiceDisplayNameA(ptr str ptr ptr)
@@ -544,11 +537,9 @@
 560 stdcall SetFileSecurityW(wstr long ptr)
 561 stdcall SetInformationCodeAuthzLevelW()
 562 stdcall SetInformationCodeAuthzPolicyW()
-563 stdcall SetKernelObjectSecurity(long long ptr) SetKernelObjectSecurityInternal
 564 stdcall SetNamedSecurityInfoA(str long ptr ptr ptr ptr ptr)
 565 stdcall SetNamedSecurityInfoExA(str long long str ptr ptr str str ptr)
 566 stdcall SetNamedSecurityInfoExW(wstr long long wstr ptr ptr wstr wstr ptr)
-567 stdcall SetNamedSecurityInfoW(wstr long ptr ptr ptr ptr ptr)
 568 stdcall SetPrivateObjectSecurity(long ptr ptr ptr long)
 569 stdcall SetPrivateObjectSecurityEx(long ptr ptr long ptr ptr)
 570 stdcall SetSecurityDescriptorControl(ptr long long)
@@ -557,7 +548,6 @@
 573 stdcall SetSecurityDescriptorOwner(ptr ptr long)
 574 stdcall SetSecurityDescriptorRMControl(ptr ptr)
 575 stdcall SetSecurityDescriptorSacl(ptr long ptr long)
-576 stdcall SetSecurityInfo(long long long ptr ptr ptr ptr)
 577 stdcall SetSecurityInfoExA(ptr long long str ptr ptr str str ptr)
 578 stdcall SetSecurityInfoExW(ptr long long wstr ptr ptr wstr wstr ptr)
 579 stdcall SetServiceBits(long long long long)
@@ -708,6 +698,9 @@
 @ stdcall EventWriteTransfer(int64 ptr ptr ptr long ptr) ntext.EtwEventWriteTransfer
 @ stdcall InitiateShutdownA(str str long long long)
 @ stdcall InitiateShutdownW(wstr wstr long long long)
+@ stdcall NotifyServiceStatusChange(ptr long ptr) NotifyServiceStatusChangeA
+@ stdcall NotifyServiceStatusChangeA(ptr long ptr) 
+@ stdcall NotifyServiceStatusChangeW(ptr long ptr)
 @ stdcall PerfCreateInstance(ptr ptr wstr long)
 @ stdcall PerfDeleteInstance(ptr ptr)
 @ stdcall PerfSetCounterRefValue(ptr ptr long ptr)
@@ -737,6 +730,7 @@
 @ stdcall RegSetKeyValueA(ptr str str long ptr long)
 @ stdcall RegSetKeyValueW(ptr wstr wstr long ptr long)
 @ stdcall SetSecurityAccessMask(long ptr)
+@ stdcall -stub TreeSetNamedSecurityInfoW(wstr long long ptr ptr ptr ptr long)
 
 #Win7+
 @ stdcall EnableTraceEx2(int64 ptr long long int64 int64 long ptr)
@@ -794,9 +788,9 @@
 ; @ stdcall I_ScValidatePnPService(long long long)
 ; @ stdcall IsValidRelativeSecurityDescriptor(ptr long long)
 ; @ stdcall LsaManageSidNameMapping(long ptr ptr)
-; @ stdcall NotifyServiceStatusChange(ptr long ptr) 
+; @ stdcall NotifyServiceStatusChange(ptr long ptr)  
 ; @ stdcall NotifyServiceStatusChangeA(ptr long ptr) 
-; @ stdcall NotifyServiceStatusChangeW(ptr long ptr) NotifyServiceStatusChange
+; @ stdcall NotifyServiceStatusChangeW(ptr long ptr) 
 ; @ stdcall PerfAddCounters(ptr ptr long)
 ; @ stdcall PerfCloseQueryHandle(ptr)
 ; @ stdcall PerfDecrementULongCounterValue(ptr ptr long long)
@@ -873,8 +867,19 @@
 ; @ stdcall EvtScopePublisher()
 ; @ stdcall EvtSetThreadCorrelationId()
 
-101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr) CreateRestrictedTokenInternal
-284 stdcall GetTokenInformation(ptr long ptr long ptr) GetTokenInformationInternal
-429 stdcall OpenProcessToken(long long ptr) OpenProcessTokenInternal
-434 stdcall OpenThreadToken(ptr long long ptr) OpenThreadTokenInternal
-583 stdcall SetTokenInformation(ptr long ptr long) SetTokenInformationInternal
+#Hooks
+87 stdcall ConvertStringSecurityDescriptorToSecurityDescriptorA(str long ptr ptr)
+88 stdcall ConvertStringSecurityDescriptorToSecurityDescriptorW(wstr long ptr ptr) ConvertStringSecurityDescriptorToSecurityDescriptorWInternal
+89 stdcall ConvertStringSidToSidA(ptr ptr)
+90 stdcall ConvertStringSidToSidW(ptr ptr) ConvertStringSidToSidWInternal
+101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr) ;CreateRestrictedTokenInternal
+248 stdcall GetKernelObjectSecurity(long long ptr long ptr) GetKernelObjectSecurityInternal
+261 stdcall GetNamedSecurityInfoW(wstr long long ptr ptr ptr ptr ptr) ;GetNamedSecurityInfoWInternal
+273 stdcall GetSecurityInfo(long long long ptr ptr ptr ptr ptr) ;GetSecurityInfoInternal
+284 stdcall GetTokenInformation(ptr long ptr long ptr) ;GetTokenInformationInternal
+429 stdcall OpenProcessToken(long long ptr) ;OpenProcessTokenInternal
+434 stdcall OpenThreadToken(ptr long long ptr) ;OpenThreadTokenInternal
+563 stdcall SetKernelObjectSecurity(long long ptr) SetKernelObjectSecurityInternal
+567 stdcall SetNamedSecurityInfoW(wstr long ptr ptr ptr ptr ptr) ;SetNamedSecurityInfoWInternal
+576 stdcall SetSecurityInfo(long long long ptr ptr ptr ptr) ;SetSecurityInfoInternal
+583 stdcall SetTokenInformation(ptr long ptr long) ;SetTokenInformationInternal

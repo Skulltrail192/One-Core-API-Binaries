@@ -21,6 +21,7 @@ list(APPEND SOURCE
 	dib.c
 	display.c
 	dwm.c
+	hooks.c
 	icon.c
 	input.c
 	magnification

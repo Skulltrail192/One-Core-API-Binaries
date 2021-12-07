@@ -1268,6 +1268,12 @@ typedef struct _PSAPI_WS_WATCH_INFORMATION_EX {
   ULONG_PTR Flags;
 } PSAPI_WS_WATCH_INFORMATION_EX, *PPSAPI_WS_WATCH_INFORMATION_EX;
 
+typedef enum AppPolicyMediaFoundationCodecLoading
+{
+    AppPolicyMediaFoundationCodecLoading_All       = 0,
+    AppPolicyMediaFoundationCodecLoading_InboxOnly = 1,
+} AppPolicyMediaFoundationCodecLoading;
+
 ULONG
 WINAPI
 BaseSetLastNTError(

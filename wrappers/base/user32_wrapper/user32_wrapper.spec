@@ -361,7 +361,6 @@
 @ stdcall GetUpdateRgn(long long long)
 @ stdcall GetUserObjectInformationA(long long ptr long ptr)
 @ stdcall GetUserObjectInformationW(long long ptr long ptr) ;NtUserGetObjectInformation
-@ stdcall GetUserObjectSecurity (long ptr ptr long ptr)
 @ stdcall GetWinStationInfo(long)
 @ stdcall GetWindow(long long)
 @ stdcall GetWindowContextHelpId(long)
@@ -881,3 +880,6 @@
 @ stdcall ThemeSetCurrentSection(ptr)
 
 @ stdcall GetAutoRotationState(ptr)
+
+#Hooks
+@ stdcall GetUserObjectSecurity (long ptr ptr long ptr) GetUserObjectSecurityInternal

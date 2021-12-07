@@ -22,6 +22,12 @@ Revision History:
 
 WINE_DEFAULT_DEBUG_CHANNEL(advapi32_hooks); 
 
+/******************************************************************************
+ *     ConvertStringSecurityDescriptorToSecurityDescriptorW   (sechost.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH ConvertStringSecurityDescriptorToSecurityDescriptorW(
+        const WCHAR *string, DWORD revision, PSECURITY_DESCRIPTOR *sd, ULONG *ret_size );
+
 BOOL
 APIENTRY
 GetTokenInformationInternal (
@@ -32,39 +38,32 @@ GetTokenInformationInternal (
     PDWORD ReturnLength
     )
 {
-    // NTSTATUS Status;
-
-    // Status = NtQueryInformationToken (
-        // TokenHandle,
-        // TokenInformationClass,
-        // TokenInformation,
-        // TokenInformationLength,
-        // ReturnLength
-        // );
-	// DbgPrint("GetTokenInformationInternal :: NtQueryInformationToken Status: %08x\n",Status);			
-		
-
-    // if ( !NT_SUCCESS(Status) ) {
-        // //BaseSetLastNTError(Status);
-		// DbgPrint("GetTokenInformation :: return FALSE\n",Status);
-        // return FALSE;
-    // }
-
-    // return TRUE;
-	BOOL ret;
+    NTSTATUS Status;
 	
-	ret = GetTokenInformation(TokenHandle,
-							  TokenInformationClass,
-							  TokenInformation,
-							  TokenInformationLength,
-							  ReturnLength);
-							  
-	if(!ret){
-		//DbgPrint("GetTokenInformation :: returned False\n");	
+	if(TokenInformationClass & TokenIntegrityLevel | TokenElevationType | TokenLinkedToken | TokenElevation){
+		
+		DbgPrint("GetTokenInformationInternal:: Vista Token Cases\n");
+		
+		Status = NtQueryInformationToken(TokenHandle,
+										 TokenInformationClass,
+										 TokenInformation,
+										 TokenInformationLength,
+										 (PULONG)ReturnLength);
+		if (!NT_SUCCESS(Status))
+		{
+			DbgPrint("GetTokenInformationInternal:: NtQueryInformationToken returned Status: 0x%08lx\n", Status);
+			SetLastError(RtlNtStatusToDosError(Status));
+			return FALSE;
+		}
+		
+		return TRUE;
 	}
 
-	return ret;		
-	
+	return GetTokenInformation(TokenHandle,
+							   TokenInformationClass,
+							   TokenInformation,
+							   TokenInformationLength,
+							   ReturnLength);	
 }
 
 BOOL
@@ -76,35 +75,27 @@ SetTokenInformationInternal (
     DWORD TokenInformationLength
     )
 { 
-    // NTSTATUS Status;
-
-    // Status = NtSetInformationToken (
-        // TokenHandle,
-        // TokenInformationClass,
-        // TokenInformation,
-        // TokenInformationLength
-        // );
-
-	// DbgPrint("SetTokenInformation :: NtSetInformationToken Status: %08x\n",Status);
+    NTSTATUS Status;
 	
-	// if(!NT_SUCCESS(Status)){
-		// DbgPrint("SetTokenInformation :: return FALSE\n",Status);
-		// return FALSE; 
-	// }
-	
-	// return TRUE;
-	BOOL ret;
-	
-	ret = SetTokenInformation(TokenHandle,
-							  TokenInformationClass,
-							  TokenInformation,
-							  TokenInformationLength);
-							  
-	if(!ret){
-		DbgPrint("SetTokenInformation :: returned False\n");	
-	}
+	if(TokenInformationClass & TokenIntegrityLevel | TokenElevationType | TokenLinkedToken | TokenElevation){
+		Status = NtSetInformationToken(TokenHandle,
+									   TokenInformationClass,
+									   TokenInformation,
+									   TokenInformationLength);
+		if (!NT_SUCCESS(Status))
+		{
+			DbgPrint("SetTokenInformationInternal:: NtSetInformationToken returned Status: 0x%08lx\n", Status);			
+			SetLastError(RtlNtStatusToDosError(Status));
+			return FALSE;
+		}
 
-	return ret;							  
+		return TRUE;		
+	}else{
+		return SetTokenInformation(TokenHandle,
+								   TokenInformationClass,
+								   TokenInformation,
+								   TokenInformationLength);		
+	}						  
 }
 
 BOOL 
@@ -116,22 +107,6 @@ OpenThreadTokenInternal(
   _Out_ PHANDLE TokenHandle
 )
 {
-	// BOOL ret;
-	// NTSTATUS status;
-	
-	// DbgPrint("OpenThreadTokenInternal :: caled\n");
-	
-	// status =  NtOpenThreadToken(ThreadHandle, DesiredAccess, OpenAsSelf, TokenHandle);
-	
-	// DbgPrint("OpenThreadToken :: Status: %08x\n",status);
-	
-	// if(!NT_SUCCESS(status)){
-		// DbgPrint("OpenThreadToken :: return FALSE\n",status);
-		// return FALSE; 
-	// }
-	
-	// return TRUE;
-
 	BOOL ret;
 	
 	ret = OpenThreadToken(ThreadHandle,
@@ -139,9 +114,9 @@ OpenThreadTokenInternal(
 							  OpenAsSelf,
 							  TokenHandle);
 							  
-	if(!ret){
-		//DbgPrint("OpenThreadToken :: returned False\n");	
-	}
+	// if(!ret){
+		// DbgPrint("OpenThreadTokenInternal::OpenThreadToken returned False\n");	
+	// }
 	
 	return ret;			
 }
@@ -170,21 +145,6 @@ OpenProcessTokenInternal(
     HANDLE *TokenHandle 
 )
 {
-	// BOOL ret;
-	// NTSTATUS status;
-	
-	// DbgPrint("OpenProcessTokenInternal :: caled\n");
-	
-	// status =  NtOpenProcessToken(ProcessHandle, DesiredAccess, TokenHandle);
-	
-	// DbgPrint("OpenProcessToken :: NtOpenProcessToken Status: %08x\n",status);
-	
-	// if(!NT_SUCCESS(status)){
-		// DbgPrint("OpenProcessToken :: return FALSE\n",status);
-		// return FALSE; 
-	// }
-	
-	// return TRUE;
 	BOOL ret;
 	
 	ret = OpenProcessToken(ProcessHandle,
@@ -192,7 +152,7 @@ OpenProcessTokenInternal(
 							  TokenHandle);
 							  
 	if(!ret){
-		DbgPrint("OpenProcessToken :: returned False\n");	
+		DbgPrint("OpenProcessTokenInternal::OpenProcessToken returned False\n");	
 	}	
 
 	return ret;			
@@ -209,25 +169,23 @@ BOOL WINAPI CreateRestrictedTokenInternal(
     PSID_AND_ATTRIBUTES restrictSids,
     PHANDLE newToken)
 {
-    TOKEN_TYPE type;
-    SECURITY_IMPERSONATION_LEVEL level = SecurityAnonymous;
-    DWORD size;
+	BOOL ret;
+	
+	ret = CreateRestrictedToken(baseToken,
+								flags,
+								nDisableSids,
+								disableSids,
+								nDeletePrivs,
+								deletePrivs,
+								nRestrictSids,
+								restrictSids,
+								newToken);
+								
+	if(!ret){
+		DbgPrint("CreateRestrictedTokenInternal::CreateRestrictedToken returned False\n");	
+	}	
 
-    FIXME("(%p, 0x%x, %u, %p, %u, %p, %u, %p, %p): stub\n",
-          baseToken, flags, nDisableSids, disableSids,
-          nDeletePrivs, deletePrivs,
-          nRestrictSids, restrictSids,
-          newToken);
-
-    size = sizeof(type);
-    if (!GetTokenInformation( baseToken, TokenType, &type, size, &size )) return FALSE;
-    if (type == TokenImpersonation)
-    {
-        size = sizeof(level);
-        if (!GetTokenInformation( baseToken, TokenImpersonationLevel, &level, size, &size ))
-            return FALSE;
-    }
-    return DuplicateTokenEx( baseToken, MAXIMUM_ALLOWED, NULL, level, type, newToken );
+	return ret;
 }
 
 BOOL WINAPI GetKernelObjectSecurityInternal(
@@ -238,11 +196,22 @@ BOOL WINAPI GetKernelObjectSecurityInternal(
   _Out_     LPDWORD              lpnLengthNeeded
 )
 {
+	NTSTATUS Status;
 	//This is a hack, for now is enabled because need a truly implementation of LABEL_SECURITY_INFORMATION (for Chrome and Chromium Framework)
 	if(RequestedInformation & LABEL_SECURITY_INFORMATION)
 	{
-		RequestedInformation = SACL_SECURITY_INFORMATION;
+		//RequestedInformation = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION;
+		
+		Status = NtQuerySecurityObject(Handle, RequestedInformation, pSecurityDescriptor,
+                                               nLength, lpnLengthNeeded );
+		
+		if(!NT_SUCCESS(Status)){
+			DbgPrint("GetKernelObjectSecurityInternal::NtQuerySecurityObject returned Status: 0x%08lx\n", Status);	
+		}
+
+		return TRUE;
 	}
+	
 	return GetKernelObjectSecurity(Handle, RequestedInformation, pSecurityDescriptor, nLength, lpnLengthNeeded);
 }
 
@@ -253,10 +222,208 @@ BOOL WINAPI SetKernelObjectSecurityInternal(
   _In_ PSECURITY_DESCRIPTOR SecurityDescriptor
 )
 {
+	NTSTATUS Status;
 	//This is a hack, for now is enabled because need a truly implementation of LABEL_SECURITY_INFORMATION (for Chrome and Chromium Framework)
 	if(SecurityInformation & LABEL_SECURITY_INFORMATION)
 	{
-		SecurityInformation = SACL_SECURITY_INFORMATION;
+
+		Status = NtSetSecurityObject(Handle, SecurityInformation, SecurityDescriptor);
+		
+		if(!NT_SUCCESS(Status)){
+			DbgPrint("SetKernelObjectSecurityInternal::NtSetSecurityObject returned Status: 0x%08lx\n", Status);	
+		}
+
+		return TRUE;
 	}
+	
 	return SetKernelObjectSecurity(Handle, SecurityInformation, SecurityDescriptor);
+}
+
+/**********************************************************************
+ * SetNamedSecurityInfoW			EXPORTED
+ *
+ * @implemented
+ */
+DWORD
+WINAPI
+SetNamedSecurityInfoWInternal(
+	LPWSTR pObjectName,
+    SE_OBJECT_TYPE ObjectType,
+    SECURITY_INFORMATION SecurityInfo,
+    PSID psidOwner,
+    PSID psidGroup,
+    PACL pDacl,
+    PACL pSacl)
+{
+	DWORD ret;
+
+	//This is a hack, for now is enabled because need a truly implementation of LABEL_SECURITY_INFORMATION (for Chrome and Chromium Framework)
+	if(SecurityInfo & LABEL_SECURITY_INFORMATION)
+	{
+		
+		//SecurityInfo = SACL_SECURITY_INFORMATION;
+		
+		ret = SetNamedSecurityInfoW(pObjectName,
+									 ObjectType,
+									 SecurityInfo,
+									 psidOwner,
+									 psidGroup,
+									 pDacl,
+									 pSacl);
+		
+		if(ret != ERROR_SUCCESS){
+			DbgPrint("SetNamedSecurityInfoWInternal::SetNamedSecurityInfoW returned ret: 0x%08lx\n", ret);	
+		}
+
+		return ERROR_SUCCESS;
+	}
+	
+	return SetNamedSecurityInfoW(pObjectName,
+								 ObjectType,
+								 SecurityInfo,
+								 psidOwner,
+								 psidGroup,
+								 pDacl,
+								 pSacl);	
+}
+
+/**********************************************************************
+ * SetSecurityInfo			EXPORTED
+ *
+ * @implemented
+ */
+DWORD
+WINAPI
+SetSecurityInfoInternal(
+	HANDLE handle,
+    SE_OBJECT_TYPE ObjectType,
+    SECURITY_INFORMATION SecurityInfo,
+    PSID psidOwner,
+    PSID psidGroup,
+    PACL pDacl,
+    PACL pSacl)
+{
+	DWORD resp;
+	//This is a hack, for now is enabled because need a truly implementation of LABEL_SECURITY_INFORMATION (for Chrome and Chromium Framework)
+	if(SecurityInfo & LABEL_SECURITY_INFORMATION)
+	{
+		SecurityInfo = SACL_SECURITY_INFORMATION;
+	}	
+	resp = SetSecurityInfo(handle,
+						   ObjectType,
+						   SecurityInfo,
+						   psidOwner,
+						   psidGroup,
+						   pDacl,
+						   pSacl);
+						   
+	if(resp != ERROR_SUCCESS)
+	{		
+		DbgPrint("SetSecurityInfoInternal::SetSecurityInfo return: %d\n", resp);	
+	}		
+						   
+	return resp;					   
+}
+
+DWORD
+WINAPI
+GetSecurityInfoInternal(
+	HANDLE handle,
+    SE_OBJECT_TYPE ObjectType,
+    SECURITY_INFORMATION SecurityInfo,
+    PSID *ppsidOwner,
+    PSID *ppsidGroup,
+    PACL *ppDacl,
+    PACL *ppSacl,
+    PSECURITY_DESCRIPTOR *ppSecurityDescriptor
+)
+{
+	DWORD resp;
+	//This is a hack, for now is enabled because need a truly implementation of LABEL_SECURITY_INFORMATION (for Chrome and Chromium Framework)
+	if(SecurityInfo & LABEL_SECURITY_INFORMATION)
+	{
+		SecurityInfo = SACL_SECURITY_INFORMATION;
+		
+		resp = GetSecurityInfo(handle,
+						   ObjectType,
+						   SecurityInfo,
+						   ppsidOwner,
+						   ppsidGroup,
+						   ppDacl,
+						   ppSacl,
+						   ppSecurityDescriptor);		
+		
+		if(resp != ERROR_SUCCESS)
+		{		
+			DbgPrint("GetSecurityInfoInternal::GetSecurityInfo return: %d\n", resp);	
+		}
+		return resp;		
+	}	
+						   
+	return GetSecurityInfo(handle,
+						   ObjectType,
+						   SecurityInfo,
+						   ppsidOwner,
+						   ppsidGroup,
+						   ppDacl,
+						   ppSacl,
+						   ppSecurityDescriptor);						   
+}
+
+/**********************************************************************
+ * GetNamedSecurityInfoW			EXPORTED
+ *
+ * @implemented
+ */
+DWORD
+WINAPI
+GetNamedSecurityInfoWInternal(
+	LPWSTR pObjectName,
+    SE_OBJECT_TYPE ObjectType,
+    SECURITY_INFORMATION SecurityInfo,
+    PSID *ppsidOwner,
+    PSID *ppsidGroup,
+    PACL *ppDacl,
+    PACL *ppSacl,
+    PSECURITY_DESCRIPTOR *ppSecurityDescriptor
+)
+{
+	DWORD resp;	
+	//This is a hack, for now is enabled because need a truly implementation of LABEL_SECURITY_INFORMATION (for Chrome and Chromium Framework)
+	if(SecurityInfo & LABEL_SECURITY_INFORMATION)
+	{
+		SecurityInfo = SACL_SECURITY_INFORMATION;
+	}		
+	resp = GetNamedSecurityInfoW(pObjectName,
+								 ObjectType,
+								 SecurityInfo,
+								 ppsidOwner,
+								 ppsidGroup,
+								 ppDacl,
+								 ppSacl,
+								 ppSecurityDescriptor);	
+								 
+	if(resp != ERROR_SUCCESS)
+	{		
+		DbgPrint("GetNamedSecurityInfoWInternal::GetNamedSecurityInfoW return: %d\n", resp);	
+	}		
+						   
+	return resp;								 
+}					  
+
+BOOL WINAPI DECLSPEC_HOTPATCH ConvertStringSecurityDescriptorToSecurityDescriptorWInternal(
+        const WCHAR *string, DWORD revision, PSECURITY_DESCRIPTOR *sd, ULONG *ret_size )
+{
+	BOOL resp;
+	
+	resp = ConvertStringSecurityDescriptorToSecurityDescriptorW(string,
+																revision,
+																sd,
+																ret_size);
+																
+	if(!resp){															
+		DbgPrint("ConvertStringSecurityDescriptorToSecurityDescriptorWInternal::ConvertStringSecurityDescriptorToSecurityDescriptorW resp: %d\n", resp);															
+	}
+	
+	return TRUE;
 }

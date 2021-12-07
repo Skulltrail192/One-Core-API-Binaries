@@ -175,3 +175,21 @@ RtlGetTickCount(VOID)
 	return ((ULONG)(UInt32x32To64(SharedUserData->TickCountLowDeprecated, \
 								  SharedUserData->TickCountMultiplier) >> 24));
 }
+
+/******************************************************************************
+ *  RtlQueryPerformanceCounter   [NTDLL.@]
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH RtlQueryPerformanceCounter( LARGE_INTEGER *counter )
+{
+    NtQueryPerformanceCounter( counter, NULL );
+    return TRUE;
+}
+
+/******************************************************************************
+ *  RtlQueryPerformanceFrequency   [NTDLL.@]
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH RtlQueryPerformanceFrequency( LARGE_INTEGER *frequency )
+{
+    frequency->QuadPart = TICKSPERSEC;
+    return TRUE;
+}

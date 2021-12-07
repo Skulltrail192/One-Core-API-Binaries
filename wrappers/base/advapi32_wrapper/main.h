@@ -16,13 +16,22 @@
 #include <perflib.h>
 #include <ndk/cmfuncs.h>
 #include <wine/config.h>
+#include <accctrl.h>
+#include <aclapi.h>
 
 #include <ntstatus.h>
 #define WIN32_NO_STATUS
 #include <winuser.h>
 #include <wine/debug.h>
 #include <wine/unicode.h>
+#include <wine/list.h>
+#include <wine/heap.h>
 
+#define SECURITY_APP_PACKAGE_AUTHORITY {0,0,0,0,0,15}
+#define SECURITY_APP_PACKAGE_BASE_RID           __MSABI_LONG(0x000000002)
+#define SECURITY_BUILTIN_PACKAGE_ANY_PACKAGE    __MSABI_LONG(0x000000001)
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 /* FUNCTIONS ****************************************************************/
 FORCEINLINE
@@ -151,3 +160,51 @@ typedef struct _TAG_INFO_NAME_FROM_TAG
     TAG_INFO_NAME_FROM_TAG_IN_PARAMS InParams;
     TAG_INFO_NAME_FROM_TAG_OUT_PARAMS OutParams;
 } TAG_INFO_NAME_FROM_TAG, *PTAG_INFO_NAME_FROM_TAG;
+
+typedef struct _PERF_COUNTER_INFO {
+  ULONG     CounterId;
+  ULONG     Type;
+  ULONGLONG Attrib;
+  ULONG     Size;
+  ULONG     DetailLevel;
+  LONG      Scale;
+  ULONG     Offset;
+} PERF_COUNTER_INFO, *PPERF_COUNTER_INFO;
+
+typedef enum
+{
+    ADS_RIGHT_DS_CREATE_CHILD         = 0x00000001,
+    ADS_RIGHT_DS_DELETE_CHILD         = 0x00000002,
+    ADS_RIGHT_ACTRL_DS_LIST           = 0x00000004,
+    ADS_RIGHT_DS_SELF                 = 0x00000008,
+    ADS_RIGHT_DS_READ_PROP            = 0x00000010,
+    ADS_RIGHT_DS_WRITE_PROP           = 0x00000020,
+    ADS_RIGHT_DS_DELETE_TREE          = 0x00000040,
+    ADS_RIGHT_DS_LIST_OBJECT          = 0x00000080,
+    ADS_RIGHT_DS_CONTROL_ACCESS       = 0x00000100,
+
+    ADS_RIGHT_DELETE                  = 0x00010000,
+    ADS_RIGHT_READ_CONTROL            = 0x00020000,
+    ADS_RIGHT_WRITE_DAC               = 0x00040000,
+    ADS_RIGHT_WRITE_OWNER             = 0x00080000,
+    ADS_RIGHT_SYNCHRONIZE             = 0x00100000,
+    ADS_RIGHT_ACCESS_SYSTEM_SECURITY  = 0x00200000,
+
+    ADS_RIGHT_GENERIC_ALL             = 0x10000000,
+    ADS_RIGHT_GENERIC_EXECUTE         = 0x20000000,
+    ADS_RIGHT_GENERIC_WRITE           = 0x40000000,
+    ADS_RIGHT_GENERIC_READ            = 0x80000000
+} ADS_RIGHTS_ENUM;
+
+/* memory allocation functions */
+
+static inline WCHAR *strdupAW( const char *src )
+{
+    WCHAR *dst = NULL;
+    if (src)
+    {
+        DWORD len = MultiByteToWideChar( CP_ACP, 0, src, -1, NULL, 0 );
+        if ((dst = heap_alloc( len * sizeof(WCHAR) ))) MultiByteToWideChar( CP_ACP, 0, src, -1, dst, len );
+    }
+    return dst;
+}

@@ -71,7 +71,7 @@
 @ stdcall I_RpcRecordCalloutFailure() rpcrtbase.I_RpcRecordCalloutFailure
 @ stdcall I_RpcReplyToClientWithStatus() rpcrtbase.I_RpcReplyToClientWithStatus
 @ stdcall I_RpcRequestMutex() rpcrtbase.I_RpcRequestMutex
-@ stdcall I_RpcSNCHOption(ptr ptr) rpcrtbase.I_RpcSNCHOption
+@ stdcall -stub I_RpcSNCHOption(ptr ptr) ;rpcrtbase.I_RpcSNCHOption
 @ stdcall I_RpcSend(ptr)
 @ stdcall I_RpcSendReceive(ptr)
 @ stdcall I_RpcServerAllocateIpPort() rpcrtbase.I_RpcServerAllocateIpPort
@@ -540,7 +540,7 @@
 @ stdcall tree_size_ndr() rpcrtbase.tree_size_ndr
 
 #Missing on Win 2k3 with Updates
-@ stdcall I_RpcBindingIsServerLocal(ptr ptr) rpcrtbase.I_RpcBindingIsServerLocal
+@ stdcall -stub I_RpcBindingIsServerLocal(ptr ptr) ;rpcrtbase.I_RpcBindingIsServerLocal
 
 #From Longhorn/Vista
 @ stdcall DllRegisterServer()

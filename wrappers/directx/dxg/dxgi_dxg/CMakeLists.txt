@@ -22,7 +22,7 @@ add_library(dxgi_dxg SHARED
     ${CMAKE_CURRENT_BINARY_DIR}/dxgi_dxg.def)
 
 set_module_type(dxgi_dxg win32dll)
-target_link_libraries(dxgi_dxg dxguid uuid wine dxgi_dxg_uuids d3d10_uuids d3d10_1_uuids)
+target_link_libraries(dxgi_dxg dxguid uuid wine dxgi_uuids d3d10_uuids d3d10_1_uuids)
 add_importlibs(dxgi_dxg wined3d gdi32 user32 msvcrt kernel32 ntdll)
 add_dependencies(dxgi_dxg wineheaders d3d_idl_headers)
 add_cd_file(TARGET dxgi_dxg DESTINATION reactos/system32 FOR all)

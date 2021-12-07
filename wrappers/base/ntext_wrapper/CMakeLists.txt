@@ -51,10 +51,12 @@ list(APPEND SOURCE
 	rtl/sysinfo.c
 	rtl/time.c
 	rtl/transaction.c
+	rtl/thread.c
 	rtl/threadpool.c
 	rtl/unicode.c
 	rtl/wer.c
 	rtl/wow64.c
+	rtl/virtual.c
     version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/ntext_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/ntext.def)

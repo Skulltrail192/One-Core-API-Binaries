@@ -244,7 +244,7 @@
 @ stdcall NtQueryInformationPort(ptr long ptr long ptr)
 @ stdcall NtQueryInformationProcess(long long ptr long ptr)
 @ stdcall NtQueryInformationThread(long long ptr long ptr)
-@ stdcall NtQueryInformationToken(long long ptr long ptr) NtQueryInformationTokenInternal #Wrapper needed for Integrity Level Introduced on Vista
+@ stdcall NtQueryInformationToken(long long ptr long ptr) ;NtQueryInformationTokenInternal #Wrapper needed for Integrity Level Introduced on Vista
 @ stdcall NtQueryInstallUILanguage(ptr)
 @ stdcall NtQueryIntervalProfile(long ptr)
 @ stdcall NtQueryIoCompletion(long long ptr long ptr)
@@ -1549,7 +1549,13 @@
 @ stdcall RtlAcquireSRWLockShared(ptr)
 @ stdcall RtlCloseStringHandle(long long)
 @ stdcall RtlCreateServiceSid(ptr ptr ptr) 
+@ stdcall RtlCreateUserStack(long long long long long ptr)
 @ stdcall RtlCultureNameToLCID(ptr ptr) ;this functions already have implementation 
+@ stdcall RtlFlsAlloc(ptr ptr)
+@ stdcall RtlFlsFree(long)
+@ stdcall RtlFlsGetValue(long ptr)
+@ stdcall RtlFlsSetValue(long ptr)
+@ stdcall RtlFreeUserStack(ptr)
 @ stdcall RtlGetCurrentTransaction()
 @ stdcall RtlGetFileMUIPath(long wstr wstr ptr wstr ptr ptr)
 @ stdcall RtlGetIntegerAtom(wstr ptr)
@@ -1568,6 +1574,7 @@
 @ stdcall RtlLCIDToCultureName(long wstr) ;this functions already have implementation
 @ stdcall RtlLcidToLocaleName(long ptr long long)
 @ stdcall RtlNormalizeString(long wstr long ptr ptr)
+@ stdcall RtlProcessFlsData(ptr long)
 @ stdcall RtlpQueryDefaultUILanguage(long long)
 @ stdcall RtlpSetCurrentUserUILanguage(long)
 @ stdcall RtlpSetDefaultUILanguage(long)
@@ -1683,6 +1690,8 @@
 @ stdcall RtlLocateLegacyContext(ptr long)
 @ stdcall RtlLocateExtendedFeature(long long ptr)
 @ stdcall RtlReleasePath(ptr)
+@ stdcall RtlQueryPerformanceCounter(ptr)
+@ stdcall RtlQueryPerformanceFrequency(ptr)
 @ stdcall RtlQueryThreadProfiling(ptr ptr)
 @ stdcall RtlQueryUnbiasedInterruptTime(ptr)
 @ stdcall RtlReadThreadProfilingData(ptr long ptr)

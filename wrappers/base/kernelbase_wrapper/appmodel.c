@@ -119,3 +119,17 @@ HMODULE WINAPI /* DECLSPEC_HOTPATCH */ LoadPackagedLibrary( LPCWSTR name, DWORD 
     SetLastError( APPMODEL_ERROR_NO_PACKAGE );
     return NULL;
 }
+
+/***********************************************************************
+ *          AppPolicyGetMediaFoundationCodecLoading (KERNELBASE.@)
+ */
+
+LONG WINAPI AppPolicyGetMediaFoundationCodecLoading(HANDLE token, AppPolicyMediaFoundationCodecLoading *policy)
+{
+    FIXME("%p, %p\n", token, policy);
+
+    if(policy)
+        *policy = AppPolicyMediaFoundationCodecLoading_All;
+
+    return ERROR_SUCCESS;
+}
