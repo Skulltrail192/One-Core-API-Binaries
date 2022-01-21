@@ -268,3 +268,21 @@ LABEL_10:
     BaseSetLastNTError(status);
   return FALSE;
 }
+
+/*
+ * @implemented
+ */
+PLARGE_INTEGER 
+WINAPI 
+BaseFormatTimeOut(
+	OUT PLARGE_INTEGER  	Timeout,
+	IN DWORD  	Milliseconds 
+) 		
+{
+    if ( (LONG) Milliseconds == -1 ) {
+        return( NULL );
+        }
+    Timeout->QuadPart = UInt32x32To64( Milliseconds, 10000 );
+    Timeout->QuadPart *= -1;
+    return Timeout;
+}

@@ -140,14 +140,25 @@ RtlGetSystemTimePrecise()
 /***********************************************************************
 *        RtlQueryUnbiasedInterruptTime [NTDLL.@]
 */
-NTSTATUS 
-WINAPI 
-RtlQueryUnbiasedInterruptTime(
-	ULONGLONG *time
-)
+BOOL WINAPI RtlQueryUnbiasedInterruptTime(ULONGLONG *time)
 {
-    *time = monotonic_counter();
-    return STATUS_SUCCESS;
+    ULONG high, low;
+
+    if (!time)
+    {
+        RtlSetLastWin32ErrorAndNtStatusFromNtStatus( STATUS_INVALID_PARAMETER );
+        return FALSE;
+    }
+
+    do
+    {
+        high = SharedUserData->InterruptTime.High1Time;
+        low = SharedUserData->InterruptTime.LowPart;
+    }
+    while (high != SharedUserData->InterruptTime.High2Time);
+    /* FIXME: should probably subtract InterruptTimeBias */
+    *time = (ULONGLONG)high << 32 | low;
+    return TRUE;
 }
 
 /***********************************************************************

@@ -1,0 +1,8 @@
+Kernelbase:
+ - InitializeProcThreadAttributeList
+ - UpdateProcThreadAttribute  - broken minichrome (chromium fork)
+ - GetQueuedCompletionStatusEx - broken visual code
+
+Ntext:
+ - LdrRegisterDllNotification - broken minichrome (chromium fork)
+ - LdrUnregisterDllNotification - broken minichrome (chromium fork)

@@ -673,7 +673,7 @@
 477 stdcall RegEnableReflectionKey(ptr)	
 502 stdcall RegQueryReflectionKey(ptr ptr)	 ;native on Server 2003, but, missing on XP (needed for synchronization) 
 
-#Missing on Server 2003 RTM
+#Missing on Server 2003 RTM and XP 
 @ stdcall RegDisablePredefinedCacheEx() 
 486 stdcall RegGetValueA(long str str long ptr ptr ptr) 
 487 stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) 
@@ -737,7 +737,7 @@
 @ stdcall EventSetInformation(ptr long ptr long) ntext.EtwEventSetInformation
 @ stdcall LsaLookupSids2(ptr long long ptr ptr ptr)
 
-; #from Vista/Longhorn advapi32 (advapinew) 
+#from Vista/Longhorn advapi32 (advapinew) 
 ; @ stdcall AddUsersToEncryptedFileEx(long long long long)
 ; @ stdcall AuditComputeEffectivePolicyBySid(ptr ptr long ptr)
 ; @ stdcall AuditComputeEffectivePolicyByToken(ptr ptr long ptr)
@@ -872,14 +872,14 @@
 88 stdcall ConvertStringSecurityDescriptorToSecurityDescriptorW(wstr long ptr ptr) ConvertStringSecurityDescriptorToSecurityDescriptorWInternal
 89 stdcall ConvertStringSidToSidA(ptr ptr)
 90 stdcall ConvertStringSidToSidW(ptr ptr) ConvertStringSidToSidWInternal
-101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr) ;CreateRestrictedTokenInternal
+101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr) CreateRestrictedTokenInternal
 248 stdcall GetKernelObjectSecurity(long long ptr long ptr) GetKernelObjectSecurityInternal
-261 stdcall GetNamedSecurityInfoW(wstr long long ptr ptr ptr ptr ptr) ;GetNamedSecurityInfoWInternal
-273 stdcall GetSecurityInfo(long long long ptr ptr ptr ptr ptr) ;GetSecurityInfoInternal
-284 stdcall GetTokenInformation(ptr long ptr long ptr) ;GetTokenInformationInternal
-429 stdcall OpenProcessToken(long long ptr) ;OpenProcessTokenInternal
-434 stdcall OpenThreadToken(ptr long long ptr) ;OpenThreadTokenInternal
+261 stdcall GetNamedSecurityInfoW(wstr long long ptr ptr ptr ptr ptr) GetNamedSecurityInfoWInternal
+273 stdcall GetSecurityInfo(long long long ptr ptr ptr ptr ptr) GetSecurityInfoInternal
+284 stdcall GetTokenInformation(ptr long ptr long ptr) GetTokenInformationInternal
+429 stdcall OpenProcessToken(long long ptr) OpenProcessTokenInternal
+434 stdcall OpenThreadToken(ptr long long ptr) OpenThreadTokenInternal
 563 stdcall SetKernelObjectSecurity(long long ptr) SetKernelObjectSecurityInternal
-567 stdcall SetNamedSecurityInfoW(wstr long ptr ptr ptr ptr ptr) ;SetNamedSecurityInfoWInternal
-576 stdcall SetSecurityInfo(long long long ptr ptr ptr ptr) ;SetSecurityInfoInternal
-583 stdcall SetTokenInformation(ptr long ptr long) ;SetTokenInformationInternal
+567 stdcall SetNamedSecurityInfoW(wstr long ptr ptr ptr ptr ptr) SetNamedSecurityInfoWInternal
+576 stdcall SetSecurityInfo(long long long ptr ptr ptr ptr) SetSecurityInfoInternal
+583 stdcall SetTokenInformation(ptr long ptr long) SetTokenInformationInternal

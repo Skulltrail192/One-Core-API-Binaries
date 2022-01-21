@@ -1223,6 +1223,8 @@
 @ stdcall QueryProcessCycleTime(ptr ptr)
 @ stdcall QueryProcessAffinityUpdateMode(ptr long)
 @ stdcall QueryThreadCycleTime(ptr ptr)
+@ stdcall RegisterApplicationRecoveryCallback(long ptr long long)
+@ stdcall RegisterApplicationRestart(wstr long)
 @ stdcall ReleaseMutexWhenCallbackReturns(ptr long) ntext.TpCallbackReleaseMutexOnCompletion
 @ stdcall ReleaseSemaphoreWhenCallbackReturns(ptr long long) ntext.TpCallbackReleaseSemaphoreOnCompletion
 @ stdcall ReleaseSRWLockExclusive(ptr) ntext.RtlReleaseSRWLockExclusive
@@ -1258,7 +1260,7 @@
 @ stdcall UnregisterApplicationRestart()
 @ stdcall UnregisterApplicationRecoveryCallback()
 @ stdcall UpdateCalendarDayOfWeek(ptr) 
-@ stdcall UpdateProcThreadAttribute(ptr long long ptr long ptr ptr)
+@ stdcall UpdateProcThreadAttribute(ptr long long ptr long ptr ptr) ;Broken MiniChrome, high cpu usage
 @ stdcall VerifyScripts(long wstr long wstr long) idndl.DownlevelVerifyScripts
 @ stdcall VirtualAllocExNuma(long ptr long long long long)
 @ stdcall WaitForThreadpoolIoCallbacks(ptr long) ntext.TpWaitForIoCompletion
@@ -1282,7 +1284,6 @@
 @ stdcall Wow64SuspendThread(ptr)
 
 #Win7 Functions
-@ stdcall AddDllDirectory(wstr)
 @ stdcall BaseFormatObjectAttributes(ptr ptr ptr)
 @ stdcall BasepAllocateActivationContextActivationBlock(long ptr ptr ptr)
 @ stdcall BasepAnsiStringToDynamicUnicodeString(wstr str)
@@ -1365,11 +1366,7 @@
 @ stdcall -arch=x86_64 QueryUmsThreadInformation(ptr long ptr long ptr)
 @ stdcall QueryUnbiasedInterruptTime(ptr)
 @ stdcall RaiseFailFastException(ptr ptr long)
-@ stdcall RegisterApplicationRecoveryCallback(long ptr long long)
-@ stdcall RegisterApplicationRestart(wstr long)
-@ stdcall RemoveDllDirectory(ptr)
 @ stdcall ResolveLocaleName(wstr ptr long)
-@ stdcall SetDefaultDllDirectories(long)
 @ stdcall SetThreadGroupAffinity(long ptr ptr)
 @ stdcall SetThreadIdealProcessorEx(ptr ptr ptr)
 @ stdcall SetThreadpoolStackInformation(ptr ptr)
@@ -1385,6 +1382,7 @@
 @ stdcall -arch=x86_64 UmsThreadYield(ptr)
 
 #Win8 Functions 
+@ stdcall AddDllDirectory(wstr) ;Error in Avast
 @ stdcall AppPolicyGetProcessTerminationMethod(ptr ptr) 
 @ stdcall AppPolicyGetShowDeveloperDiagnostic(ptr ptr)
 @ stdcall AppPolicyGetThreadInitializationType(ptr ptr) 
@@ -1421,6 +1419,8 @@
 @ stdcall PathCchRenameExtension(wstr long wstr)
 @ stdcall PathCchRemoveExtension(wstr long)
 # @ stub PathIsUNCEx
+@ stdcall RemoveDllDirectory(ptr)
+@ stdcall SetDefaultDllDirectories(long)
 @ stdcall SetProcessMitigationPolicy(long ptr long)
 @ stdcall WaitOnAddress(ptr ptr long long)
 @ stdcall WakeByAddressAll(ptr) ntext.RtlWakeAddressAll

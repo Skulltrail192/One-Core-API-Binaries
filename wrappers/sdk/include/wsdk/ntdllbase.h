@@ -354,11 +354,11 @@ NTSTATUS NTAPI RtlSleepConditionVariableSRW(
 
 VOID NTAPI RtlInitializeSRWLock(OUT PRTL_SRWLOCK SRWLock);
 
-NTSTATUS NTAPI RtlSleepConditionVariableCS( 	
-		IN OUT PRTL_CONDITION_VARIABLE ConditionVariable,
-		IN OUT PRTL_CRITICAL_SECTION CriticalSection,
-		IN PLARGE_INTEGER TimeOut OPTIONAL
-); 
+NTSTATUS
+NTAPI
+RtlSleepConditionVariableCS(IN OUT PRTL_CONDITION_VARIABLE ConditionVariable,
+                            IN OUT PRTL_CRITICAL_SECTION CriticalSection,
+                            IN const LARGE_INTEGER * TimeOut OPTIONAL); 
 
 NTSTATUS WINAPI RtlGetUserPreferredUILanguages(DWORD dwFlags, 
 											   BOOL verification,

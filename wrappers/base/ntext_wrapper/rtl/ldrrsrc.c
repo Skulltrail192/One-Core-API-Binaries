@@ -267,11 +267,10 @@ Return Value:
 
         DllPathNameLength = (ULONG)(p - PathToAlternateModule) * sizeof(WCHAR);
 
-        RtlCopyMemory(
+        wcscpy(//RtlCopyMemory(
             DllPathName,
-            PathToAlternateModule,
-            DllPathNameLength
-            );
+            PathToAlternateModule
+            );//,DllPathNameLength);
 
         BaseDllName = p ;
         BaseDllNameLength = CopyCount * sizeof(WCHAR) - DllPathNameLength;
@@ -289,10 +288,10 @@ Return Value:
         DllPathNameLength = Entry->FullDllName.Length -
                             Entry->BaseDllName.Length;
 
-        RtlCopyMemory(
+        wcscpy(//RtlCopyMemory(
             DllPathName,
-            Entry->FullDllName.Buffer,
-            DllPathNameLength);
+            Entry->FullDllName.Buffer
+            );//,DllPathNameLength);
 
         BaseDllName = Entry->BaseDllName.Buffer;
         BaseDllNameLength = Entry->BaseDllName.Length;

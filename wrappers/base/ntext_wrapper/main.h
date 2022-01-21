@@ -744,13 +744,11 @@ typedef VOID (CALLBACK *PRTL_OVERLAPPED_COMPLETION_ROUTINE)(DWORD,DWORD,LPVOID);
     // PVOID Ptr;
 // } RTL_CONDITION_VARIABLE, *PRTL_CONDITION_VARIABLE;
 
-NTSTATUS 
-WINAPI
-RtlSleepConditionVariableCS(
-  PRTL_CONDITION_VARIABLE variable,
-  PRTL_CRITICAL_SECTION   crit,
-  PLARGE_INTEGER    timeout
-);
+NTSTATUS
+NTAPI
+RtlSleepConditionVariableCS(IN OUT PRTL_CONDITION_VARIABLE ConditionVariable,
+                            IN OUT PRTL_CRITICAL_SECTION CriticalSection,
+                            IN const LARGE_INTEGER * TimeOut OPTIONAL); 
  
 void 
 WINAPI

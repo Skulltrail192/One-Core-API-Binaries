@@ -199,19 +199,20 @@ BOOL WINAPI GetKernelObjectSecurityInternal(
 	NTSTATUS Status;
 	//This is a hack, for now is enabled because need a truly implementation of LABEL_SECURITY_INFORMATION (for Chrome and Chromium Framework)
 	if(RequestedInformation & LABEL_SECURITY_INFORMATION)
-	{
-		//RequestedInformation = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION;
-		
+	{	
 		Status = NtQuerySecurityObject(Handle, RequestedInformation, pSecurityDescriptor,
                                                nLength, lpnLengthNeeded );
 		
 		if(!NT_SUCCESS(Status)){
 			DbgPrint("GetKernelObjectSecurityInternal::NtQuerySecurityObject returned Status: 0x%08lx\n", Status);	
+			RequestedInformation = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION;
+			goto tryAgain;
 		}
 
 		return TRUE;
 	}
 	
+tryAgain:	
 	return GetKernelObjectSecurity(Handle, RequestedInformation, pSecurityDescriptor, nLength, lpnLengthNeeded);
 }
 
@@ -230,12 +231,15 @@ BOOL WINAPI SetKernelObjectSecurityInternal(
 		Status = NtSetSecurityObject(Handle, SecurityInformation, SecurityDescriptor);
 		
 		if(!NT_SUCCESS(Status)){
-			DbgPrint("SetKernelObjectSecurityInternal::NtSetSecurityObject returned Status: 0x%08lx\n", Status);	
+			DbgPrint("SetKernelObjectSecurityInternal::NtSetSecurityObject returned Status: 0x%08lx\n", Status);
+			SecurityInformation = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION;
+			goto tryAgain;			
 		}
 
 		return TRUE;
 	}
-	
+
+tryAgain:	
 	return SetKernelObjectSecurity(Handle, SecurityInformation, SecurityDescriptor);
 }
 
@@ -273,11 +277,14 @@ SetNamedSecurityInfoWInternal(
 		
 		if(ret != ERROR_SUCCESS){
 			DbgPrint("SetNamedSecurityInfoWInternal::SetNamedSecurityInfoW returned ret: 0x%08lx\n", ret);	
+			SecurityInfo = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION;
+			goto tryAgain;			
 		}
 
 		return ERROR_SUCCESS;
 	}
 	
+tryAgain:	
 	return SetNamedSecurityInfoW(pObjectName,
 								 ObjectType,
 								 SecurityInfo,
@@ -307,22 +314,30 @@ SetSecurityInfoInternal(
 	//This is a hack, for now is enabled because need a truly implementation of LABEL_SECURITY_INFORMATION (for Chrome and Chromium Framework)
 	if(SecurityInfo & LABEL_SECURITY_INFORMATION)
 	{
-		SecurityInfo = SACL_SECURITY_INFORMATION;
+		resp = SetSecurityInfo(handle,
+							   ObjectType,
+							   SecurityInfo,
+							   psidOwner,
+							   psidGroup,
+							   pDacl,
+							   pSacl);
+							   
+		if(resp != ERROR_SUCCESS)
+		{		
+			DbgPrint("SetSecurityInfoInternal::SetSecurityInfo return: %d\n", resp);	
+			SecurityInfo = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION;
+			goto tryAgain;			
+		}			
 	}	
-	resp = SetSecurityInfo(handle,
+	
+tryAgain:						   
+	return SetSecurityInfo(handle,
 						   ObjectType,
 						   SecurityInfo,
 						   psidOwner,
 						   psidGroup,
 						   pDacl,
-						   pSacl);
-						   
-	if(resp != ERROR_SUCCESS)
-	{		
-		DbgPrint("SetSecurityInfoInternal::SetSecurityInfo return: %d\n", resp);	
-	}		
-						   
-	return resp;					   
+						   pSacl);					   
 }
 
 DWORD
@@ -342,8 +357,6 @@ GetSecurityInfoInternal(
 	//This is a hack, for now is enabled because need a truly implementation of LABEL_SECURITY_INFORMATION (for Chrome and Chromium Framework)
 	if(SecurityInfo & LABEL_SECURITY_INFORMATION)
 	{
-		SecurityInfo = SACL_SECURITY_INFORMATION;
-		
 		resp = GetSecurityInfo(handle,
 						   ObjectType,
 						   SecurityInfo,
@@ -355,11 +368,14 @@ GetSecurityInfoInternal(
 		
 		if(resp != ERROR_SUCCESS)
 		{		
-			DbgPrint("GetSecurityInfoInternal::GetSecurityInfo return: %d\n", resp);	
+			DbgPrint("GetSecurityInfoInternal::GetSecurityInfo return: %d\n", resp);
+			SecurityInfo = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION;
+			goto tryAgain;				
 		}
 		return resp;		
 	}	
-						   
+		
+tryAgain:		
 	return GetSecurityInfo(handle,
 						   ObjectType,
 						   SecurityInfo,
@@ -392,23 +408,33 @@ GetNamedSecurityInfoWInternal(
 	//This is a hack, for now is enabled because need a truly implementation of LABEL_SECURITY_INFORMATION (for Chrome and Chromium Framework)
 	if(SecurityInfo & LABEL_SECURITY_INFORMATION)
 	{
-		SecurityInfo = SACL_SECURITY_INFORMATION;
-	}		
-	resp = GetNamedSecurityInfoW(pObjectName,
+		resp = GetNamedSecurityInfoW(pObjectName,
+									 ObjectType,
+									 SecurityInfo,
+									 ppsidOwner,
+									 ppsidGroup,
+									 ppDacl,
+									 ppSacl,
+									 ppSecurityDescriptor);
+												 
+									 
+		if(resp != ERROR_SUCCESS)
+		{		
+			DbgPrint("GetNamedSecurityInfoWInternal::GetNamedSecurityInfoW return: %d\n", resp);	
+			SecurityInfo = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION;
+			goto tryAgain;			
+		}	
+	}	
+	
+tryAgain:	
+	return GetNamedSecurityInfoW(pObjectName,
 								 ObjectType,
 								 SecurityInfo,
 								 ppsidOwner,
 								 ppsidGroup,
 								 ppDacl,
 								 ppSacl,
-								 ppSecurityDescriptor);	
-								 
-	if(resp != ERROR_SUCCESS)
-	{		
-		DbgPrint("GetNamedSecurityInfoWInternal::GetNamedSecurityInfoW return: %d\n", resp);	
-	}		
-						   
-	return resp;								 
+								 ppSecurityDescriptor);								 
 }					  
 
 BOOL WINAPI DECLSPEC_HOTPATCH ConvertStringSecurityDescriptorToSecurityDescriptorWInternal(

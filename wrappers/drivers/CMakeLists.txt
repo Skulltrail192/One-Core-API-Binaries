@@ -1,3 +1,3 @@
-add_subdirectory(bootanim)
-#add_subdirectory(netio)
-#add_subdirectory(nsiproxy)
+add_subdirectory(dependencies)
+add_subdirectory(new)
+add_subdirectory(wrappers)

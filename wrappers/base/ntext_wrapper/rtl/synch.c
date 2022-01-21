@@ -627,7 +627,7 @@ NTSTATUS
 NTAPI
 RtlSleepConditionVariableCS(IN OUT PRTL_CONDITION_VARIABLE ConditionVariable,
                             IN OUT PRTL_CRITICAL_SECTION CriticalSection,
-                            IN PLARGE_INTEGER TimeOut OPTIONAL)
+                            IN const LARGE_INTEGER * TimeOut OPTIONAL)
 {
     NTSTATUS status;
     interlocked_xchg_add( (int *)&ConditionVariable->Ptr, 1 );
