@@ -59,22 +59,89 @@
 #define APPMODEL_ERROR_PACKAGE_RUNTIME_CORRUPT             15701
 #define APPMODEL_ERROR_PACKAGE_IDENTITY_CORRUPT            15702
 #define APPMODEL_ERROR_NO_APPLICATION                      15703
-#define PROC_THREAD_ATTRIBUTE_PARENT_PROCESS (ProcThreadAttributeParentProcess | PROC_THREAD_ATTRIBUTE_INPUT)
-#define PROC_THREAD_ATTRIBUTE_HANDLE_LIST (ProcThreadAttributeHandleList | PROC_THREAD_ATTRIBUTE_INPUT)
-#define PROC_THREAD_ATTRIBUTE_GROUP_AFFINITY (ProcThreadAttributeGroupAffinity | PROC_THREAD_ATTRIBUTE_THREAD | PROC_THREAD_ATTRIBUTE_INPUT)
-#define PROC_THREAD_ATTRIBUTE_IDEAL_PROCESSOR (ProcThreadAttributeIdealProcessor | PROC_THREAD_ATTRIBUTE_THREAD | PROC_THREAD_ATTRIBUTE_INPUT)
-#define PROC_THREAD_ATTRIBUTE_UMS_THREAD (ProcThreadAttributeUmsThread | PROC_THREAD_ATTRIBUTE_THREAD | PROC_THREAD_ATTRIBUTE_INPUT)
-#define PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY (ProcThreadAttributeMitigationPolicy | PROC_THREAD_ATTRIBUTE_INPUT)
+
+typedef struct _PROC_THREAD_ATTRIBUTE_LIST
+*PPROC_THREAD_ATTRIBUTE_LIST, *LPPROC_THREAD_ATTRIBUTE_LIST;
+
+#define PROC_THREAD_ATTRIBUTE_NUMBER   0x0000ffff
+#define PROC_THREAD_ATTRIBUTE_THREAD   0x00010000
+#define PROC_THREAD_ATTRIBUTE_INPUT    0x00020000
+#define PROC_THREAD_ATTRIBUTE_ADDITIVE 0x00040000
+
+typedef enum _PROC_THREAD_ATTRIBUTE_NUM_WIN7
+{
+    // ProcThreadAttributeParentProcess = 0,
+    ProcThreadAttributeExtendedFlags = 1,
+    // ProcThreadAttributeHandleList = 2,
+    // ProcThreadAttributeGroupAffinity = 3,
+    ProcThreadAttributePreferredNode = 4,
+    // ProcThreadAttributeIdealProcessor = 5,
+    // ProcThreadAttributeUmsThread = 6,
+    // ProcThreadAttributeMitigationPolicy = 7,
+    // ProcThreadAttributeSecurityCapabilities = 9,
+	ProcThreadAttributeConsoleReference = 10,
+    // ProcThreadAttributeProtectionLevel = 11,
+    // ProcThreadAttributeJobList = 13,
+    // ProcThreadAttributeChildProcessPolicy = 14,
+    // ProcThreadAttributeAllApplicationPackagesPolicy = 15,
+    // ProcThreadAttributeWin32kFilter = 16,
+    // ProcThreadAttributeSafeOpenPromptOriginClaim = 17,
+    ProcThreadAttributeDesktopAppPolicy = 18,
+	ProcThreadAttributePseudoConsole =  22,
+	ProcThreadAttributeMax
+} PROC_THREAD_ATTRIBUTE_NUM_WIN7;
+
+#define ProcThreadAttributeValue(Number, Thread, Input, Additive) \
+    (((Number) & PROC_THREAD_ATTRIBUTE_NUMBER) | \
+     ((Thread != FALSE) ? PROC_THREAD_ATTRIBUTE_THREAD : 0) | \
+     ((Input != FALSE) ? PROC_THREAD_ATTRIBUTE_INPUT : 0) | \
+     ((Additive != FALSE) ? PROC_THREAD_ATTRIBUTE_ADDITIVE : 0))
+
 #define PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES (ProcThreadAttributeSecurityCapabilities | PROC_THREAD_ATTRIBUTE_INPUT)
 #define PROC_THREAD_ATTRIBUTE_PROTECTION_LEVEL (ProcThreadAttributeProtectionLevel | PROC_THREAD_ATTRIBUTE_INPUT)
 #define PROC_THREAD_ATTRIBUTE_JOB_LIST (ProcThreadAttributeJobList | PROC_THREAD_ATTRIBUTE_INPUT)
 #define PROC_THREAD_ATTRIBUTE_CHILD_PROCESS_POLICY (ProcThreadAttributeChildProcessPolicy | PROC_THREAD_ATTRIBUTE_INPUT)
 #define PROC_THREAD_ATTRIBUTE_ALL_APPLICATION_PACKAGES_POLICY (ProcThreadAttributeAllApplicationPackagesPolicy | PROC_THREAD_ATTRIBUTE_INPUT)
 #define PROC_THREAD_ATTRIBUTE_WIN32K_FILTER (ProcThreadAttributeWin32kFilter | PROC_THREAD_ATTRIBUTE_INPUT)
-#define PROC_THREAD_ATTRIBUTE_NUMBER   0x0000ffff
-#define PROC_THREAD_ATTRIBUTE_THREAD   0x00010000
-#define PROC_THREAD_ATTRIBUTE_INPUT    0x00020000
-#define PROC_THREAD_ATTRIBUTE_ADDITIVE 0x00040000
+#define PROC_THREAD_ATTRIBUTE_DESKTOP_APP_POLICY (ProcThreadAttributeDesktopAppPolicy | PROC_THREAD_ATTRIBUTE_INPUT)
+#define PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE (ProcThreadAttributePseudoConsole | PROC_THREAD_ATTRIBUTE_INPUT)
+#define PROC_THREAD_ATTRIBUTE_FLAG_REPLACE_EXTENDEDFLAGS	1
+
+
+#ifndef PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES
+#define PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES \
+	ProcThreadAttributeValue (ProcThreadAttributeSecurityCapabilities, FALSE, TRUE, FALSE)
+#endif
+
+// #define PROC_THREAD_ATTRIBUTE_PARENT_PROCESS \
+    // ProcThreadAttributeValue (ProcThreadAttributeParentProcess, FALSE, TRUE, FALSE)
+#define PROC_THREAD_ATTRIBUTE_EXTENDED_FLAGS \
+    ProcThreadAttributeValue (ProcThreadAttributeExtendedFlags, FALSE, TRUE, TRUE)
+// #define PROC_THREAD_ATTRIBUTE_HANDLE_LIST \
+    // ProcThreadAttributeValue (ProcThreadAttributeHandleList, FALSE, TRUE, FALSE)
+#define PROC_THREAD_ATTRIBUTE_GROUP_AFFINITY \
+    ProcThreadAttributeValue (ProcThreadAttributeGroupAffinity, TRUE, TRUE, FALSE)
+#define PROC_THREAD_ATTRIBUTE_PREFERRED_NODE \
+    ProcThreadAttributeValue (ProcThreadAttributePreferredNode, FALSE, TRUE, FALSE)
+// #define PROC_THREAD_ATTRIBUTE_IDEAL_PROCESSOR \
+    // ProcThreadAttributeValue (ProcThreadAttributeIdealProcessor, TRUE, TRUE, FALSE)
+#define PROC_THREAD_ATTRIBUTE_UMS_THREAD \
+    ProcThreadAttributeValue (ProcThreadAttributeUmsThread, TRUE, TRUE, FALSE)
+#define PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY \
+    ProcThreadAttributeValue (ProcThreadAttributeMitigationPolicy, FALSE, TRUE, FALSE)
+#define PROC_THREAD_ATTRIBUTE_CONSOLE_REFERENCE \
+    ProcThreadAttributeValue(ProcThreadAttributeConsoleReference, FALSE, TRUE, FALSE)
+
+#ifndef PROC_THREAD_ATTRIBUTE_PROTECTION_LEVEL
+#define PROC_THREAD_ATTRIBUTE_PROTECTION_LEVEL \
+	ProcThreadAttributeValue (ProcThreadAttributeProtectionLevel, FALSE, TRUE, FALSE)
+#endif
+
+typedef struct _UMS_CREATE_THREAD_ATTRIBUTES {
+  DWORD UmsVersion;
+  PVOID UmsContext;
+  PVOID UmsCompletionList;
+} UMS_CREATE_THREAD_ATTRIBUTES, *PUMS_CREATE_THREAD_ATTRIBUTES;
 
 #define MAX_RESTART_CMD_LINE 0x800
 #define RESTART_CYCLICAL 0x1
@@ -179,6 +246,8 @@ extern ULONG BaseDllTag;
 PBASE_STATIC_SERVER_DATA BaseStaticServerData;
 extern BOOL bIsFileApiAnsi;
 extern HMODULE kernel32_handle DECLSPEC_HIDDEN;
+
+typedef void *HPCON;
 
 typedef RTL_SRWLOCK SRWLOCK, *PSRWLOCK;
 
@@ -314,22 +383,22 @@ typedef struct _REASON_CONTEXT {
   } Reason;
 } REASON_CONTEXT, *PREASON_CONTEXT;
 
-struct proc_thread_attr
+typedef struct _PROC_THREAD_ATTRIBUTE
 {
-    DWORD_PTR attr;
-    SIZE_T size;
-    void *value;
-};
+	DWORD_PTR Attribute;
+	SIZE_T cbSize;
+	PVOID lpValue;
+} PROC_THREAD_ATTRIBUTE;
 
 typedef struct _PROC_THREAD_ATTRIBUTE_LIST
 {
-    DWORD mask;  /* bitmask of items in list */
-    DWORD size;  /* max number of items in list */
-    DWORD count; /* number of items in list */
-    DWORD pad;
-    DWORD_PTR unk;
-    struct proc_thread_attr attrs[1];
-}PROC_THREAD_ATTRIBUTE_LIST, *PPROC_THREAD_ATTRIBUTE_LIST, *LPPROC_THREAD_ATTRIBUTE_LIST;
+	DWORD AttributeFlags;
+	DWORD MaxCount;
+	DWORD Count;
+	DWORD Pad4B;
+	PROC_THREAD_ATTRIBUTE* ExtendedEntry;
+	PROC_THREAD_ATTRIBUTE AttributeList[ANYSIZE_ARRAY];
+} PROC_THREAD_ATTRIBUTE_LIST;
 
 typedef enum _WER_REGISTER_FILE_TYPE
 {

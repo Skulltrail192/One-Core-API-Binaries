@@ -913,137 +913,235 @@ BOOL WINAPI GetLogicalProcessorInformationEx(LOGICAL_PROCESSOR_RELATIONSHIP rela
 }
  
 /***********************************************************************
- *           InitializeProcThreadAttributeList       (KERNEL32.@)
+ *           InitializeProcThreadAttributeList   (kernelbase.@)
  */
-BOOL 
-WINAPI 
-InitializeProcThreadAttributeList(
-	LPPROC_THREAD_ATTRIBUTE_LIST list,
-    DWORD count, 
-	DWORD flags, 
-	SIZE_T *size
-)
+BOOL WINAPI InitializeProcThreadAttributeList(LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList,DWORD dwAttributeCount,DWORD dwFlags,PSIZE_T lpSize)
 {
-    SIZE_T needed;
-    BOOL ret = FALSE;
+	BOOL Result;
+	SIZE_T RequiredSize;
 	
-	DbgPrint("InitializeProcThreadAttributeList called!\n");
+	DbgPrint("InitializeProcThreadAttributeList called\n");
+	
+	if (dwFlags!=0)
+	{
+		BaseSetLastNTError(STATUS_INVALID_PARAMETER_3);
+		return FALSE;
+	}
+	if (dwAttributeCount>ProcThreadAttributeMax)	//Win7这个值为8，Win8则为12
+	{
+		BaseSetLastNTError(STATUS_INVALID_PARAMETER_2);
+		return FALSE;
+	}
+	
+	RequiredSize=dwAttributeCount*sizeof(PROC_THREAD_ATTRIBUTE)+FIELD_OFFSET(PROC_THREAD_ATTRIBUTE_LIST,AttributeList);
+	if (lpAttributeList==NULL || *lpSize<RequiredSize)
+	{
+		RtlSetLastWin32Error(ERROR_INSUFFICIENT_BUFFER);
+		Result=FALSE;
+	}
+	else
+	{
+		lpAttributeList->AttributeFlags=0;
+		lpAttributeList->ExtendedEntry=NULL;
+		lpAttributeList->MaxCount=dwAttributeCount;
+		lpAttributeList->Count=0;
+		Result=TRUE;
+	}
+	*lpSize=RequiredSize;
+	return Result;
+}
 
-    needed = FIELD_OFFSET(PROC_THREAD_ATTRIBUTE_LIST, attrs[count]);
-	
-	DbgPrint("InitializeProcThreadAttributeList :: needed: %d\n", needed);
-	
-    if (list && *size >= needed)
-    {
-        list->mask = 0;
-        list->size = count;
-        list->count = 0;
-        list->unk = 0;
-        ret = TRUE;
-		DbgPrint("InitializeProcThreadAttributeList :: initialized: %d\n", needed);		
-    }
-    else
-        SetLastError(ERROR_INSUFFICIENT_BUFFER);
 
-    *size = needed;	
+
+/***********************************************************************
+ *           UpdateProcThreadAttribute   (kernelbase.@)
+ */
+BOOL WINAPI UpdateProcThreadAttribute(LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList,DWORD dwFlags,
+	DWORD_PTR Attribute,PVOID lpValue,SIZE_T cbSize,PVOID lpPreviousValue,PSIZE_T lpReturnSize)
+{
+	DWORD AttributeFlag;
+	PROC_THREAD_ATTRIBUTE* Entry;
+	DWORD dwExtendedFlags;
 	
-    return ret;
+	DbgPrint("UpdateProcThreadAttribute called\n");
+	
+	if (dwFlags&(~PROC_THREAD_ATTRIBUTE_FLAG_REPLACE_EXTENDEDFLAGS))
+	{
+		BaseSetLastNTError(STATUS_INVALID_PARAMETER_2);
+		return FALSE;
+	}
+
+	AttributeFlag=1<<(Attribute&PROC_THREAD_ATTRIBUTE_NUMBER);
+	//只有PROC_THREAD_ATTRIBUTE_EXTENDED_FLAGS才带有PROC_THREAD_ATTRIBUTE_ADDITIVE
+	if ((Attribute&PROC_THREAD_ATTRIBUTE_ADDITIVE)==0) 
+	{
+		if (lpAttributeList->Count==lpAttributeList->MaxCount)
+		{
+			BaseSetLastNTError(STATUS_UNSUCCESSFUL);
+			return FALSE;
+		}
+		if (lpAttributeList->AttributeFlags&AttributeFlag)
+		{
+			BaseSetLastNTError(STATUS_OBJECT_NAME_EXISTS);
+			return FALSE;
+		}
+		if (lpPreviousValue!=NULL)
+		{
+			BaseSetLastNTError(STATUS_INVALID_PARAMETER_6);
+			return FALSE;
+		}
+		if (dwFlags&PROC_THREAD_ATTRIBUTE_FLAG_REPLACE_EXTENDEDFLAGS)
+		{
+			BaseSetLastNTError(STATUS_INVALID_PARAMETER_2);
+			return FALSE;
+		}
+	}
+	//已知的所有Attribute都带有PROC_THREAD_ATTRIBUTE_INPUT
+	//也许微软内部的代码会利用lpReturnSize输出点什么
+	if ((Attribute&PROC_THREAD_ATTRIBUTE_INPUT) && lpReturnSize!=NULL)
+	{
+		BaseSetLastNTError(STATUS_INVALID_PARAMETER_7);
+		return FALSE;
+	}
+
+	Entry=(PROC_THREAD_ATTRIBUTE*)((BYTE*)lpAttributeList+
+		lpAttributeList->Count*sizeof(PROC_THREAD_ATTRIBUTE)+FIELD_OFFSET(PROC_THREAD_ATTRIBUTE_LIST,AttributeList));
+
+	switch (Attribute)	//Attribute = (Number | Thread | Input | Additive)
+	{
+	case PROC_THREAD_ATTRIBUTE_PARENT_PROCESS:	//0, 0, 0x20000, 0
+		if (cbSize!=sizeof(HANDLE))
+		{
+			BaseSetLastNTError(STATUS_INFO_LENGTH_MISMATCH);
+			return FALSE;
+		}
+		break;
+	case PROC_THREAD_ATTRIBUTE_HANDLE_LIST:		//2, 0, 0x20000, 0
+		if (cbSize==0 || (cbSize&3))
+		{
+			BaseSetLastNTError(STATUS_INFO_LENGTH_MISMATCH);
+			return FALSE;
+		}
+		break;
+	case PROC_THREAD_ATTRIBUTE_PREFERRED_NODE:	//4, 0, 0x20000, 0
+		if (cbSize!=sizeof(USHORT))
+		{
+			BaseSetLastNTError(STATUS_INFO_LENGTH_MISMATCH);
+			return FALSE;
+		}
+		break;
+	case PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY:	//7, 0, 0x20000, 0
+		if (cbSize!=sizeof(DWORD) && cbSize!=sizeof(DWORD64))	//Win8开始允许DWORD64
+		{
+			BaseSetLastNTError(STATUS_INFO_LENGTH_MISMATCH);
+			return FALSE;
+		}
+		break;
+	case PROC_THREAD_ATTRIBUTE_GROUP_AFFINITY:	//3, 0x10000, 0x20000, 0
+		if (cbSize!=sizeof(GROUP_AFFINITY))
+		{
+			BaseSetLastNTError(STATUS_INFO_LENGTH_MISMATCH);
+			return FALSE;
+		}
+		break;
+	case PROC_THREAD_ATTRIBUTE_IDEAL_PROCESSOR:	//5, 0x10000, 0x20000, 0
+		if (cbSize!=sizeof(PROCESSOR_NUMBER))
+		{
+			BaseSetLastNTError(STATUS_INFO_LENGTH_MISMATCH);
+			return FALSE;
+		}
+		break;
+	//此标记及对应的函数CreateUmsThreadContext仅在64位系统才有，Win7和Win8都是如此
+	//注意，在64位下，sizeof(UMS_CREATE_THREAD_ATTRIBUTES)为24，而在32位下为12
+	case PROC_THREAD_ATTRIBUTE_UMS_THREAD:		//6, 0x10000, 0x20000, 0
+		if (cbSize!=sizeof(UMS_CREATE_THREAD_ATTRIBUTES))
+		{
+			BaseSetLastNTError(STATUS_INFO_LENGTH_MISMATCH);
+			return FALSE;
+		}
+		break;
+	case PROC_THREAD_ATTRIBUTE_EXTENDED_FLAGS:	//1, 0, 0x20000, 0x40000
+		if (cbSize!=sizeof(DWORD))
+		{
+			BaseSetLastNTError(STATUS_INFO_LENGTH_MISMATCH);
+			return FALSE;
+		}
+		break;
+	//下面3个仅Win8以上支持
+	case PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES:	//9, 0, 0x20000, 0
+		if (cbSize!=16)	//sizeof(SECURITY_CAPABILITIES)，32位是16，64位是24
+		{
+			BaseSetLastNTError(STATUS_INFO_LENGTH_MISMATCH);
+			return FALSE;
+		}
+		break;
+	case PROC_THREAD_ATTRIBUTE_CONSOLE_REFERENCE:		//10, 0, 0x20000, 0
+		if (cbSize!=sizeof(HANDLE))
+		{
+			BaseSetLastNTError(STATUS_INFO_LENGTH_MISMATCH);
+			return FALSE;
+		}
+		break;
+	case PROC_THREAD_ATTRIBUTE_PROTECTION_LEVEL:		//11, 0, 0x20000, 0
+		if (cbSize!=sizeof(DWORD))
+		{
+			BaseSetLastNTError(STATUS_INFO_LENGTH_MISMATCH);
+			return FALSE;
+		}
+		break;
+	default:
+		BaseSetLastNTError(STATUS_NOT_SUPPORTED);
+		return FALSE;
+		break;
+	}
+	//原代码中这段代码和检查大小放在一起
+	if (Attribute==PROC_THREAD_ATTRIBUTE_EXTENDED_FLAGS)
+	{
+		DWORD dwPreviousExtendedFlags;
+		//没有ExtendedEntry，就将当前Entry设为ExtendedEntry
+		if (lpAttributeList->ExtendedEntry==NULL)
+		{
+			lpAttributeList->ExtendedEntry=Entry;
+			dwPreviousExtendedFlags=0;
+		}
+		else	//存在ExtendedEntry，取出之前的ExtendedEntry
+		{
+			Entry=lpAttributeList->ExtendedEntry;
+			dwPreviousExtendedFlags=(DWORD)Entry->lpValue;
+			AttributeFlag=0;
+		}
+		//取出新的ExtendedFlags，根据dwFlags决定是替换原值还是保留并添加新值
+		dwExtendedFlags=*(DWORD*)lpValue;
+		if (dwExtendedFlags&0xFFFFFFFC)	//Win8是0xFFFFFFF8；Win7可用2位，Win8可用4位
+		{
+			BaseSetLastNTError(STATUS_INVALID_PARAMETER);
+			return FALSE;
+		}
+		if ((dwFlags&PROC_THREAD_ATTRIBUTE_FLAG_REPLACE_EXTENDEDFLAGS)==0)
+			dwExtendedFlags=dwExtendedFlags|dwPreviousExtendedFlags;
+		if (lpPreviousValue!=NULL)
+			*(DWORD*)lpPreviousValue=dwPreviousExtendedFlags;
+		//Win7原代码借用lpAttributeList存储lpValue，这里直接修改lpValue
+		lpValue=(PVOID)dwExtendedFlags;
+	}
+	//如果是ExtendedFlags，仅更新lpValue，否则添加新项
+	Entry->lpValue=lpValue;
+	if (AttributeFlag!=0)
+	{
+		Entry->Attribute=Attribute;
+		Entry->cbSize=cbSize;
+		lpAttributeList->Count++;
+		lpAttributeList->AttributeFlags|=AttributeFlag;
+	}
+	return TRUE;
 }
 
 /***********************************************************************
- *           UpdateProcThreadAttribute       (KERNEL32.@)
+ *           DeleteProcThreadAttributeList   (kernelbase.@)
  */
-BOOL WINAPI UpdateProcThreadAttribute(struct _PROC_THREAD_ATTRIBUTE_LIST *list,
-                                      DWORD flags, DWORD_PTR attr, void *value, SIZE_T size,
-                                      void *prev_ret, SIZE_T *size_ret)
+void WINAPI DECLSPEC_HOTPATCH DeleteProcThreadAttributeList( struct _PROC_THREAD_ATTRIBUTE_LIST *list )
 {
-    DWORD mask;
-    struct proc_thread_attr *entry;
-
-    DbgPrint("(%p %x %08lx %p %ld %p %p)\n", list, flags, attr, value, size, prev_ret, size_ret);
-
-    if (list->count >= list->size)
-    {
-        SetLastError(ERROR_GEN_FAILURE);
-        return FALSE;
-    }
-
-    switch (attr)
-    {
-    case PROC_THREAD_ATTRIBUTE_PARENT_PROCESS:
-        if (size != sizeof(HANDLE))
-        {
-            SetLastError(ERROR_BAD_LENGTH);
-            return FALSE;
-        }
-        break;
-
-    case PROC_THREAD_ATTRIBUTE_HANDLE_LIST:
-        if ((size / sizeof(HANDLE)) * sizeof(HANDLE) != size)
-        {
-            SetLastError(ERROR_BAD_LENGTH);
-            return FALSE;
-        }
-        break;
-
-    case PROC_THREAD_ATTRIBUTE_IDEAL_PROCESSOR:
-        if (size != sizeof(PROCESSOR_NUMBER))
-        {
-            SetLastError(ERROR_BAD_LENGTH);
-            return FALSE;
-        }
-        break;
-
-    case PROC_THREAD_ATTRIBUTE_CHILD_PROCESS_POLICY:
-       if (size != sizeof(DWORD) && size != sizeof(DWORD64))
-       {
-           SetLastError(ERROR_BAD_LENGTH);
-           return FALSE;
-       }
-       break;
-
-    case PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY:
-        if (size != sizeof(DWORD) && size != sizeof(DWORD64) && size != sizeof(DWORD64) * 2)
-        {
-            SetLastError(ERROR_BAD_LENGTH);
-            return FALSE;
-        }
-        break;
-
-    default:
-        SetLastError(ERROR_NOT_SUPPORTED);
-        DbgPrint("Unhandled attribute number %lu\n", attr & PROC_THREAD_ATTRIBUTE_NUMBER);
-        return FALSE;
-    }
-
-    mask = 1 << (attr & PROC_THREAD_ATTRIBUTE_NUMBER);
-
-    if (list->mask & mask)
-    {
-        SetLastError(ERROR_OBJECT_NAME_EXISTS);
-        return FALSE;
-    }
-
-    list->mask |= mask;
-
-    entry = list->attrs + list->count;
-    entry->attr = attr;
-    entry->size = size;
-    entry->value = value;
-    list->count++;
-
-    return TRUE;
-}
-
-/***********************************************************************
- *           DeleteProcThreadAttributeList       (KERNEL32.@)
- */
-void 
-WINAPI 
-DeleteProcThreadAttributeList(
-	struct _PROC_THREAD_ATTRIBUTE_LIST *list
-)
-{
+	DbgPrint("DeleteProcThreadAttributeList called\n");
     return;
 }
 
@@ -1440,8 +1538,6 @@ CreateProcessInternalExW(
     PHANDLE hRestrictedUserToken
     )
 {
-	// STARTUPINFOW startupInfo;
-	
 	BOOL resp;
     static const WCHAR chromeexeW[] = {'c','h','r','o','m','e','.','e','x','e',0};
     static const WCHAR nosandboxW[] = {' ','-','-','n','o','-','s','a','n','d','b','o','x',0};	
