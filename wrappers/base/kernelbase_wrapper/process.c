@@ -919,9 +919,7 @@ BOOL WINAPI InitializeProcThreadAttributeList(LPPROC_THREAD_ATTRIBUTE_LIST lpAtt
 {
 	BOOL Result;
 	SIZE_T RequiredSize;
-	
-	DbgPrint("InitializeProcThreadAttributeList called\n");
-	
+		
 	if (dwFlags!=0)
 	{
 		BaseSetLastNTError(STATUS_INVALID_PARAMETER_3);
@@ -962,8 +960,6 @@ BOOL WINAPI UpdateProcThreadAttribute(LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeLi
 	DWORD AttributeFlag;
 	PROC_THREAD_ATTRIBUTE* Entry;
 	DWORD dwExtendedFlags;
-	
-	DbgPrint("UpdateProcThreadAttribute called\n");
 	
 	if (dwFlags&(~PROC_THREAD_ATTRIBUTE_FLAG_REPLACE_EXTENDEDFLAGS))
 	{
@@ -1141,7 +1137,6 @@ BOOL WINAPI UpdateProcThreadAttribute(LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeLi
  */
 void WINAPI DECLSPEC_HOTPATCH DeleteProcThreadAttributeList( struct _PROC_THREAD_ATTRIBUTE_LIST *list )
 {
-	DbgPrint("DeleteProcThreadAttributeList called\n");
     return;
 }
 

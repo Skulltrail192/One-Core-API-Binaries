@@ -85,11 +85,11 @@
 @ extern NlsAnsiCodePage
 @ extern NlsMbCodePageTag
 @ extern NlsMbOemCodePageTag
-@ stdcall NtAcceptConnectPort(ptr long ptr long long ptr) NtAcceptConnectPortInternal
-@ stdcall NtAccessCheck(ptr long long ptr ptr ptr ptr ptr) NtAccessCheckInternal
-@ stdcall NtAccessCheckAndAuditAlarm(ptr long ptr ptr ptr long ptr long ptr ptr ptr) NtAccessCheckAndAuditAlarmInternal
-@ stdcall NtAccessCheckByType(ptr ptr ptr long ptr long ptr ptr long ptr ptr) NtAccessCheckByTypeInternal
-@ stdcall NtAccessCheckByTypeAndAuditAlarm(ptr ptr ptr ptr ptr ptr long long long ptr long ptr long ptr ptr ptr) NtAccessCheckByTypeAndAuditAlarmInternal
+@ stdcall NtAcceptConnectPort(ptr long ptr long long ptr)
+@ stdcall NtAccessCheck(ptr long long ptr ptr ptr ptr ptr)
+@ stdcall NtAccessCheckAndAuditAlarm(ptr long ptr ptr ptr long ptr long ptr ptr ptr)
+@ stdcall NtAccessCheckByType(ptr ptr ptr long ptr long ptr ptr long ptr ptr)
+@ stdcall NtAccessCheckByTypeAndAuditAlarm(ptr ptr ptr ptr ptr ptr long long long ptr long ptr long ptr ptr ptr)
 @ stdcall NtAccessCheckByTypeResultList(ptr ptr ptr long ptr long ptr ptr long ptr ptr)
 @ stdcall NtAccessCheckByTypeResultListAndAuditAlarm(ptr ptr ptr ptr ptr ptr long long long ptr long ptr long ptr ptr ptr)
 @ stdcall NtAccessCheckByTypeResultListAndAuditAlarmByHandle(ptr ptr ptr ptr ptr ptr ptr long long long ptr long ptr long ptr ptr ptr)
@@ -243,8 +243,6 @@
 @ stdcall NtQueryInformationJobObject(long long ptr long ptr)
 @ stdcall NtQueryInformationPort(ptr long ptr long ptr)
 @ stdcall NtQueryInformationProcess(long long ptr long ptr)
-@ stdcall NtQueryInformationThread(long long ptr long ptr)
-@ stdcall NtQueryInformationToken(long long ptr long ptr) ;NtQueryInformationTokenInternal #Wrapper needed for Integrity Level Introduced on Vista
 @ stdcall NtQueryInstallUILanguage(ptr)
 @ stdcall NtQueryIntervalProfile(long ptr)
 @ stdcall NtQueryIoCompletion(long long ptr long ptr)
@@ -256,7 +254,6 @@
 @ stdcall NtQueryPerformanceCounter(ptr ptr)
 @ stdcall NtQueryPortInformationProcess()
 @ stdcall NtQueryQuotaInformationFile(ptr ptr ptr long long ptr long ptr long)
-@ stdcall NtQuerySection(long long long long long) NtQuerySectionInternal
 @ stdcall NtQuerySecurityObject (long long long long long)
 @ stdcall NtQuerySemaphore (long long ptr long ptr)
 @ stdcall NtQuerySymbolicLinkObject(long ptr ptr)
@@ -318,9 +315,7 @@
 @ stdcall NtSetInformationJobObject(long long ptr long)
 @ stdcall NtSetInformationKey(long long ptr long)
 @ stdcall NtSetInformationObject(long long ptr long)
-@ stdcall NtSetInformationProcess(long long long long) NtSetInformationProcessInternal
 @ stdcall NtSetInformationThread(long long ptr long)
-@ stdcall NtSetInformationToken(long long ptr long)
 @ stdcall NtSetIntervalProfile(long long)
 @ stdcall NtSetIoCompletion(ptr long ptr long long)
 @ stdcall NtSetLdtEntries(long double long double) ; CHECKME
@@ -872,8 +867,8 @@
 @ stdcall RtlxUnicodeStringToAnsiSize(ptr)
 @ stdcall RtlxUnicodeStringToOemSize(ptr) ; RtlUnicodeStringToOemSize
 @ stdcall -ret64 VerSetConditionMask(double long long)
-@ stdcall ZwAcceptConnectPort(ptr long ptr long long ptr) NtAcceptConnectPortInternal
-@ stdcall ZwAccessCheck(ptr long long ptr ptr ptr ptr ptr) NtAccessCheckInternal
+@ stdcall ZwAcceptConnectPort(ptr long ptr long long ptr)
+@ stdcall ZwAccessCheck(ptr long long ptr ptr ptr ptr ptr)
 @ stdcall ZwAccessCheckAndAuditAlarm(ptr long ptr ptr ptr long ptr long ptr ptr ptr) NtAccessCheckAndAuditAlarm
 @ stdcall ZwAccessCheckByType(ptr ptr ptr long ptr long ptr ptr long ptr ptr) NtAccessCheckByType
 @ stdcall ZwAccessCheckByTypeAndAuditAlarm(ptr ptr ptr ptr ptr ptr long long long ptr long ptr long ptr ptr ptr) NtAccessCheckByTypeAndAuditAlarm
@@ -1721,3 +1716,10 @@
 @ stdcall NtRollbackTransaction(ptr long)
 @ stdcall NtSetInformationTransaction(ptr long ptr long)
 @ stdcall NtSetInformationVirtualMemory(ptr long long ptr ptr long)
+
+#Hooks
+@ stdcall NtQueryInformationThread(long long ptr long ptr) NtQueryInformationThreadInternal
+@ stdcall NtQueryInformationToken(long long ptr long ptr) NtQueryInformationTokenInternal #Wrapper needed for Integrity Level Introduced on Vista
+@ stdcall NtQuerySection(long long long long long) NtQuerySectionInternal
+@ stdcall NtSetInformationProcess(long long long long) NtSetInformationProcessInternal
+@ stdcall NtSetInformationToken(long long ptr long) NtSetInformationTokenInternal
