@@ -1,1 +1,10 @@
-OBSERVE QUE:  A Microsoft Corporation (ou de acordo com o local onde você reside, uma de suas afiliadas) licencia este suplemento para você.  Você poderá usar uma cópia deste suplemento com cada cópia devidamente licenciada do software Microsoft Windows Server 2003 and Microsoft Windows XP (ao qual este suplemento é aplicável) (o “software”).  Você não poderá usar o suplemento se não tiver uma licença para o software.  Os termos da licença do software se aplicam ao uso deste suplemento.  A Microsoft fornece serviços de suporte para o suplemento conforme descrito em www.support.microsoft.com/common/international.aspx.
+This is part of One-Core-API
+project. Is a open source project
+to get new applications and drivers
+run on XP/2003/Reactos. This is 
+the kernel module. You is responsable
+if get issue on your system instaling
+this update.
+
+EULAID:APP_COMPAT_UPDATE
+

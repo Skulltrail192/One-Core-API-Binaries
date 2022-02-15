@@ -5259,7 +5259,7 @@
 	dusex.dll,amd64/dusex.dll
 	dwmapi.dll,amd64/dwmapi.dll
 	dxva2.dll,amd64/dxva2.dll
-	esent.dll,amd64/esent.dll
+	;esent.dll,amd64/esent.dll
 	evr.dll,amd64/evr.dll
 	explorerframe.dll,amd64/explorerframe.dll
 	fntcache.dll,amd64/fntcache.dll
@@ -5311,8 +5311,7 @@
 	UIAnimation.dll,amd64/UIAnimation.dll
 	UIAutomationCore.dll,amd64/UIAutomationCore.dll
 	UIRibbon.dll,amd64/UIRibbon.dll
-	UIRibbonRes.dll,amd64/UIRibbonRes.dll
-	version.dll,amd64/version.dll
+	UIRibbonRes.dll,amd64/UIRibbonRes.dll	
 	wdi.dll,amd64/wdi.dll
 	wdscore.dll,amd64/wdscore.dll
 	wer.dll,amd64/wer.dll
@@ -5356,7 +5355,7 @@
 	dusex.dll,i386/wdusex.dll
 	dwmapi.dll,i386/wdwmapi.dll
 	dxva2.dll,i386/wdxva2.dll
-	esent.dll,i386/wesent.dll
+	;esent.dll,i386/wesent.dll
 	evr.dll,i386/wevr.dll
 	explorerframe.dll,i386/wexplorerframe.dll
 	fntcache.dll,i386/wfntcache.dll
@@ -5409,7 +5408,6 @@
 	UIAutomationCore.dll,i386/wUIAutomationCore.dll
 	UIRibbon.dll,i386/wUIRibbon.dll
 	UIRibbonRes.dll,i386/wUIRibbonRes.dll
-	version.dll,i386/wversion.dll
 	wdi.dll,i386/wwdi.dll
 	wdscore.dll,i386/wwdscore.dll
 	wer.dll,i386/wwer.dll
@@ -5456,7 +5454,7 @@
 	amd64/duser.dll = 1
 	amd64/dwmapi.dll = 1
 	amd64/dxva2.dll = 1
-	amd64/esent.dll = 1
+	;amd64/esent.dll = 1
 	amd64/evr.dll = 1
 	amd64/explorerframe.dll = 1
 	amd64/fntcache.dll = 1	
@@ -5552,7 +5550,7 @@
 	i386/wduser.dll = 1
 	i386/wdwmapi.dll = 1
 	i386/wdxva2.dll = 1
-	i386/wesent.dll = 1
+	;i386/wesent.dll = 1 
 	i386/wevr.dll = 1
 	i386/wexplorerframe.dll = 1
 	i386/wfntcache.dll = 1	
@@ -5605,7 +5603,6 @@
 	i386/wUIAutomationCore.dll = 1
 	i386/wUIRibbon.dll = 1
 	i386/wUIRibbonRes.dll = 1
-	i386/wversion.dll = 1	
 	i386/wwdi.dll = 1
 	i386/wwdscore.dll = 1
 	i386/wwer.dll = 1

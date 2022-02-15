@@ -2808,7 +2808,7 @@
 	"dwmapi.dll"
 	"eappcfg.dll"
 	"eappprxy.dll"	
-	"esent.dll"
+	;"esent.dll"
 	"evr.dll"
 	"explorerframe.dll"
 	"FWPUCLNT.dll"	
@@ -2907,7 +2907,7 @@
 	"dwmapi.dll" = 1
 	"eappcfg.dll" = 1
 	"eappprxy.dll" = 1	
-	"esent.dll" = 1
+	;"esent.dll" = 1
 	"evr.dll" = 1
 	"explorerframe.dll" = 1
 	"FWPUCLNT.dll" = 1	

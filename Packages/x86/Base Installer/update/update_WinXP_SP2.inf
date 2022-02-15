@@ -1,0 +1,699 @@
+[Version]
+	LanguageType 		  = %LANGTYPEVALUE%
+	MaxNtBuildToUpdate        = 2600
+	MaxNtMajorVersionToUpdate = 5
+	MaxNtMinorVersionToUpdate = 1
+	MaxNtServicePackVersion   = 768
+	MinNtServicePackVersion   = 256
+	ThisServicePackVersion    = 768
+	NtBuildToUpdate           = 2600
+	NtMajorVersionToUpdate    = 5
+	NtMinorVersionToUpdate    = 1
+	Signature                 = "$Windows NT$"
+
+[Configuration]
+    InstallationType     = Hotfix
+    InstallLogFileName   = %SP_SHORT_TITLE%.log
+    EventLogKeyName      = NtServicePack
+    EventLogDllName      = spmsg.dll
+    NoPNPFiles           = 1
+    UnInstallLogFileName = %SP_SHORT_TITLE%Uninst.log
+    UnInstallDirName     = $NtUninstall%SP_SHORT_TITLE%$
+    ServiceFileInUseDetect    = 1
+    AppFileinUseDetect        = 3
+
+[Strings]
+	BASE_FILE_VERSION       = "6.0.6000.16385"
+	BASE_VERSION             = "3.0.0.0"
+	SP_TITLE                = "One-Core-API Base"
+	LANGTYPEVALUE           = 0x0
+	SP_SHORT_TITLE          = "OCAB"
+	SERVICE_PACK_NUMBER     = 3
+	COMMENT                 = "One-Core-API Base [See Q100000 for more information]"
+	SERVICEPACKSOURCEFILES  = "One-Core-API Base"
+	Msft                    = "Microsoft"
+	ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+	PARENT_DISPLAY_NAME     = "Windows Updates"
+
+[UninstallSections]
+    Add.Reg, Add.Reg.Uninstall
+    Del.Reg, Del.Reg.Uninstall
+	
+[Product.Add.Reg]
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed",0x10001,1
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Backup Dir",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed By",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed On",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Service Pack",0x10001,%SERVICE_PACK_NUMBER%
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Valid",0x10001,1
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","Flags",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","New File",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","New Link Date",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","Old Link Date",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%BASE_VERSION%
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
+	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSION%"
+
+	; propsys.dll registry info
+	HKLM, Software\Classes\Interface\{20076C7E-4851-41ed-9EB8-F4E5F2BB0286}, , 0, "IShowModalDialog"
+	HKLM, Software\Classes\Interface\{20076C7E-4851-41ed-9EB8-F4E5F2BB0286}\NumMethods, , 0x10001, 1
+	HKLM, Software\Classes\Interface\{20076C7E-4851-41ed-9EB8-F4E5F2BB0286}\ProxyStubClsid32, , 0, "{20076C7E-4851-41ed-9EB8-F4E5F2BB0286}"
+	HKLM, Software\Classes\AppID\{3F4D7BB8-4F38-4526-8CD3-C44D68689C5F}, DllSurrogate, 0, ""
+	HKLM, Software\Classes\AppID\{3F4D7BB8-4F38-4526-8CD3-C44D68689C5F}, AccessPermission, 0x1, 01,00,04,80,60,00,00,00,70,00,00,00,00,00,00,00,14,00,00,00,02,00,4c,00,03,00,00,00,00,00,14,00,03,00,00,00,01,01,00,00,00,00,00,05,12,00,00,00,00,00,14,00,07,00,00,00,01,01,00,00,00,00,00,05,0a,00,00,00,00,00,14,00,03,00,00,00,01,01,00,00,00,00,00,05,04,00,00,00,cd,cd,cd,cd,cd,cd,cd,cd,01,02,00,00,00,00,00,05,20,00,00,00,20,02,00,00,01,02,00,00,00,00,00,05,20,00,00,00,20,02,00,00
+	HKLM, Software\Classes\AppID\{3F4D7BB8-4F38-4526-8CD3-C44D68689C5F}, LaunchPermission, 0x1, 01,00,04,80,78,00,00,00,88,00,00,00,00,00,00,00,14,00,00,00,02,00,64,00,04,00,00,00,00,00,14,00,1f,00,00,00,01,01,00,00,00,00,00,05,12,00,00,00,00,00,18,00,1f,00,00,00,01,02,00,00,00,00,00,05,20,00,00,00,20,02,00,00,00,00,14,00,1f,00,00,00,01,01,00,00,00,00,00,05,04,00,00,00,00,00,14,00,0b,00,00,00,01,01,00,00,00,00,00,05,12,00,00,00,cd,cd,cd,cd,cd,cd,cd,cd,01,02,00,00,00,00,00,05,20,00,00,00,20,02,00,00,01,02,00,00,00,00,00,05,20,00,00,00,20,02,00,00
+	HKLM, Software\Microsoft\Windows\CurrentVersion\PropertySystem, , 0, "Microsoft Windows Property System"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\PropertySystem\ChangeNotifyHandlers
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved, {97e467b4-98c6-4f19-9588-161b7773d6f6}, 0, "Office Document Property Handler"
+	HKLM, SYSTEM\CurrentControlSet\Services\EventLog\Application\Microsoft-Windows-propsys, ProviderGuid, 0x20000, "{9485FA1E-23CD-49A1-84E3-11D8BC550CB7}"
+	HKLM, SYSTEM\CurrentControlSet\Services\EventLog\Application\Microsoft-Windows-propsys, EventMessageFile, 0x20000, "%systemroot%\system32\%WDS_MARKET%\propsys.dll.mui"
+	HKLM, SYSTEM\CurrentControlSet\Services\EventLog\Application\Microsoft-Windows-propsys, TypesSupported, 0x10001, 7
+	HKLM, Software\Classes\CLSID\{9a02e012-6303-4e1e-b9a1-630f802592c5}, , 0, "Packed Property Storage Object"
+	HKLM, Software\Classes\CLSID\{9a02e012-6303-4e1e-b9a1-630f802592c5}\InProcServer32, , 0x20000, "%SystemRoot%\system32\propsys.dll"
+	HKLM, Software\Classes\CLSID\{9a02e012-6303-4e1e-b9a1-630f802592c5}\InProcServer32, ThreadingModel, 0, "Both"
+	HKLM, Software\Classes\CLSID\{C2566514-DD44-4c6c-AAAD-FBD2F18D8DEE}, , 0, "Property Set Storage In Memory Object"
+	HKLM, Software\Classes\CLSID\{C2566514-DD44-4c6c-AAAD-FBD2F18D8DEE}\InProcServer32, , 0x20000, "%SystemRoot%\system32\propsys.dll"
+	HKLM, Software\Classes\CLSID\{C2566514-DD44-4c6c-AAAD-FBD2F18D8DEE}\InProcServer32, ThreadingModel, 0, "Apartment"
+	HKLM, Software\Classes\CLSID\{9cfc2df3-6ba3-46ef-a836-e519e81f0ec4}, , 0, "Property System Apartment Class Factory"
+	HKLM, Software\Classes\CLSID\{9cfc2df3-6ba3-46ef-a836-e519e81f0ec4}\InProcServer32, , 0x20000, "%SystemRoot%\system32\propsys.dll"
+	HKLM, Software\Classes\CLSID\{9cfc2df3-6ba3-46ef-a836-e519e81f0ec4}\InProcServer32, ThreadingModel, 0, "Apartment"
+	HKLM, Software\Classes\CLSID\{76765b11-3f95-4af2-ac9d-ea55d8994f1a}, , 0, "Property System Both Class Factory"
+	HKLM, Software\Classes\CLSID\{76765b11-3f95-4af2-ac9d-ea55d8994f1a}\InProcServer32, , 0x20000, "%SystemRoot%\system32\propsys.dll"
+	HKLM, Software\Classes\CLSID\{76765b11-3f95-4af2-ac9d-ea55d8994f1a}\InProcServer32, ThreadingModel, 0, "Both"
+	HKLM, Software\Classes\CLSID\{8d80504a-0826-40c5-97e1-ebc68f953792}, , 0, "OLE DocFile Property Handler"
+	HKLM, Software\Classes\CLSID\{8d80504a-0826-40c5-97e1-ebc68f953792}, ManualSafeSave, 0x10001, 1
+	HKLM, Software\Classes\CLSID\{8d80504a-0826-40c5-97e1-ebc68f953792}\InProcServer32, , 0x20000, "%SystemRoot%\system32\propsys.dll"
+	HKLM, Software\Classes\CLSID\{8d80504a-0826-40c5-97e1-ebc68f953792}\InProcServer32, ThreadingModel, 0, "Apartment"
+	HKLM, Software\Classes\CLSID\{97e467b4-98c6-4f19-9588-161b7773d6f6}, , 0, "Office Document Property Handler"
+	HKLM, Software\Classes\CLSID\{97e467b4-98c6-4f19-9588-161b7773d6f6}, ManualSafeSave, 0x10001, 1
+	HKLM, Software\Classes\CLSID\{97e467b4-98c6-4f19-9588-161b7773d6f6}\InProcServer32, , 0x20000, "%SystemRoot%\system32\propsys.dll"
+	HKLM, Software\Classes\CLSID\{97e467b4-98c6-4f19-9588-161b7773d6f6}\InProcServer32, ThreadingModel, 0, "Apartment"
+	HKLM, Software\Classes\CLSID\{b8967f85-58ae-4f46-9fb2-5d7904798f4b}, , 0, "Property System"
+	HKLM, Software\Classes\CLSID\{b8967f85-58ae-4f46-9fb2-5d7904798f4b}\InProcServer32, , 0x20000, "%SystemRoot%\system32\propsys.dll"
+	HKLM, Software\Classes\CLSID\{b8967f85-58ae-4f46-9fb2-5d7904798f4b}\InProcServer32, ThreadingModel, 0, "both"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.doc, , 0, "{97e467b4-98c6-4f19-9588-161b7773d6f6}"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.dot, , 0, "{97e467b4-98c6-4f19-9588-161b7773d6f6}"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.ppt, , 0, "{97e467b4-98c6-4f19-9588-161b7773d6f6}"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.pot, , 0, "{97e467b4-98c6-4f19-9588-161b7773d6f6}"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.xls, , 0, "{97e467b4-98c6-4f19-9588-161b7773d6f6}"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.xlt, , 0, "{97e467b4-98c6-4f19-9588-161b7773d6f6}"
+	HKLM, Software\Classes\CLSID\{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}, , 0, "PSFactoryBuffer"
+	HKLM, Software\Classes\CLSID\{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}\InProcServer32, , 0x20000, "%SystemRoot%\system32\propsys.dll"
+	HKLM, Software\Classes\CLSID\{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}\InProcServer32, ThreadingModel, 0, "Both"
+	HKLM, Software\Classes\Interface\{076750E4-B009-49BD-AA85-B7938456CE10}, , 0, "IPropertyChangePriv"
+	HKLM, Software\Classes\Interface\{076750E4-B009-49BD-AA85-B7938456CE10}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{076750E4-B009-49BD-AA85-B7938456CE10}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{11E1FBF9-2D56-4A6B-8DB3-7CD193A471F2}, , 0, "IPropertyEnumType"
+	HKLM, Software\Classes\Interface\{11E1FBF9-2D56-4A6B-8DB3-7CD193A471F2}\NumMethods, , 0, "7"
+	HKLM, Software\Classes\Interface\{11E1FBF9-2D56-4A6B-8DB3-7CD193A471F2}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{1F9FC1D0-C39B-4B26-817F-011967D3440E}, , 0, "IPropertyDescriptionList"
+	HKLM, Software\Classes\Interface\{1F9FC1D0-C39B-4B26-817F-011967D3440E}\NumMethods, , 0, "5"
+	HKLM, Software\Classes\Interface\{1F9FC1D0-C39B-4B26-817F-011967D3440E}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{F67104FC-2AF9-46FD-B32D-243C1404F3D1}, , 0, "IPropertyDescriptionAliasInfo"
+	HKLM, Software\Classes\Interface\{F67104FC-2AF9-46FD-B32D-243C1404F3D1}\NumMethods, , 0, "2"
+	HKLM, Software\Classes\Interface\{F67104FC-2AF9-46FD-B32D-243C1404F3D1}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{078F91BD-29A2-440F-924E-46A291524520}, , 0, "IPropertyDescriptionSearchInfo"
+	HKLM, Software\Classes\Interface\{078F91BD-29A2-440F-924E-46A291524520}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{078F91BD-29A2-440F-924E-46A291524520}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{3017056D-9A91-4E90-937D-746C72ABBF4F}, , 0, "IPropertyStoreCache"
+	HKLM, Software\Classes\Interface\{3017056D-9A91-4E90-937D-746C72ABBF4F}\NumMethods, , 0, "12"
+	HKLM, Software\Classes\Interface\{3017056D-9A91-4E90-937D-746C72ABBF4F}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{3BD82D8D-FB97-462A-B942-4BDFE8811A0C}, , 0, "IInitializeWithPropertyKeys"
+	HKLM, Software\Classes\Interface\{3BD82D8D-FB97-462A-B942-4BDFE8811A0C}\NumMethods, , 0, "10"
+	HKLM, Software\Classes\Interface\{3BD82D8D-FB97-462A-B942-4BDFE8811A0C}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{40D4577F-E237-4BDB-BD69-58F089431B6A}, , 0, "IDelayedPropertyStoreFactory"
+	HKLM, Software\Classes\Interface\{40D4577F-E237-4BDB-BD69-58F089431B6A}\NumMethods, , 0, "6"
+	HKLM, Software\Classes\Interface\{40D4577F-E237-4BDB-BD69-58F089431B6A}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{44140B42-9155-4D7A-B952-55779D778B7B}, , 0, "IPropertyProvider"
+	HKLM, Software\Classes\Interface\{44140B42-9155-4D7A-B952-55779D778B7B}\NumMethods, , 0, "9"
+	HKLM, Software\Classes\Interface\{44140B42-9155-4D7A-B952-55779D778B7B}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{465A756D-45AD-4305-85FD-D3321650F3B7}, , 0, "IInitializeWithDelegate"
+	HKLM, Software\Classes\Interface\{465A756D-45AD-4305-85FD-D3321650F3B7}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{465A756D-45AD-4305-85FD-D3321650F3B7}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{603F59F5-2856-4501-B277-50322D71E9D7}, , 0, "IAggregateMultipleValues"
+	HKLM, Software\Classes\Interface\{603F59F5-2856-4501-B277-50322D71E9D7}\NumMethods, , 0, "15"
+	HKLM, Software\Classes\Interface\{603F59F5-2856-4501-B277-50322D71E9D7}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{679CA263-B06D-40EE-BC2F-0DD3AACECC52}, , 0, "IFormatForDisplayHelper"
+	HKLM, Software\Classes\Interface\{679CA263-B06D-40EE-BC2F-0DD3AACECC52}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{679CA263-B06D-40EE-BC2F-0DD3AACECC52}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{b7d14566-0509-4cce-a71f-0a554233bd9b}, , 0, "IInitializeWithFile"
+	HKLM, Software\Classes\Interface\{b7d14566-0509-4cce-a71f-0a554233bd9b}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{b7d14566-0509-4cce-a71f-0a554233bd9b}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{B824B49D-22AC-4161-AC8A-9916E8FA3F7F}, , 0, "IInitializeWithStream"
+	HKLM, Software\Classes\Interface\{B824B49D-22AC-4161-AC8A-9916E8FA3F7F}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{B824B49D-22AC-4161-AC8A-9916E8FA3F7F}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{6F79D558-3E96-4549-A1D1-7D75D2288814}, , 0, "IPropertyDescription"
+	HKLM, Software\Classes\Interface\{6F79D558-3E96-4549-A1D1-7D75D2288814}\NumMethods, , 0, "24"
+	HKLM, Software\Classes\Interface\{6F79D558-3E96-4549-A1D1-7D75D2288814}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{71604B0F-97B0-4764-8577-2F13E98A1422}, , 0, "INamedPropertyStore"
+	HKLM, Software\Classes\Interface\{71604B0F-97B0-4764-8577-2F13E98A1422}\NumMethods, , 0, "7"
+	HKLM, Software\Classes\Interface\{71604B0F-97B0-4764-8577-2F13E98A1422}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{75121952-e0d0-43e5-9380-1d80483acf72}, , 0, "ICreateObject"
+	HKLM, Software\Classes\Interface\{75121952-e0d0-43e5-9380-1d80483acf72}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{75121952-e0d0-43e5-9380-1d80483acf72}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{75BD59AA-F23B-4963-ABA4-0B355752A91B}, , 0, "IPropertyKeyStore"
+	HKLM, Software\Classes\Interface\{75BD59AA-F23B-4963-ABA4-0B355752A91B}\NumMethods, , 0, "9"
+	HKLM, Software\Classes\Interface\{75BD59AA-F23B-4963-ABA4-0B355752A91B}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{7AF7F355-1066-4E17-B1F2-19FE2F099CD2}, , 0, "IPropertyValue"
+	HKLM, Software\Classes\Interface\{7AF7F355-1066-4E17-B1F2-19FE2F099CD2}\NumMethods, , 0, "7"
+	HKLM, Software\Classes\Interface\{7AF7F355-1066-4E17-B1F2-19FE2F099CD2}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{86228AA3-A736-4733-BD8A-10A83C69BF84}, , 0, "IAggregateFilterCondition"
+	HKLM, Software\Classes\Interface\{86228AA3-A736-4733-BD8A-10A83C69BF84}\NumMethods, , 0, "6"
+	HKLM, Software\Classes\Interface\{86228AA3-A736-4733-BD8A-10A83C69BF84}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99}, , 0, "IPropertyStore"
+	HKLM, Software\Classes\Interface\{886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99}\NumMethods, , 0, "8"
+	HKLM, Software\Classes\Interface\{886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{8C59322F-F915-4757-9925-4FB4DF1DD7D7}, , 0, "IInitializeWithItemArrayAndGPSFlags"
+	HKLM, Software\Classes\Interface\{8C59322F-F915-4757-9925-4FB4DF1DD7D7}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{8C59322F-F915-4757-9925-4FB4DF1DD7D7}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{8C9EE71B-4660-49A0-926E-E97A3379CDD7}, , 0, "IEnforceGrfMode"
+	HKLM, Software\Classes\Interface\{8C9EE71B-4660-49A0-926E-E97A3379CDD7}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{8C9EE71B-4660-49A0-926E-E97A3379CDD7}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{A99400F4-3D84-4557-94BA-1242FB2CC9A6}, , 0, "IPropertyEnumTypeList"
+	HKLM, Software\Classes\Interface\{A99400F4-3D84-4557-94BA-1242FB2CC9A6}\NumMethods, , 0, "7"
+	HKLM, Software\Classes\Interface\{A99400F4-3D84-4557-94BA-1242FB2CC9A6}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{AD4AE633-00BF-4BB6-B527-91A0E28A6C78}, , 0, "IMultipleValues"
+	HKLM, Software\Classes\Interface\{AD4AE633-00BF-4BB6-B527-91A0E28A6C78}\NumMethods, , 0, "13"
+	HKLM, Software\Classes\Interface\{AD4AE633-00BF-4BB6-B527-91A0E28A6C78}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{B8158717-9161-46FD-B8D2-26D42185BC69}, , 0, "IInitializeWithPropertyStores"
+	HKLM, Software\Classes\Interface\{B8158717-9161-46FD-B8D2-26D42185BC69}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{B8158717-9161-46FD-B8D2-26D42185BC69}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{B81DA65E-6FC6-4995-86BA-7A113815AE3A}, , 0, "ISimplePropertyChangeInit"
+	HKLM, Software\Classes\Interface\{B81DA65E-6FC6-4995-86BA-7A113815AE3A}\NumMethods, , 0, "7"
+	HKLM, Software\Classes\Interface\{B81DA65E-6FC6-4995-86BA-7A113815AE3A}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{BC110B6D-57E8-4148-A9C6-91015AB2F3A5}, , 0, "IPropertyStoreFactory"
+	HKLM, Software\Classes\Interface\{BC110B6D-57E8-4148-A9C6-91015AB2F3A5}\NumMethods, , 0, "5"
+	HKLM, Software\Classes\Interface\{BC110B6D-57E8-4148-A9C6-91015AB2F3A5}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{C8E2D566-186E-4D49-BF41-6909EAD56ACC}, , 0, "IPropertyStoreCapabilities"
+	HKLM, Software\Classes\Interface\{C8E2D566-186E-4D49-BF41-6909EAD56ACC}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{C8E2D566-186E-4D49-BF41-6909EAD56ACC}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{CA724E8A-C3E6-442B-88A4-6FB0DB8035A3}, , 0, "IPropertySystem"
+	HKLM, Software\Classes\Interface\{CA724E8A-C3E6-442B-88A4-6FB0DB8035A3}\NumMethods, , 0, "12"
+	HKLM, Software\Classes\Interface\{CA724E8A-C3E6-442B-88A4-6FB0DB8035A3}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{CB6D939D-7DFE-4E1E-AA08-D3BEC4A0F1C6}, , 0, "IInitializeWithPropertyFactory"
+	HKLM, Software\Classes\Interface\{CB6D939D-7DFE-4E1E-AA08-D3BEC4A0F1C6}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{CB6D939D-7DFE-4E1E-AA08-D3BEC4A0F1C6}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{380F5CAD-1B5E-42F2-805D-637FD392D31E}, , 0, "IPropertyChangeArray"
+	HKLM, Software\Classes\Interface\{380F5CAD-1B5E-42F2-805D-637FD392D31E}\NumMethods, , 0, "10"
+	HKLM, Software\Classes\Interface\{380F5CAD-1B5E-42F2-805D-637FD392D31E}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{DC6044C7-1606-4B00-B43D-A5F461C76766}, , 0, "IPropertyStoreContainer"
+	HKLM, Software\Classes\Interface\{DC6044C7-1606-4B00-B43D-A5F461C76766}\NumMethods, , 0, "5"
+	HKLM, Software\Classes\Interface\{DC6044C7-1606-4B00-B43D-A5F461C76766}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{DE9C1991-1891-491C-B3A2-EE89C467C584}, , 0, "IInitializePropertyStore"
+	HKLM, Software\Classes\Interface\{DE9C1991-1891-491C-B3A2-EE89C467C584}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{DE9C1991-1891-491C-B3A2-EE89C467C584}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{E318AD57-0AA0-450F-ACA5-6FAB7103D917}\NumMethods, , 0, "6"
+	HKLM, Software\Classes\Interface\{E318AD57-0AA0-450F-ACA5-6FAB7103D917}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{1C943EB9-337C-46DE-A85A-77942B039099}, , 0, "IPropertyDescriptionListInit"
+	HKLM, Software\Classes\Interface\{1C943EB9-337C-46DE-A85A-77942B039099}\NumMethods, , 0, "7"
+	HKLM, Software\Classes\Interface\{1C943EB9-337C-46DE-A85A-77942B039099}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{EAC5D059-9EA4-4852-8435-45CF5466E07B}, , 0, "IPropertyDescriptionPriv"
+	HKLM, Software\Classes\Interface\{EAC5D059-9EA4-4852-8435-45CF5466E07B}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{EAC5D059-9EA4-4852-8435-45CF5466E07B}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{F06A4B42-CA85-47FD-A35C-CC3C458938DB}, , 0, "IPropertyStoreInit"
+	HKLM, Software\Classes\Interface\{F06A4B42-CA85-47FD-A35C-CC3C458938DB}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{F06A4B42-CA85-47FD-A35C-CC3C458938DB}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{F917BC8A-1BBA-4478-A245-1BDE03EB9431}, , 0, "IPropertyChange"
+	HKLM, Software\Classes\Interface\{F917BC8A-1BBA-4478-A245-1BDE03EB9431}\NumMethods, , 0, "6"
+	HKLM, Software\Classes\Interface\{F917BC8A-1BBA-4478-A245-1BDE03EB9431}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{FA955FD9-38BE-4879-A6CE-824CF52D609F}, , 0, "IPropertySystemChangeNotify"
+	HKLM, Software\Classes\Interface\{FA955FD9-38BE-4879-A6CE-824CF52D609F}\NumMethods, , 0, "4"
+	HKLM, Software\Classes\Interface\{FA955FD9-38BE-4879-A6CE-824CF52D609F}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{FC0CA0A7-C316-4FD2-9031-3E628E6D4F23}, , 0, "IObjectWithPropertyKey"
+	HKLM, Software\Classes\Interface\{FC0CA0A7-C316-4FD2-9031-3E628E6D4F23}\NumMethods, , 0, "5"
+	HKLM, Software\Classes\Interface\{FC0CA0A7-C316-4FD2-9031-3E628E6D4F23}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Classes\Interface\{FCA2857D-1760-4AD3-8C63-C9B602FCBAEA}, , 0, "IFilterCondition"
+	HKLM, Software\Classes\Interface\{FCA2857D-1760-4AD3-8C63-C9B602FCBAEA}\NumMethods, , 0, "12"
+	HKLM, Software\Classes\Interface\{FCA2857D-1760-4AD3-8C63-C9B602FCBAEA}\ProxyStubClsid32, , 0, "{F562A2C8-E850-4F05-8E7A-E7192E4E6C23}"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .aac, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .aif, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .aifc, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .aiff, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .amf, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .au, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .cda, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .dfs, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .dss, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .far, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .m3u, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .m4a, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mid, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .midi, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mp3, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mus, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .okt, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .p16, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .psm, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .ra, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .ram, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .rmi, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .s3m, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .snd, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .sng, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .stm, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .ult, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .uw, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .voc, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wav, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wax, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wma, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wpl, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .xm, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .xmi, 0, "music"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .3ds, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .a11, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .ai, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .ani, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .anm, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .art, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .b&w, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .b_w, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .b1n, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .b8, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .bga, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .bit, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .bld, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .bm, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .bmp, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .cdf, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .cdr, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .cgm, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .cmp, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .cps, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .cvs, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .dcx, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .dib, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .dip, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .dw2, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .dwg, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .emf, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .eps, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .fh3, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .fh4, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .fit, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .flc, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .fli, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .gcd, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .gif, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .gl, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .gsd, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .hrf, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .hs2, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .hsi, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .iax, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .ica, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .icb, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .ico, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .jas, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .jif, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .jfif, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .jpc, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .jpe, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .jpeg, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .jpg, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .jtf, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .lbm, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mpt, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .msp, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .nc, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .neo, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pct, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pcx, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pda, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pdd, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pds, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pgm, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pic, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pix, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .png, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .ppm, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .psd, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pse, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .qdv, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .rgb, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .rif, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .rip, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .rix, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .rl4, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .rl8, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .rle, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .sg1, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .tif, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .tiff, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .van, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vda, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vdr, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wmf, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .xbm, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .xif, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .xpm, 0, "picture"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .csv, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .doc, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .dot, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .dvi, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .htm, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .html, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .latex, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mdb, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mht, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mhtml, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mny, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .one, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pdf, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pm, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pm5, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pot, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pps, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .ppt, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .ppz, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .ps, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pt5, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .rtf, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .rtx, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .tex, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .text, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .tsv, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .txt, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vsd, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wks, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wp, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wp5, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wp6, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wpd, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wri, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wtx, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .xlb, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .xlc, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .xll, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .xlm, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .xls, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .xlw, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .xml, 0, "document"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .asf, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .asx, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .avi, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .avm, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .cmv, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .ivf, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .m1v, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mmm, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mov, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mp2, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mp2v, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mpa, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mpe, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mpeg, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mpg, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mpv2, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .mwf, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .qt, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vue, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wm, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wmv, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wmx, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .wvx, 0, "video"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .dvr-ms, 0, "recordedtv"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .eml, 0, "email;communication"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .msg, 0, "email;communication"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .nws, 0, "email;communication"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vcs, 0, "calendar;communication"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vcf, 0, "contact;communication"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .contact, 0, "contact;communication"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .group, 0, "contact"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .lnk, 0, "link"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .url, 0, "link"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .bat, 0, "program"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .cmd, 0, "program"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .com, 0, "program"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .exe, 0, "program"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .hta, 0, "program"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .msi, 0, "program"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .pif, 0, "program"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .reg, 0, "program"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .scr, 0, "program"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbe, 0, "program"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbs, 0, "program"
+	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "program"
+
+[ProductInstall.CopyFilesAlways]
+    CopyFiles                  = CopyAlways.System32.files
+	CopyFiles                  = CopyAlways.WinSxS.Main.files
+	CopyFiles                  = CopyAlways.WinSxS.Manifests.files
+	CopyFiles                  = CopyAlways.WinSxS.Policies.files
+    CopyFiles				   = CopyAlways.DriverCab.files	
+	
+[ProductInstall.DontDelayUntilReboot]
+    CopyFiles=MustReplace.System32.files
+	
+[ProductInstall.GlobalRegistryChanges.Install]
+    AddReg=Product.Add.Reg
+
+[ProductInstall.GlobalRegistryChanges.ReInstall]
+    AddReg=Product.Add.Reg
+	
+[ProductInstall.UniprocessorFiles]
+    CopyFiles=Uniprocessor.Kernel.files
+
+[ProductInstall.MultiprocessorFiles]
+    CopyFiles=Multiprocessor.Kernel.files	
+
+[DestinationDirs]
+	System32.files=11                   ; %windir%\system32 (replace if exist)
+    CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+	CopyAlways.WinSxS.Main.files = 10 ; %windir%
+	CopyAlways.WinSxS.Manifests.files = 10 ; %windir%
+	CopyAlways.WinSxS.Policies.files = 10 ; %windir%
+	MustReplace.System32.files=11       ; %windir%\system32 (don't delay until reboot)
+    CopyAlways.DriverCab.files=65623 ; Destination determined at runtime
+    Uniprocessor.Kernel.files=11    ; %windir%\system32 (don't delay until reboot)
+    Multiprocessor.Kernel.files=11  ; %windir%\system32 (don't delay until reboot)
+	ACPI.CoreDriverFiles = 12 ; %windir%\system32\drivers	
+	
+[ProductInstall.ReplaceFilesIfExist]
+	CopyFiles = ACPI.CoreDriverFiles	
+
+[MustReplace.System32.files]
+	crypt32.dll,XPSP3\xpspcrypt32.dll
+    ntdll.dll,XPSP3\xpspntdll.dll
+	kernel32.dll, XPSP3\xpspkernel32.dll
+	winsrv.dll, XPSP3\xpspwinsrv.dll
+	win32k.sys, XPSP3\xpspwin32k.sys	
+
+[System32.files]
+	win32k.sys, XPSP3\xpspwin32k.sys
+	
+[ACPI.CoreDriverFiles]
+	acpi.sys, XPSP3\Drivers\xpspacpi.sys 
+
+[CopyAlways.DriverCab.files]
+    ntoskrnl.exe,XPSP3\xpspntoskrnl.exe
+    ntkrpamp.exe,XPSP3\xpspntkrpamp.exe
+    ntkrnlpa.exe,XPSP3\xpspntkrnlpa.exe
+    ntkrnlmp.exe,XPSP3\xpspntkrnlmp.exe
+	hal.dll,XPSP3\xpsphal.dll
+	halaacpi.dll,XPSP3\xpsphalaacpi.dll	
+	halacpi.dll,XPSP3\xpsphalacpi.dll	
+	halapic.dll,XPSP3\xpsphalapic.dll	
+	halmacpi.dll,XPSP3\xpsphalmacpi.dll	
+	halmps.dll,XPSP3\xpsphalmps.dll	
+	halsp.dll,XPSP3\xpsphalsp.dll	
+	acpi.sys,XPSP3\Drivers\xpspacpi.sys	
+
+[Uniprocessor.Kernel.files]
+    ntoskrnl.exe,XPSP3\xpspntoskrnl.exe
+    ntkrnlpa.exe,XPSP3\xpspntkrnlpa.exe
+	hal.dll,XPSP3\xpsphalaacpi.dll
+	
+[Multiprocessor.Kernel.files]
+    ntkrnlpa.exe,XPSP3\xpspntkrpamp.exe
+    ntoskrnl.exe,XPSP3\xpspntkrnlmp.exe
+	hal.dll,XPSP3\xpsphalmacpi.dll		
+	
+[MustReplace.WinSxS.Main.files]	
+	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winxp\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
+	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c\gdiplus.dll	
+	
+[CopyAlways.WinSxS.Main.files]	
+	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winxp\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
+	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c\gdiplus.dll
+	
+[CopyAlways.WinSxS.Manifests.files]	
+	"WinSxS\manifests\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.cat"
+	"WinSxS\manifests\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.manifest"
+	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c.cat"
+	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c.manifest"
+	
+[CopyAlways.WinSxS.Policies.files]
+	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.policy"
+	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.cat"	
+	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24180.cat"
+	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24180.policy"
+
+[CopyAlways.System32.Files]
+    advapibase.dll,XPSP3\xpspadvapibase.dll
+	advpack.dll,XPSP3\xpspadvpack.dll
+	crypt32.dll,XPSP3\xpspcrypt32.dll
+    gdibase.dll,XPSP3\xpspgdibase.dll	
+    kernel32.dll,XPSP3\xpspkernel32.dll
+    netapibase.dll,XPSP3\xpspnetapibase.dll	
+	ntdsapi.dll,XPSP3\xpspntdsapi.dll	
+    olebase.dll,XPSP3\xpspolebase.dll		
+    powrprofbase.dll,XPSP3\xpsppowrprofbase.dll
+    rpcrtbase.dll,XPSP3\xpsprpcrtbase.dll
+	samlib.dll,XPSP3\xpspsamlib.dll
+    securbase.dll,XPSP3\xpspsecurbase.dll
+    setupapibase.dll,XPSP3\xpspsetupapibase.dll
+    shellbase.dll,XPSP3\xpspshellbase.dll
+	shlwapibase.dll,XPSP3\xpspshlwapibase.dll
+    userbase.dll,XPSP3\xpspuserbase.dll
+    uxthemebase.dll,XPSP3\xpspuxthemebase.dll
+    winstabase.dll,XPSP3\xpspwinstabase.dll
+    ws2_base.dll,XPSP3\xpspws2_base.dll
+	winsrv.dll, XPSP3\xpspwinsrv.dll
+	win32k.sys, XPSP3\xpspwin32k.sys	
+    advapi32.dll
+    ;advapilong.dll
+    ;advapinew.dll	
+    bcrypt.dll
+    comctlext.dll
+	cryptnew.dll
+	fileextd.dll
+    pdhbase.dll
+    gdi32.dll
+    iphlpapi.dll
+    iphlpapibase.dll
+    idndl.dll
+    ;kernel32.dll 
+    kernelbase.dll
+	msvcrt.dll
+    netapi32.dll
+    netapinew.dll
+    Nlsdl.dll
+    normaliz.dll		
+    nsi.dll		
+	ntext.dll	
+	ole32.dll
+    pdh.dll	
+    powrprof.dll
+    propsys.dll	
+    psapi.dll	
+    rpcrt4.dll	
+    secur32.dll
+    ;securnew.dll
+    setupapi.dll
+    shell32.dll
+    shlwapi.dll
+    sspicli.dll
+    user32.dll
+    uxtheme.dll
+	version.dll	
+	wevtold.dll
+    winbrand.dll	
+    winsta.dll	
+    winstanew.dll
+    ws2_32.dll
+	
+[SourceDisksNames]
+    1=%ServicePackSourceFiles%
+
+[SourceDisksFiles]
+    XPSP3\xpspadvapibase.dll = 1
+	XPSP3\xpspadvpack.dll = 1	
+	XPSP3\xpspcrypt32.dll = 1
+    XPSP3\xpspgdibase.dll = 1	
+    XPSP3\xpspkernel32.dll = 1
+    XPSP3\xpspnetapibase.dll = 1	
+	XPSP3\xpspntdsapi.dll = 1	
+    XPSP3\xpspolebase.dll = 1	
+    XPSP3\xpsppowrprofbase.dll = 1
+    XPSP3\xpsprpcrtbase.dll = 1
+	XPSP3\xpspsamlib.dll	= 1
+    XPSP3\xpspsecurbase.dll = 1
+    XPSP3\xpspsetupapibase.dll = 1
+    XPSP3\xpspshellbase.dll = 1
+    XPSP3\xpspuserbase.dll = 1
+    XPSP3\xpspuxthemebase.dll = 1
+    XPSP3\xpspwinstabase.dll = 1
+    XPSP3\xpspws2_base.dll = 1
+    XPSP3\xpspntkrnlmp.exe=1
+    XPSP3\xpspntdll.dll=1
+    XPSP3\xpspntkrpamp.exe=1
+    XPSP3\xpspntoskrnl.exe=1
+    XPSP3\xpspntkrnlpa.exe=1
+	XPSP3\xpspwin32k.sys=1	
+    advapi32.dll = 1
+    ;advapilong.dll = 1
+    ;advapinew.dll = 1
+    bcrypt.dll = 1
+    comctlext.dll =1
+	cryptnew.dll = 1
+	fileextd.dll = 1
+    gdi32.dll = 1
+    iphlpapi.dll = 1
+    iphlpapibase.dll = 1
+    idndl.dll = 1
+    ;kernel32.dll = 1
+    kernelbase.dll = 1
+	msvcrt.dll = 1
+    netapi32.dll = 1
+    netapinew.dll = 1
+    Nlsdl.dll = 1
+    normaliz.dll = 1
+    nsi.dll = 1
+	ntext.dll = 1	
+	ole32.dll = 1	
+    pdh.dll = 1
+    pdhbase.dll = 1
+    powrprof.dll = 1
+    propsys.dll = 1	
+    psapi.dll = 1	
+    rpcrt4.dll = 1
+    secur32.dll = 1
+    ;securnew.dll = 1
+    setupapi.dll = 1
+    shell32.dll = 1
+    shlwapi.dll = 1
+    sspicli.dll = 1
+    user32.dll = 1
+	version.dll = 1		
+    uxtheme.dll = 1
+	wevtold.dll = 1
+    winbrand.dll = 1	
+    winsta.dll = 1	
+    winstanew.dll = 1
+    ws2_32.dll = 1
+	WinSxS\winxp\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll = 1
+	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.cat = 1
+	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.manifest = 1
+	WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.policy = 1
+	WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.cat = 1	
+    WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c\gdiplus.dll =1
+    WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c.cat =1
+	WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c.manifest =1
+	WinSxS\polices\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24180.cat =1
+	WinSxS\polices\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24180.policy =1	
+[Strings]
+	MSFT_Prefix                 = "MicrosoftOneCoreAPIBase"
+
+[UninstallSections]
+    GlobalRegistryChanges, GlobalRegistryChanges.UnInstall
+    Add.Reg, Add.Reg.Uninstall
+    Del.Reg, Del.Reg.Uninstall
+    DestinationDirs,DestinationDirs.Uninstall
+    RestoreFiles,RestoreFiles.Uninstall
+	
+[DestinationDirs.Uninstall]
+    Links.Delfiles=16407	
+
+[GlobalRegistryChanges.UnInstall]
+    AddReg=Add.Reg
+    DelReg=Del.Reg
+
+[Save.Reg.For.Uninstall]
+
+	HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"

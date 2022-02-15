@@ -512,23 +512,23 @@
 	
 [MustReplace.WinSxS.Main.files]	
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winxp\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
-	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24102_x-ww_22f03396\gdiplus.dll	
+	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c\gdiplus.dll	
 	
 [CopyAlways.WinSxS.Main.files]	
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winxp\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
-	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24102_x-ww_22f03396\gdiplus.dll
+	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c\gdiplus.dll
 	
 [CopyAlways.WinSxS.Manifests.files]	
 	"WinSxS\manifests\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.cat"
 	"WinSxS\manifests\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.manifest"
-	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24102_x-ww_22f03396.cat"
-	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24102_x-ww_22f03396.manifest"
+	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c.cat"
+	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c.manifest"
 	
 [CopyAlways.WinSxS.Policies.files]
 	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.policy"
 	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.cat"	
-	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24102.cat"
-	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24102.policy"
+	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24180.cat"
+	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24180.policy"
 
 [CopyAlways.System32.Files]
     advapibase.dll,XPSP3\xpspadvapibase.dll
@@ -541,14 +541,12 @@
     olebase.dll,XPSP3\xpspolebase.dll		
     powrprofbase.dll,XPSP3\xpsppowrprofbase.dll
     rpcrtbase.dll,XPSP3\xpsprpcrtbase.dll
-	samlib.dll,XPSP3\xpspsamlib.dll
     securbase.dll,XPSP3\xpspsecurbase.dll
     setupapibase.dll,XPSP3\xpspsetupapibase.dll
     shellbase.dll,XPSP3\xpspshellbase.dll
 	shlwapibase.dll,XPSP3\xpspshlwapibase.dll
     userbase.dll,XPSP3\xpspuserbase.dll
     uxthemebase.dll,XPSP3\xpspuxthemebase.dll
-    winstabase.dll,XPSP3\xpspwinstabase.dll
     ws2_base.dll,XPSP3\xpspws2_base.dll
 	winsrv.dll, XPSP3\xpspwinsrv.dll
 	win32k.sys, XPSP3\xpspwin32k.sys	
@@ -568,7 +566,6 @@
     kernelbase.dll
 	msvcrt.dll
     netapi32.dll
-    netapinew.dll
     Nlsdl.dll
     normaliz.dll		
     nsi.dll		
@@ -588,10 +585,8 @@
     user32.dll
     uxtheme.dll
 	version.dll	
-	wevtold.dll
-    winbrand.dll	
-    winsta.dll	
-    winstanew.dll
+	;wevtold.dll
+    winbrand.dll
     ws2_32.dll
 	
 [SourceDisksNames]
@@ -608,13 +603,11 @@
     XPSP3\xpspolebase.dll = 1	
     XPSP3\xpsppowrprofbase.dll = 1
     XPSP3\xpsprpcrtbase.dll = 1
-	XPSP3\xpspsamlib.dll	= 1
     XPSP3\xpspsecurbase.dll = 1
     XPSP3\xpspsetupapibase.dll = 1
     XPSP3\xpspshellbase.dll = 1
     XPSP3\xpspuserbase.dll = 1
     XPSP3\xpspuxthemebase.dll = 1
-    XPSP3\xpspwinstabase.dll = 1
     XPSP3\xpspws2_base.dll = 1
     XPSP3\xpspntkrnlmp.exe=1
     XPSP3\xpspntdll.dll=1
@@ -637,7 +630,6 @@
     kernelbase.dll = 1
 	msvcrt.dll = 1
     netapi32.dll = 1
-    netapinew.dll = 1
     Nlsdl.dll = 1
     normaliz.dll = 1
     nsi.dll = 1
@@ -660,19 +652,17 @@
     uxtheme.dll = 1
 	wevtold.dll = 1
     winbrand.dll = 1	
-    winsta.dll = 1	
-    winstanew.dll = 1
     ws2_32.dll = 1
 	WinSxS\winxp\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll = 1
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.cat = 1
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.manifest = 1
-	WinSxS\6.0.3790.5190.policy = 1
-	WinSxS\6.0.3790.5190.cat = 1	
-    WinSxS\gdiplus.dll =1
-    WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24102_x-ww_22f03396.cat =1
-	WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24102_x-ww_22f03396.manifest =1
-	WinSxS\polices\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24102.cat =1
-	WinSxS\polices\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24102.policy =1	
+	WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.policy = 1
+	WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.cat = 1	
+    WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c\gdiplus.dll =1
+    WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c.cat =1
+	WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c.manifest =1
+	WinSxS\polices\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24180.cat =1
+	WinSxS\polices\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24180.policy =1	
 [Strings]
 	MSFT_Prefix                 = "MicrosoftOneCoreAPIBase"
 
