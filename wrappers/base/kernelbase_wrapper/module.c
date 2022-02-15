@@ -374,73 +374,16 @@ BOOL WINAPI DECLSPEC_HOTPATCH SetDefaultDllDirectories( DWORD flags )
  */
 BOOL WINAPI SetSearchPathMode( DWORD flags )
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernel32.dll");
 	NTSTATUS Status;
 	
-	pSetSearchPathMode = (void *)GetProcAddress(hkernel32, "SetSearchPathMode");
-	if(pSetSearchPathMode){
-		return pSetSearchPathMode(flags);
-	}else{
-		Status = RtlSetSearchPathMode( flags );
+	Status = RtlSetSearchPathMode( flags );
 		
-		if(NT_SUCCESS(Status)){
-			return TRUE;
-		}else{
-			SetLastError(Status);
-			return FALSE;
-		}	
-	}
-}
-
-FARPROC 
-WINAPI 
-GetProcAddressInternal(
-  _In_ HMODULE hModule,
-  _In_ LPCSTR  lpProcName
-)
-{
-	//DbgPrint("GetProcAddress::Function name: %s\n", lpProcName);
-	return GetProcAddress(hModule, lpProcName);
-}
-
-HMODULE 
-WINAPI 
-GetModuleHandleInternalA(
-  _In_opt_ LPCTSTR lpModuleName
-)
-{
-	//DbgPrint("GetModuleHandleA::Module name: %s\n", lpModuleName);
-	return GetModuleHandleA(lpModuleName);
-}
-
-HMODULE 
-WINAPI 
-GetModuleHandleInternalW(
-  _In_opt_ LPCWSTR lpModuleName
-)
-{
-	//DbgPrint("GetModuleHandleW::Module name: %ws\n", lpModuleName);
-	return GetModuleHandleW(lpModuleName);
-}
-
-HMODULE 
-WINAPI 
-LoadLibraryInternalA(
-  _In_ LPCTSTR lpFileName
-)
-{
-	//DbgPrint("LoadLibraryA::File name: %s\n", lpFileName);
-	return LoadLibraryA(lpFileName);
-}
-
-HMODULE 
-WINAPI 
-LoadLibraryInternalW(
-  _In_ LPCWSTR lpFileName
-)
-{
-	//DbgPrint("LoadLibraryW::File name: %ws\n", lpFileName);
-	return LoadLibraryW(lpFileName);
+	if(NT_SUCCESS(Status)){
+		return TRUE;
+	}else{
+		SetLastError(Status);
+		return FALSE;
+	}	
 }
 
 WCHAR szAppInit[KEY_LENGTH];

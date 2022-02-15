@@ -4,11 +4,11 @@ Copyright (c) 2022 Shorthorn Project
 
 Module Name:
 
-    display.c
+    syspams.c
 
 Abstract:
 
-    Implement Display Information functions
+    Implement System parameters functions
 
 Author:
 

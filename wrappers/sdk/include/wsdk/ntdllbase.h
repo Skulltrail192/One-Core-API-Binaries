@@ -93,7 +93,7 @@ typedef struct _TP_IO{
 
 typedef VOID (CALLBACK *PTP_WIN32_IO_CALLBACK)(PTP_CALLBACK_INSTANCE,PVOID,PVOID,ULONG,ULONG_PTR,PTP_IO);
 
-typedef PVOID PDELAYLOAD_FAILURE_SYSTEM_ROUTINE; 
+typedef PVOID (WINAPI *PDELAYLOAD_FAILURE_SYSTEM_ROUTINE)(LPCSTR, LPCSTR);
 
 typedef struct _WIN32_MEMORY_RANGE_ENTRY {
   PVOID  VirtualAddress;
@@ -162,6 +162,14 @@ typedef struct _PERFORMANCE_DATA {
   DWORD                 Reserved;
   HARDWARE_COUNTER_DATA HwCounters[MAX_HW_COUNTERS];
 } PERFORMANCE_DATA, *PPERFORMANCE_DATA;
+
+#define FLS_MAX_SLOT	128
+
+typedef struct _FLS_DATA_INFO
+{
+	LIST_ENTRY FlsLink;
+	PVOID FlsSlot[FLS_MAX_SLOT];
+} FLS_DATA_INFO;
 
 typedef struct _DELAYLOAD_PROC_DESCRIPTOR
 {
@@ -279,71 +287,23 @@ NTSTATUS WINAPI RtlFlsAlloc(PFLS_CALLBACK_FUNCTION lpCallback,
 							DWORD *lpCallbackPointer);
 
 NTSTATUS WINAPI RtlFlsFree(DWORD dwFlsIndex);
-
-NTSTATUS NTAPI TpAllocPool(__out PTP_POOL *PoolReturn, PVOID Reserved);
-
-NTSTATUS NTAPI TpAllocCleanupGroup(__out PTP_CLEANUP_GROUP *CleanupGroupReturn);
-
-NTSTATUS NTAPI TpAllocTimer (__out PTP_TIMER *Timer, 
-							  __in PTP_TIMER_CALLBACK Callback, 
-							  __inout_opt PVOID Context, 
-							  __in_opt PTP_CALLBACK_ENVIRON CallbackEnviron);
 							  
-NTSTATUS WINAPI RtlReadThreadProfilingData(HANDLE PerformanceDataHandle, DWORD Flags, PPERFORMANCE_DATA PerformanceData);							  
-
-NTSTATUS NTAPI TpAllocWait( 
-		__out PTP_WAIT *  	WaitReturn,
-		__in PTP_WAIT_CALLBACK  	Callback,
-		__inout_opt PVOID  	Context,
-		__in_opt PTP_CALLBACK_ENVIRON  	CallbackEnviron);
-
-NTSTATUS NTAPI TpAllocWork 	( 	__out PTP_WORK *  	WorkReturn,
-		__in PTP_WORK_CALLBACK  	Callback,
-		__inout_opt PVOID  	Context,
-		__in_opt PTP_CALLBACK_ENVIRON  	CallbackEnviron );
-
-VOID NTAPI TpSetPoolMaxThreads 	( 	__inout PTP_POOL  	Pool,
-		__in LONG  	MaxThreads 
-	);
-
-NTSTATUS NTAPI TpSetPoolMinThreads 	(__inout PTP_POOL  	Pool,
-		__in LONG  	MinThreads 
-);
-
-BOOL WINAPI TpIsTimerSet(
-  _Inout_  PTP_TIMER pti
-);
-
-NTSTATUS NTAPI TpAllocWork(
-		__out PTP_WORK *  	WorkReturn,
-		__in PTP_WORK_CALLBACK  	Callback,
-		__inout_opt PVOID  	Context,
-		__in_opt PTP_CALLBACK_ENVIRON  	CallbackEnviron 
-);
-
-NTSTATUS NTAPI TpSimpleTryPost( 
-		__in PTP_SIMPLE_CALLBACK  	Callback,
-		__inout_opt PVOID  	Context,
-		__in_opt PTP_CALLBACK_ENVIRON  	CallbackEnviron 
-);  
-
+NTSTATUS WINAPI RtlReadThreadProfilingData(
+	HANDLE PerformanceDataHandle, 
+	DWORD Flags, 
+	PPERFORMANCE_DATA PerformanceData
+);							  
 
 NTSTATUS 
-NTAPI 	
-TpAllocIoCompletion(
-	_Out_ PTP_IO *IoReturn, 
-	_In_ HANDLE File, 
-	_In_ PTP_WIN32_IO_CALLBACK Callback, 
-	_Inout_opt_ PVOID Context, 
-	_In_opt_ PTP_CALLBACK_ENVIRON CallbackEnviron
-);
-
-NTSTATUS NTAPI NtQuerySystemInformationEx(SYSTEM_INFORMATION_CLASS information,
-										  PUSHORT Group, 
-										  DWORD number, 
-										  PULONG64 ProcessorIdleCycleTime, 
-										  PULONG *BufferLength, 
-										  PULONG OtherLength);	
+NTAPI 
+NtQuerySystemInformationEx(
+	SYSTEM_INFORMATION_CLASS SystemInformationClass,
+	PVOID SystemInformation, 
+	ULONG QueryInformationLength, 
+	PVOID SystemInformatiom, 
+	ULONG BufferLength, 
+	PULONG ReturnLength
+);	
 
 NTSTATUS NTAPI RtlSleepConditionVariableSRW( 	
 		IN OUT PRTL_CONDITION_VARIABLE  	ConditionVariable,
@@ -365,26 +325,26 @@ NTSTATUS WINAPI RtlGetUserPreferredUILanguages(DWORD dwFlags,
 											   PULONG pulNumLanguages, 
 											   PZZWSTR pwszLanguagesBuffer, 
 											   PULONG pcchLanguagesBuffer);
+											   
+typedef VOID (*PTP_IO_CALLBACK)(PTP_CALLBACK_INSTANCE,void*,void*,IO_STATUS_BLOCK*,PTP_IO);
 
+/* Thread Pool */
 VOID NTAPI TpDisassociateCallback(__inout PTP_CALLBACK_INSTANCE Instance); 
-
-VOID NTAPI 	TpStartAsyncIoOperation(__inout PTP_IO Io);
-
-VOID NTAPI 	TpCancelAsyncIoOperation (__inout PTP_IO Io);
-
-VOID WINAPI RtlDeleteBoundaryDescriptor(_In_  HANDLE BoundaryDescriptor);
-
-VOID NTAPI 	TpCallbackUnloadDllOnCompletion (__inout PTP_CALLBACK_INSTANCE Instance, __in PVOID DllHandle);
-
-VOID WINAPI RtlAcquireSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock);	
-
-VOID NTAPI RtlReleaseSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock);
+VOID NTAPI TpStartAsyncIoOperation(__inout PTP_IO Io);
+VOID NTAPI TpCancelAsyncIoOperation (__inout PTP_IO Io);
+VOID NTAPI TpCallbackUnloadDllOnCompletion (__inout PTP_CALLBACK_INSTANCE Instance, __in PVOID DllHandle);
+NTSTATUS NTAPI TpAllocPool(TP_POOL **,PVOID);
+NTSTATUS NTAPI TpAllocTimer(TP_TIMER **,PTP_TIMER_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
+NTSTATUS NTAPI TpAllocWait(TP_WAIT **,PTP_WAIT_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
+NTSTATUS NTAPI TpAllocWork(TP_WORK **,PTP_WORK_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
+NTSTATUS NTAPI TpSimpleTryPost(PTP_SIMPLE_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
+NTSTATUS NTAPI TpAllocCleanupGroup(TP_CLEANUP_GROUP **);
+NTSTATUS NTAPI TpAllocIoCompletion(TP_IO **,HANDLE,PTP_IO_CALLBACK,void *,TP_CALLBACK_ENVIRON *);
 
 VOID NTAPI TpCallbackReleaseMutexOnCompletion( 
 		__inout PTP_CALLBACK_INSTANCE  	Instance,
 		__in HANDLE  	Mutex 
 ); 
-
 VOID NTAPI TpCallbackReleaseSemaphoreOnCompletion( 	
 		__inout PTP_CALLBACK_INSTANCE  	Instance,
 		__in HANDLE  	Semaphore,
@@ -395,6 +355,22 @@ NTSTATUS WINAPI RtlAddSIDToBoundaryDescriptor(
   _Inout_  HANDLE *BoundaryDescriptor,
   _In_     PSID RequiredSid
 );
+
+NTSTATUS WINAPI TpSetPoolStackInformation(
+  _Inout_  PTP_POOL ptpp,
+  _In_     PTP_POOL_STACK_INFORMATION ptpsi
+);
+
+NTSTATUS NTAPI 	TpQueryPoolStackInformation (
+  __in PTP_POOL Pool, 
+  __out PTP_POOL_STACK_INFORMATION PoolStackInformation
+);
+
+VOID WINAPI RtlAcquireSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock);
+VOID NTAPI RtlReleaseSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock);
+VOID WINAPI RtlDeleteBoundaryDescriptor(_In_  HANDLE BoundaryDescriptor);
+VOID NTAPI RtlReleaseSRWLockShared(IN OUT PRTL_SRWLOCK SRWLock);
+VOID NTAPI RtlAcquireSRWLockShared(IN OUT PRTL_SRWLOCK SRWLock);
 
 NTSTATUS 
 NTAPI 
@@ -429,16 +405,6 @@ NTSTATUS NTAPI 	NtReplacePartitionUnit(__in PUNICODE_STRING TargetInstancePath,
 										__in PUNICODE_STRING SpareInstancePath,
 										__in ULONG Flags);
 								
-NTSTATUS WINAPI TpSetPoolStackInformation(
-  _Inout_  PTP_POOL ptpp,
-  _In_     PTP_POOL_STACK_INFORMATION ptpsi
-);
-
-NTSTATUS NTAPI 	TpQueryPoolStackInformation (
-  __in PTP_POOL Pool, 
-  __out PTP_POOL_STACK_INFORMATION PoolStackInformation
-);
-
 NTSTATUS NTAPI RtlCheckTokenCapability(
   _In_opt_  HANDLE TokenHandle,
   _In_      PSID CapabilitySidToCheck,
@@ -486,7 +452,7 @@ NTSTATUS WINAPI LdrResolveDelayLoadsFromDll(
 
 //PTEB NtCurrentTeb(void);
 
-void WINAPI DECLSPEC_HOTPATCH RtlProcessFlsData( void *teb_fls_data, ULONG flags );
+VOID NTAPI RtlProcessFlsData( void *teb_fls_data, ULONG flags );
 
 NTSTATUS WINAPI NtUnmapViewOfSectionEx(HANDLE handle, PVOID MemoryCache, ULONG number);
 
@@ -502,7 +468,7 @@ NTSYSAPI NTSTATUS  WINAPI RtlIsNormalizedString(ULONG,const WCHAR*,INT,BOOLEAN*)
 
 NTSYSAPI NTSTATUS  WINAPI RtlNormalizeString(ULONG,const WCHAR*,INT,WCHAR*,INT*);
 
-BOOL WINAPI RtlDeregisterSecureMemoryCacheCallback(_In_  PSECURE_MEMORY_CACHE_CALLBACK pfnCallBack);
+BOOL WINAPI RtlDeregisterSecureMemoryCacheCallback(_In_  PRTL_SECURE_MEMORY_CACHE_CALLBACK pfnCallBack);
 
 NTSYSAPI NTSTATUS WINAPI RtlRegisterSecureMemoryCacheCallback(_In_  PRTL_SECURE_MEMORY_CACHE_CALLBACK pfnCallBack);
 
@@ -579,6 +545,12 @@ typedef enum _PROCESS_MITIGATION_POLICY
     MaxProcessMitigationPolicy
 } PROCESS_MITIGATION_POLICY, *PPROCESS_MITIGATION_POLICY;
 
+typedef struct _FLS_CALLBACK_INFO
+{
+	PFLS_CALLBACK_FUNCTION CallbackFunc;
+	RTL_SRWLOCK FlsCbLock;
+} FLS_CALLBACK_INFO;
+
 typedef DWORD WINAPI RTL_RUN_ONCE_INIT_FN(PRTL_RUN_ONCE, PVOID, PVOID*);
 typedef RTL_RUN_ONCE_INIT_FN *PRTL_RUN_ONCE_INIT_FN;
 
@@ -618,7 +590,7 @@ NTSTATUS NTAPI
 LdrFindResourceEx_U(
     IN ULONG Flags,
     IN PVOID DllHandle,
-    IN const ULONG_PTR* ResourceIdPath,
+    IN PLDR_RESOURCE_INFO ResourceIdPath,
     IN ULONG ResourceIdPathLength,
     OUT PIMAGE_RESOURCE_DATA_ENTRY *ResourceDataEntry
 );
@@ -672,9 +644,10 @@ NTSYSAPI NTSTATUS  WINAPI RtlIdnToUnicode(DWORD,const WCHAR*,INT,WCHAR*,INT*);
 NTSYSAPI NTSTATUS  WINAPI RtlGetProcessPreferredUILanguages(DWORD,ULONG*,WCHAR*,ULONG*);
 NTSYSAPI NTSTATUS  WINAPI RtlSetThreadPreferredUILanguages(DWORD,PCZZWSTR,ULONG*);
 NTSYSAPI NTSTATUS  WINAPI RtlSetProcessPreferredUILanguages(DWORD,PCZZWSTR,ULONG*);
-NTSYSAPI NTSTATUS  WINAPI RtlDosPathNameToNtPathName_U_WithStatus(PCWSTR,PUNICODE_STRING,PWSTR*,CURDIR*);
+NTSYSAPI NTSTATUS  WINAPI RtlDosPathNameToNtPathName_U_WithStatus(PCWSTR,PUNICODE_STRING,PWSTR*,PRTL_RELATIVE_NAME_U);
 NTSYSAPI NTSTATUS  WINAPI NtFilterToken(HANDLE,ULONG,TOKEN_GROUPS*,TOKEN_PRIVILEGES*,TOKEN_GROUPS*,HANDLE*);
 NTSYSAPI NTSTATUS  WINAPI RtlConvertToAutoInheritSecurityObject(PSECURITY_DESCRIPTOR,PSECURITY_DESCRIPTOR,PSECURITY_DESCRIPTOR*,GUID*,BOOL,PGENERIC_MAPPING);
 NTSYSAPI NTSTATUS  WINAPI NtGetNlsSectionPtr(ULONG,ULONG,void*,void**,SIZE_T*);
 NTSYSAPI NTSTATUS WINAPI RtlFlsGetValue( ULONG index, void **data );
 NTSYSAPI NTSTATUS WINAPI RtlFlsSetValue( ULONG index, void *data );
+

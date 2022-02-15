@@ -1127,7 +1127,7 @@ NTSTATUS
 NTAPI
 RtlDosPathNameToNtPathName_U_WithStatus(IN PCWSTR DosName,
                                         OUT PUNICODE_STRING NtName,
-                                        OUT PCWSTR *PartName,
+                                        OUT PWSTR *PartName,
                                         OUT PRTL_RELATIVE_NAME_U RelativeName)
 {
     /* Call the internal function */

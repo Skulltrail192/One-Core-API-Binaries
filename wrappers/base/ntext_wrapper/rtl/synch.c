@@ -84,24 +84,6 @@ InternalCmpXChgCondVarRel(IN OUT PRTL_CONDITION_VARIABLE ConditionVariable,
                                                                (PVOID)Comperand);
 }
 
-VOID
-NTAPI
-RtlReleaseSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock);
-
-VOID
-NTAPI
-RtlAcquireSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock);
-
-VOID
-NTAPI
-RtlReleaseSRWLockShared(IN OUT PRTL_SRWLOCK SRWLock);
-
-VOID
-NTAPI
-RtlAcquireSRWLockShared(IN OUT PRTL_SRWLOCK SRWLock);
-
-
-
 /* GLOBALS *******************************************************************/
 
 extern HANDLE GlobalKeyedEventHandle;
@@ -664,7 +646,7 @@ RtlSleepConditionVariableCS(IN OUT PRTL_CONDITION_VARIABLE ConditionVariable,
  *  the behaviour is undefined if the thread doesn't own the lock.
  */
 NTSTATUS NTAPI RtlSleepConditionVariableSRW( RTL_CONDITION_VARIABLE *variable, RTL_SRWLOCK *lock,
-                                              const LARGE_INTEGER *timeout, ULONG flags )
+                                              PLARGE_INTEGER timeout, ULONG flags )
 {
     NTSTATUS status;
     interlocked_xchg_add( (int *)&variable->Ptr, 1 );

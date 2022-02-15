@@ -1,31 +1,22 @@
-/***************************************************************************\
-* ConvertDIBIcon
-*
-* Called when a cursor/icon in DIB format is loaded.  This converts the
-* cursor/icon into the old format and returns the resource handle.  IE,
-* grabs the DIB bits and transforms them into physical bitmap bits.
-*
-*
-* DIB Formats for icons/cursors 101
-*
-* Old Win 3.0 format icons/cursors start with an OLDICON/OLDCURSOR header
-* followed by a double high monochrome DIB.  The height refered to in the
-* header is the icon/cursor height, not the DIB height which is twice as
-* high.  The XOR mask is in the first-half of the DIB bits.
-*
-* Old PM format icons/cursors start with a BITMAPCOREHEADER and
-* are identical to the current win 3.1/NT format thereafter.
-*
-* Current NT/Chicago/Win 3.1 format icons/cursors start with
-* a BITAMPINFOHEADER.  The height of this header refers to the height
-* of the first bitmap which may either be color or truely monochrome.
-* If its color, it is followed by the monochrome AND mask bits imediately
-* after the color bits.  If it is truely monochrome, the AND and XOR
-* masks are totally contained in the first DIB bits and no more bits
-* follow.
-*
-* 5-Oct-1994 SanfordS   Recreated
-\***************************************************************************/
+/*++
+
+Copyright (c) 2022 Shorthorn Project
+
+Module Name:
+
+    dib.c
+
+Abstract:
+
+    Implement DIB functions
+
+Author:
+
+    Skulltrail 14-February-2022
+
+Revision History:
+
+--*/
 
 // HICON ConvertDIBIcon(
     // LPBITMAPINFOHEADER lpbih,

@@ -25,28 +25,9 @@ Revision History:
 WINE_DEFAULT_DEBUG_CHANNEL(kernel32);
 WINE_DECLARE_DEBUG_CHANNEL(winedbg);
 
-static BOOL (WINAPI *pSetThreadStackGuarantee)(PULONG);
 static DWORD (WINAPI *pConsoleIMERoutine)(LPVOID);
 static DWORD (WINAPI *pCtrlRoutine)(LPVOID);
 void WINAPI RtlFreeUserStack( void *stack );
-
-/***********************************************************************
- * Fibers
- ***********************************************************************/
-
-
-struct fiber_data
-{
-    LPVOID                param;             /* 00/00 fiber param */
-    void                 *except;            /* 04/08 saved exception handlers list */
-    void                 *stack_base;        /* 08/10 top of fiber stack */
-    void                 *stack_limit;       /* 0c/18 fiber stack low-water mark */
-    void                 *stack_allocation;  /* 10/20 base of the fiber stack allocation */
-    CONTEXT               context;           /* 14/30 fiber context */
-    DWORD                 flags;             /*       fiber flags */
-    LPFIBER_START_ROUTINE start;             /*       start routine */
-    void                 *fls_slots;         /*       fiber storage slots */
-};
 
 /*******************************************************************
  *         format_exception_msg
@@ -347,63 +328,73 @@ static BOOL start_debugger_atomic(PEXCEPTION_POINTERS epointers)
     return TRUE;
 }
 
-/***********************************************************************
- *           FlsAlloc   (KERNEL32.@) - For XP support
- */
-DWORD 
-WINAPI 
-DECLSPEC_HOTPATCH
-FlsAlloc(
-	PFLS_CALLBACK_FUNCTION lpCallback
-)
-{
-    DWORD index;
-
-    if (!set_ntstatus( RtlFlsAlloc( lpCallback, &index ))) return FLS_OUT_OF_INDEXES;
-    return index;
+BOOL isXPOrLower(){
+	OSVERSIONINFOW osVersion = {0};
+	
+	GetVersionExW(&osVersion);
+	
+	if(osVersion.dwMajorVersion<=5){
+		if(osVersion.dwMinorVersion<=1){
+			return TRUE;
+		}
+	}
+	
+	return FALSE;
 }
 
 /***********************************************************************
- *           FlsFree   (KERNEL32.@) - For XP support
+ *           FlsAlloc   (KERNEL32.@) - For .Net 4.5.1 + Framework Support (native functions not work)
  */
-BOOL 
-WINAPI 
-FlsFree(
-	DWORD dwFlsIndex
-)
+DWORD WINAPI FlsAlloc( PFLS_CALLBACK_FUNCTION lpCallback )
 {
-	return set_ntstatus( RtlFlsFree( dwFlsIndex ));
+	if(isXPOrLower()){
+		return TlsAlloc();				
+	}else{
+		DWORD index;		
+		if (!set_ntstatus( RtlFlsAlloc( lpCallback, &index ))) return FLS_OUT_OF_INDEXES;
+		return index;		
+	}	
 }
 
 /***********************************************************************
- *           FlsGetValue   (KERNEL32.@) - For XP support
+ *           FlsFree   (KERNEL32.@) - Framework Support (native functions not work)
  */
-PVOID 
-WINAPI 
-FlsGetValue( 
-	DWORD index 
-)
-{
-    void *data;
-
-    if (!set_ntstatus( RtlFlsGetValue( index, &data ))) return NULL;
-    SetLastError( ERROR_SUCCESS );
-    return data;
+BOOL WINAPI FlsFree( DWORD index )
+{	
+	if(isXPOrLower()){
+		return TlsFree(index); 	
+	}else{
+		return set_ntstatus( RtlFlsFree( index ));		
+	}	
 }
 
 /***********************************************************************
- *           FlsSetValue   (KERNEL32.@) - For XP support
+ *           FlsGetValue   (KERNEL32.@) - Framework Support (native functions not work)
  */
-BOOL 
-WINAPI 
-FlsSetValue(
-	DWORD dwFlsIndex, 
-	PVOID lpFlsData
-)
+PVOID WINAPI FlsGetValue( DWORD index )
 {
-	return set_ntstatus( RtlFlsSetValue( dwFlsIndex, lpFlsData ));
+	if(isXPOrLower()){
+		return TlsGetValue(index); 	
+	}else{
+		void *data;
+
+		if (!set_ntstatus( RtlFlsGetValue( index, &data ))) return NULL;
+		SetLastError( ERROR_SUCCESS );
+		return data;	
+	}		
 }
 
+/***********************************************************************
+ *           FlsSetValue   (KERNEL32.@) - Framework Support (native functions not work)
+ */
+BOOL WINAPI FlsSetValue( DWORD index, PVOID lpFlsData )
+{
+	if(isXPOrLower()){
+		return TlsSetValue(index, lpFlsData);	
+	}else{
+		return set_ntstatus( RtlFlsSetValue( index, lpFlsData ));		
+	}	
+}
 
 /***********************************************************************
  *           ConvertThreadToFiberEx   (KERNEL32.@) - For XP support
@@ -480,26 +471,20 @@ SetThreadStackGuarantee(
 	IN OUT PULONG StackSizeInBytes
 )
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernel32.dll");
-	pSetThreadStackGuarantee = (void *)GetProcAddress(hkernel32, "SetThreadStackGuarantee");
-	if(pSetThreadStackGuarantee){
-		return pSetThreadStackGuarantee(StackSizeInBytes);
-	}else{
-		ULONG prev_size = NtCurrentTeb()->GuaranteedStackBytes;
-		ULONG new_size = (*StackSizeInBytes + 4095) & ~4095;
+	ULONG prev_size = NtCurrentTeb()->GuaranteedStackBytes;
+	ULONG new_size = (*StackSizeInBytes + 4095) & ~4095;
 
-		/* at least 2 pages on 64-bit */
-		if (sizeof(void *) > sizeof(int) && new_size) new_size = max( new_size, 8192 );
+	/* at least 2 pages on 64-bit */
+	if (sizeof(void *) > sizeof(int) && new_size) new_size = max( new_size, 8192 );
 
-		*StackSizeInBytes = prev_size;
-		if (new_size >= (char *)NtCurrentTeb()->NtTib.StackBase - (char *)NtCurrentTeb()->DeallocationStack)
-		{
-			SetLastError( ERROR_INVALID_PARAMETER );
-			return FALSE;
-		}
-		if (new_size > prev_size) NtCurrentTeb()->GuaranteedStackBytes = (new_size + 4095) & ~4095;
-		return TRUE;
-	}    
+	*StackSizeInBytes = prev_size;
+	if (new_size >= (char *)NtCurrentTeb()->NtTib.StackBase - (char *)NtCurrentTeb()->DeallocationStack)
+	{
+		SetLastError( ERROR_INVALID_PARAMETER );
+		return FALSE;
+	}
+	if (new_size > prev_size) NtCurrentTeb()->GuaranteedStackBytes = (new_size + 4095) & ~4095;
+	return TRUE;
 }
 
 DWORD
@@ -1198,7 +1183,7 @@ CreateThreadpoolIo(
 
     TRACE( "%p, %p, %p\n", pfnio, pv, pcbe );
 
-    status = TpAllocIoCompletion( &io, file, pfnio, pv, pcbe );
+    status = TpAllocIoCompletion( &io, file, (PTP_IO_CALLBACK)pfnio, pv, pcbe );
     if (status)
     {
         SetLastError( RtlNtStatusToDosError(status) );
@@ -1304,22 +1289,4 @@ BOOL WINAPI DECLSPEC_HOTPATCH QueryThreadpoolStackInformation( PTP_POOL pool, PT
 	Status = TpQueryPoolStackInformation( pool, stack_info );
 	
     return NT_SUCCESS(Status);
-}
-
-/***********************************************************************
- *           DeleteFiber   (kernelbase.@)
- */
-void WINAPI DECLSPEC_HOTPATCH DeleteFiber( LPVOID fiber_ptr )
-{
-    struct fiber_data *fiber = fiber_ptr;
-
-    if (!fiber) return;
-    if (fiber == NtCurrentTeb()->NtTib.FiberData)
-    {
-        HeapFree( GetProcessHeap(), 0, fiber );
-        RtlExitUserThread( 1 );
-    }
-    RtlFreeUserStack( fiber->stack_allocation );
-    RtlProcessFlsData( (void *)fiber->fls_slots, 3 );
-    HeapFree( GetProcessHeap(), 0, fiber );
 }

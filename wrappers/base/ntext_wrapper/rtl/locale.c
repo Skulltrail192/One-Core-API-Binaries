@@ -918,8 +918,14 @@ static NTSTATUS get_dummy_preferred_ui_language( DWORD flags, LANGID lang, ULONG
 /**************************************************************************
  *      RtlGetUserPreferredUILanguages   (NTDLL.@)
  */
-NTSTATUS WINAPI RtlGetUserPreferredUILanguages( DWORD flags, ULONG unknown, ULONG *count,
-                                                WCHAR *buffer, ULONG *size )
+NTSTATUS 
+NTAPI 
+RtlGetUserPreferredUILanguages(
+	DWORD flags, 
+	BOOL verification,
+	PULONG count, 
+	PZZWSTR buffer, 
+	PULONG size)
 {
     LANGID ui_language;
 

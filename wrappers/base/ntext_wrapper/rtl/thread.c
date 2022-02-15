@@ -22,6 +22,8 @@ Revision History:
 
 #include <main.h> 
 
+RTL_SRWLOCK RtlpFlsLock=RTL_SRWLOCK_INIT;
+
 typedef struct _FLS_CALLBACK
 {
     void                  *unknown;
@@ -274,7 +276,6 @@ NTSTATUS WINAPI DECLSPEC_HOTPATCH RtlFlsGetValue( ULONG index, void **data )
     *data = fls->fls_data_chunks[chunk_index] ? fls->fls_data_chunks[chunk_index][idx + 1] : NULL;
     return STATUS_SUCCESS;
 }
-
 
 /***********************************************************************
  *              RtlProcessFlsData (NTDLL.@)

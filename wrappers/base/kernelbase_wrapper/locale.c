@@ -75,11 +75,6 @@ static RTL_CRITICAL_SECTION cache_section;
 
 WINE_DEFAULT_DEBUG_CHANNEL(locale); 
 
-typedef BOOL (WINAPI *pGetNLSVersion)(
-    NLS_FUNCTION, 
-	LCID,
-	LPNLSVERSIONINFO);
-
 struct sortguid
 {
     GUID  id;          /* sort GUID */
@@ -1801,16 +1796,7 @@ GetNLSVersion(
     LCID             lcid,
     LPNLSVERSIONINFO info)
 {
-	pGetNLSVersion nlsVersion;
-    WCHAR locale[LOCALE_NAME_MAX_LENGTH];
-	
-	nlsVersion = (pGetNLSVersion) GetProcAddress(
-                            GetModuleHandleW(L"kernel32"),
-                            "GetNLSVersion");
-							
-	if(nlsVersion!=NULL){
-		return nlsVersion(func, lcid, info);
-	}
+    WCHAR locale[LOCALE_NAME_MAX_LENGTH];	
 	
     if (info->dwNLSVersionInfoSize < offsetof( NLSVERSIONINFO, dwNLSVersionInfoSize ))
     {

@@ -2254,7 +2254,7 @@ VOID WINAPI TpCallbackReleaseMutexOnCompletion( TP_CALLBACK_INSTANCE *instance, 
 /***********************************************************************
  *           TpCallbackReleaseSemaphoreOnCompletion    (NTDLL.@)
  */
-VOID WINAPI TpCallbackReleaseSemaphoreOnCompletion( TP_CALLBACK_INSTANCE *instance, HANDLE semaphore, DWORD count )
+VOID WINAPI TpCallbackReleaseSemaphoreOnCompletion( TP_CALLBACK_INSTANCE *instance, HANDLE semaphore, LONG count )
 {
     struct threadpool_instance *this = impl_from_TP_CALLBACK_INSTANCE( instance );
 

@@ -4,7 +4,7 @@ Copyright (c) 2018 Shorthorn Project
 
 Module Name:
 
-    cursor.c
+    icon.c
 
 Abstract:
 
@@ -17,6 +17,7 @@ Author:
 Revision History:
 
 --*/
+
 #include <main.h>
 
 WINE_DEFAULT_DEBUG_CHANNEL(user32);

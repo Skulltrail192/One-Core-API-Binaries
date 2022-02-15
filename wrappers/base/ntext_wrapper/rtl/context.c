@@ -28,7 +28,7 @@ Module Name:
 VOID
 NTAPI
 RtlSetExtendedFeaturesMask (
-    __out PCONTEXT_EX ContextEx,
+    __out PCONTEXT ContextEx,
     __in DWORD64 FeatureMask
 )
 {
@@ -41,7 +41,7 @@ NTAPI
 RtlInitializeExtendedContext (
     __out PVOID Context,
     __in DWORD ContextFlags,
-    __out PCONTEXT_EX* ContextEx
+    __out PCONTEXT* ContextEx
 )
 {
 	DbgPrint("UNIMPLEMENTED: RtlInitializeExtendedContext");

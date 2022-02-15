@@ -34,6 +34,7 @@
 #include <list.h>
 #include <wmistr.h>
 #include <lpcfuncs.h>
+#include <ntdllbase.h>
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -197,24 +198,22 @@ typedef VOID (*PTP_WAIT_CALLBACK)(PTP_CALLBACK_INSTANCE Instance, PVOID Context,
 
 typedef VOID (WINAPI *PBAD_MEMORY_CALLBACK_ROUTINE)(VOID);
 
-typedef VOID (*PTP_IO_CALLBACK)(PTP_CALLBACK_INSTANCE,void*,void*,IO_STATUS_BLOCK*,PTP_IO);
-
 typedef BOOLEAN (*PSECURE_MEMORY_CACHE_CALLBACK)(
     _In_  PVOID Addr,
     _In_  SIZE_T Range
 );
 
-typedef PVOID (WINAPI *PDELAYLOAD_FAILURE_SYSTEM_ROUTINE)(LPCSTR, LPCSTR);
+// typedef PVOID (WINAPI *PDELAYLOAD_FAILURE_SYSTEM_ROUTINE)(LPCSTR, LPCSTR);
 
 typedef VOID (CALLBACK *PTP_WIN32_IO_CALLBACK)(PTP_CALLBACK_INSTANCE,PVOID,PVOID,ULONG,ULONG_PTR,PTP_IO);
 
-typedef enum _NORM_FORM { 
-  NormalizationOther  = 0,
-  NormalizationC      = 0x1,
-  NormalizationD      = 0x2,
-  NormalizationKC     = 0x5,
-  NormalizationKD     = 0x6
-} NORM_FORM;
+// typedef enum _NORM_FORM { 
+  // NormalizationOther  = 0,
+  // NormalizationC      = 0x1,
+  // NormalizationD      = 0x2,
+  // NormalizationKC     = 0x5,
+  // NormalizationKD     = 0x6
+// } NORM_FORM;
 
 typedef enum _TRANSACTION_INFORMATION_CLASS { 
   TransactionBasicInformation               = 0,
@@ -223,73 +222,73 @@ typedef enum _TRANSACTION_INFORMATION_CLASS {
   TransactionSuperiorEnlistmentInformation
 } TRANSACTION_INFORMATION_CLASS;
 
-typedef struct _WIN32_MEMORY_RANGE_ENTRY {
-  PVOID  VirtualAddress;
-  SIZE_T NumberOfBytes;
-} WIN32_MEMORY_RANGE_ENTRY, *PWIN32_MEMORY_RANGE_ENTRY;
+// typedef struct _WIN32_MEMORY_RANGE_ENTRY {
+  // PVOID  VirtualAddress;
+  // SIZE_T NumberOfBytes;
+// } WIN32_MEMORY_RANGE_ENTRY, *PWIN32_MEMORY_RANGE_ENTRY;
 
-typedef struct _CLAIM_SECURITY_ATTRIBUTE_OCTET_STRING_VALUE {
-  PVOID pValue;
-  DWORD ValueLength;
-} CLAIM_SECURITY_ATTRIBUTE_OCTET_STRING_VALUE, *PCLAIM_SECURITY_ATTRIBUTE_OCTET_STRING_VALUE;
+// typedef struct _CLAIM_SECURITY_ATTRIBUTE_OCTET_STRING_VALUE {
+  // PVOID pValue;
+  // DWORD ValueLength;
+// } CLAIM_SECURITY_ATTRIBUTE_OCTET_STRING_VALUE, *PCLAIM_SECURITY_ATTRIBUTE_OCTET_STRING_VALUE;
 
-typedef struct _CLAIM_SECURITY_ATTRIBUTE_FQBN_VALUE {
-  DWORD64 Version;
-  PWSTR   Name;
-} CLAIM_SECURITY_ATTRIBUTE_FQBN_VALUE, *PCLAIM_SECURITY_ATTRIBUTE_FQBN_VALUE;
+// typedef struct _CLAIM_SECURITY_ATTRIBUTE_FQBN_VALUE {
+  // DWORD64 Version;
+  // PWSTR   Name;
+// } CLAIM_SECURITY_ATTRIBUTE_FQBN_VALUE, *PCLAIM_SECURITY_ATTRIBUTE_FQBN_VALUE;
 
-typedef struct _CLAIM_SECURITY_ATTRIBUTE_V1 {
-  PWSTR Name;
-  WORD  ValueType;
-  WORD  Reserved;
-  DWORD Flags;
-  DWORD ValueCount;
-  union {
-    PLONG64                                      pInt64;
-    PDWORD64                                     pUint64;
-    PWSTR                                        *ppString;
-    PCLAIM_SECURITY_ATTRIBUTE_FQBN_VALUE         pFqbn;
-    PCLAIM_SECURITY_ATTRIBUTE_OCTET_STRING_VALUE pOctetString;
-  } Values;
-} CLAIM_SECURITY_ATTRIBUTE_V1, *PCLAIM_SECURITY_ATTRIBUTE_V1;
+// typedef struct _CLAIM_SECURITY_ATTRIBUTE_V1 {
+  // PWSTR Name;
+  // WORD  ValueType;
+  // WORD  Reserved;
+  // DWORD Flags;
+  // DWORD ValueCount;
+  // union {
+    // PLONG64                                      pInt64;
+    // PDWORD64                                     pUint64;
+    // PWSTR                                        *ppString;
+    // PCLAIM_SECURITY_ATTRIBUTE_FQBN_VALUE         pFqbn;
+    // PCLAIM_SECURITY_ATTRIBUTE_OCTET_STRING_VALUE pOctetString;
+  // } Values;
+// } CLAIM_SECURITY_ATTRIBUTE_V1, *PCLAIM_SECURITY_ATTRIBUTE_V1;
 
-typedef struct _CLAIM_SECURITY_ATTRIBUTES_INFORMATION {
-  WORD  Version;
-  WORD  Reserved;
-  DWORD AttributeCount;
-  union {
-    PCLAIM_SECURITY_ATTRIBUTE_V1 pAttributeV1;
-  } Attribute;
-} CLAIM_SECURITY_ATTRIBUTES_INFORMATION, *PCLAIM_SECURITY_ATTRIBUTES_INFORMATION;
+// typedef struct _CLAIM_SECURITY_ATTRIBUTES_INFORMATION {
+  // WORD  Version;
+  // WORD  Reserved;
+  // DWORD AttributeCount;
+  // union {
+    // PCLAIM_SECURITY_ATTRIBUTE_V1 pAttributeV1;
+  // } Attribute;
+// } CLAIM_SECURITY_ATTRIBUTES_INFORMATION, *PCLAIM_SECURITY_ATTRIBUTES_INFORMATION;
 
-typedef struct _TP_POOL_STACK_INFORMATION
-{
-   SIZE_T StackReserve;
-   SIZE_T StackCommit;
-} TP_POOL_STACK_INFORMATION,*PTP_POOL_STACK_INFORMATION;
+// typedef struct _TP_POOL_STACK_INFORMATION
+// {
+   // SIZE_T StackReserve;
+   // SIZE_T StackCommit;
+// } TP_POOL_STACK_INFORMATION,*PTP_POOL_STACK_INFORMATION;
 
-typedef enum  { 
-  PMCCounter,
-  MaxHardwareCounterType
-} HARDWARE_COUNTER_TYPE;
+// typedef enum  { 
+  // PMCCounter,
+  // MaxHardwareCounterType
+// } HARDWARE_COUNTER_TYPE;
 
-typedef struct _HARDWARE_COUNTER_DATA {
-  HARDWARE_COUNTER_TYPE Type;
-  DWORD                 Reserved;
-  DWORD64               Value;
-} HARDWARE_COUNTER_DATA, *PHARDWARE_COUNTER_DATA;
+// typedef struct _HARDWARE_COUNTER_DATA {
+  // HARDWARE_COUNTER_TYPE Type;
+  // DWORD                 Reserved;
+  // DWORD64               Value;
+// } HARDWARE_COUNTER_DATA, *PHARDWARE_COUNTER_DATA;
 
-typedef struct _PERFORMANCE_DATA {
-  WORD                  Size;
-  BYTE                  Version;
-  BYTE                  HwCountersCount;
-  DWORD                 ContextSwitchCount;
-  DWORD64               WaitReasonBitMap;
-  DWORD64               CycleTime;
-  DWORD                 RetryCount;
-  DWORD                 Reserved;
-  HARDWARE_COUNTER_DATA HwCounters[MAX_HW_COUNTERS];
-} PERFORMANCE_DATA, *PPERFORMANCE_DATA;
+// typedef struct _PERFORMANCE_DATA {
+  // WORD                  Size;
+  // BYTE                  Version;
+  // BYTE                  HwCountersCount;
+  // DWORD                 ContextSwitchCount;
+  // DWORD64               WaitReasonBitMap;
+  // DWORD64               CycleTime;
+  // DWORD                 RetryCount;
+  // DWORD                 Reserved;
+  // HARDWARE_COUNTER_DATA HwCounters[MAX_HW_COUNTERS];
+// } PERFORMANCE_DATA, *PPERFORMANCE_DATA;
 
 typedef struct _ALPC_PORT_ATTRIBUTES
 {
@@ -355,27 +354,27 @@ typedef struct _ALPC_CONTEXT_ATTR
   ULONG CallbackId;
 } ALPC_CONTEXT_ATTR, *PALPC_CONTEXT_ATTR;
 
-typedef struct _DELAYLOAD_PROC_DESCRIPTOR
-{
-     ULONG ImportDescribedByName;
-     union {
-         LPCSTR Name;
-         ULONG Ordinal;
-     } Description;
-} DELAYLOAD_PROC_DESCRIPTOR, *PDELAYLOAD_PROC_DESCRIPTOR;
+// typedef struct _DELAYLOAD_PROC_DESCRIPTOR
+// {
+     // ULONG ImportDescribedByName;
+     // union {
+         // LPCSTR Name;
+         // ULONG Ordinal;
+     // } Description;
+// } DELAYLOAD_PROC_DESCRIPTOR, *PDELAYLOAD_PROC_DESCRIPTOR;
 
-typedef struct _DELAYLOAD_INFO
-{
-     ULONG Size;
-     PCIMAGE_DELAYLOAD_DESCRIPTOR DelayloadDescriptor;
-     PIMAGE_THUNK_DATA ThunkAddress;
-     LPCSTR TargetDllName;
-     DELAYLOAD_PROC_DESCRIPTOR TargetApiDescriptor;
-     PVOID TargetModuleBase;
-     PVOID Unused;
-     ULONG LastError;
-} DELAYLOAD_INFO, *PDELAYLOAD_INFO;
-typedef PVOID (WINAPI *PDELAYLOAD_FAILURE_DLL_CALLBACK)(ULONG, PDELAYLOAD_INFO);
+// typedef struct _DELAYLOAD_INFO
+// {
+     // ULONG Size;
+     // PCIMAGE_DELAYLOAD_DESCRIPTOR DelayloadDescriptor;
+     // PIMAGE_THUNK_DATA ThunkAddress;
+     // LPCSTR TargetDllName;
+     // DELAYLOAD_PROC_DESCRIPTOR TargetApiDescriptor;
+     // PVOID TargetModuleBase;
+     // PVOID Unused;
+     // ULONG LastError;
+// } DELAYLOAD_INFO, *PDELAYLOAD_INFO;
+// typedef PVOID (WINAPI *PDELAYLOAD_FAILURE_DLL_CALLBACK)(ULONG, PDELAYLOAD_INFO);
 
 //
 // This structure specifies an offset (from the beginning of CONTEXT_EX
@@ -1138,45 +1137,38 @@ RtlRunOnceExecuteOnce(
 
 /* Threadpool functions */
 
-NTSYSAPI NTSTATUS  WINAPI TpAllocCleanupGroup(TP_CLEANUP_GROUP **);
-NTSYSAPI NTSTATUS  WINAPI TpAllocIoCompletion(TP_IO **,HANDLE,PTP_IO_CALLBACK,void *,TP_CALLBACK_ENVIRON *);
-NTSYSAPI NTSTATUS  WINAPI TpAllocPool(TP_POOL **,PVOID);
-NTSYSAPI NTSTATUS  WINAPI TpAllocTimer(TP_TIMER **,PTP_TIMER_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
-NTSYSAPI NTSTATUS  WINAPI TpAllocWait(TP_WAIT **,PTP_WAIT_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
-NTSYSAPI NTSTATUS  WINAPI TpAllocWork(TP_WORK **,PTP_WORK_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
-NTSYSAPI void      WINAPI TpCallbackLeaveCriticalSectionOnCompletion(TP_CALLBACK_INSTANCE *,RTL_CRITICAL_SECTION *);
-NTSYSAPI NTSTATUS  WINAPI TpCallbackMayRunLong(TP_CALLBACK_INSTANCE *);
-NTSYSAPI void      WINAPI TpCallbackReleaseMutexOnCompletion(TP_CALLBACK_INSTANCE *,HANDLE);
-NTSYSAPI void      WINAPI TpCallbackReleaseSemaphoreOnCompletion(TP_CALLBACK_INSTANCE *,HANDLE,DWORD);
-NTSYSAPI void      WINAPI TpCallbackSetEventOnCompletion(TP_CALLBACK_INSTANCE *,HANDLE);
-NTSYSAPI void      WINAPI TpCallbackUnloadDllOnCompletion(TP_CALLBACK_INSTANCE *,HMODULE);
-NTSYSAPI void      WINAPI TpCancelAsyncIoOperation(TP_IO *);
-NTSYSAPI void      WINAPI TpDisassociateCallback(TP_CALLBACK_INSTANCE *);
-NTSYSAPI BOOL      WINAPI TpIsTimerSet(TP_TIMER *);
-NTSYSAPI void      WINAPI TpPostWork(TP_WORK *);
-NTSYSAPI NTSTATUS  WINAPI TpQueryPoolStackInformation(TP_POOL *, TP_POOL_STACK_INFORMATION *stack_info);
-NTSYSAPI void      WINAPI TpReleaseCleanupGroup(TP_CLEANUP_GROUP *);
-NTSYSAPI void      WINAPI TpReleaseCleanupGroupMembers(TP_CLEANUP_GROUP *,BOOL,PVOID);
-NTSYSAPI void      WINAPI TpReleaseIoCompletion(TP_IO *);
-NTSYSAPI void      WINAPI TpReleasePool(TP_POOL *);
-NTSYSAPI void      WINAPI TpReleaseTimer(TP_TIMER *);
-NTSYSAPI void      WINAPI TpReleaseWait(TP_WAIT *);
-NTSYSAPI void      WINAPI TpReleaseWork(TP_WORK *);
-NTSYSAPI void      WINAPI TpSetPoolMaxThreads(TP_POOL *,DWORD);
-NTSYSAPI BOOL      WINAPI TpSetPoolMinThreads(TP_POOL *,DWORD);
-NTSYSAPI NTSTATUS  WINAPI TpSetPoolStackInformation(TP_POOL *, TP_POOL_STACK_INFORMATION *stack_info);
-NTSYSAPI void      WINAPI TpSetTimer(TP_TIMER *, LARGE_INTEGER *,LONG,LONG);
-NTSYSAPI void      WINAPI TpSetWait(TP_WAIT *,HANDLE,LARGE_INTEGER *);
-NTSYSAPI NTSTATUS  WINAPI TpSimpleTryPost(PTP_SIMPLE_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
-NTSYSAPI void      WINAPI TpStartAsyncIoOperation(TP_IO *);
-NTSYSAPI void      WINAPI TpWaitForIoCompletion(TP_IO *,BOOL);
-NTSYSAPI void      WINAPI TpWaitForTimer(TP_TIMER *,BOOL);
-NTSYSAPI void      WINAPI TpWaitForWait(TP_WAIT *,BOOL);
-NTSYSAPI void      WINAPI TpWaitForWork(TP_WORK *,BOOL);
-
-NTSTATUS
-NTAPI
-RtlDosPathNameToNtPathName_U_WithStatus(IN PCWSTR DosName,
-                                        OUT PUNICODE_STRING NtName,
-                                        OUT PCWSTR *PartName,
-                                        OUT PRTL_RELATIVE_NAME_U RelativeName);
+// NTSYSAPI NTSTATUS  WINAPI TpAllocCleanupGroup(TP_CLEANUP_GROUP **);
+// NTSYSAPI NTSTATUS  WINAPI TpAllocIoCompletion(TP_IO **,HANDLE,PTP_IO_CALLBACK,void *,TP_CALLBACK_ENVIRON *);
+// NTSYSAPI NTSTATUS  WINAPI TpAllocPool(TP_POOL **,PVOID);
+// NTSYSAPI NTSTATUS  WINAPI TpAllocTimer(TP_TIMER **,PTP_TIMER_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
+// NTSYSAPI NTSTATUS  WINAPI TpAllocWait(TP_WAIT **,PTP_WAIT_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
+// NTSYSAPI NTSTATUS  WINAPI TpAllocWork(TP_WORK **,PTP_WORK_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
+// NTSYSAPI void      WINAPI TpCallbackLeaveCriticalSectionOnCompletion(TP_CALLBACK_INSTANCE *,RTL_CRITICAL_SECTION *);
+// NTSYSAPI NTSTATUS  WINAPI TpCallbackMayRunLong(TP_CALLBACK_INSTANCE *);
+// NTSYSAPI void      WINAPI TpCallbackReleaseMutexOnCompletion(TP_CALLBACK_INSTANCE *,HANDLE);
+// NTSYSAPI void      WINAPI TpCallbackReleaseSemaphoreOnCompletion(TP_CALLBACK_INSTANCE *,HANDLE,DWORD);
+// NTSYSAPI void      WINAPI TpCallbackSetEventOnCompletion(TP_CALLBACK_INSTANCE *,HANDLE);
+// NTSYSAPI void      WINAPI TpCallbackUnloadDllOnCompletion(TP_CALLBACK_INSTANCE *,HMODULE);
+// NTSYSAPI void      WINAPI TpCancelAsyncIoOperation(TP_IO *);
+// NTSYSAPI void      WINAPI TpDisassociateCallback(TP_CALLBACK_INSTANCE *);
+// NTSYSAPI BOOL      WINAPI TpIsTimerSet(TP_TIMER *);
+// NTSYSAPI void      WINAPI TpPostWork(TP_WORK *);
+// NTSYSAPI NTSTATUS  WINAPI TpQueryPoolStackInformation(TP_POOL *, TP_POOL_STACK_INFORMATION *stack_info);
+// NTSYSAPI void      WINAPI TpReleaseCleanupGroup(TP_CLEANUP_GROUP *);
+// NTSYSAPI void      WINAPI TpReleaseCleanupGroupMembers(TP_CLEANUP_GROUP *,BOOL,PVOID);
+// NTSYSAPI void      WINAPI TpReleaseIoCompletion(TP_IO *);
+// NTSYSAPI void      WINAPI TpReleasePool(TP_POOL *);
+// NTSYSAPI void      WINAPI TpReleaseTimer(TP_TIMER *);
+// NTSYSAPI void      WINAPI TpReleaseWait(TP_WAIT *);
+// NTSYSAPI void      WINAPI TpReleaseWork(TP_WORK *);
+// NTSYSAPI void      WINAPI TpSetPoolMaxThreads(TP_POOL *,DWORD);
+// NTSYSAPI BOOL      WINAPI TpSetPoolMinThreads(TP_POOL *,DWORD);
+// NTSYSAPI NTSTATUS  WINAPI TpSetPoolStackInformation(TP_POOL *, TP_POOL_STACK_INFORMATION *stack_info);
+// NTSYSAPI void      WINAPI TpSetTimer(TP_TIMER *, LARGE_INTEGER *,LONG,LONG);
+// NTSYSAPI void      WINAPI TpSetWait(TP_WAIT *,HANDLE,LARGE_INTEGER *);
+// NTSYSAPI NTSTATUS  WINAPI TpSimpleTryPost(PTP_SIMPLE_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
+// NTSYSAPI void      WINAPI TpStartAsyncIoOperation(TP_IO *);
+// NTSYSAPI void      WINAPI TpWaitForIoCompletion(TP_IO *,BOOL);
+// NTSYSAPI void      WINAPI TpWaitForTimer(TP_TIMER *,BOOL);
+// NTSYSAPI void      WINAPI TpWaitForWait(TP_WAIT *,BOOL);
+// NTSYSAPI void      WINAPI TpWaitForWork(TP_WORK *,BOOL);

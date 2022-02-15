@@ -34,30 +34,23 @@ GetNumaNodeProcessorMask(
     NTSTATUS Status;
     ULONG ReturnedSize;
     SYSTEM_NUMA_INFORMATION Map;
-	HMODULE hkernel32 = GetModuleHandleA("kernel32.dll");
-	
-	pGetNumaNodeProcessorMask = (void *)GetProcAddress(hkernel32, "GetNumaNodeProcessorMask");
-	if(pGetNumaNodeProcessorMask){
-		return pGetNumaNodeProcessorMask(Node, ProcessorMask);
-	}else{
-		Status = NtQuerySystemInformation(SystemNumaProcessorMap,
+
+	Status = NtQuerySystemInformation(SystemNumaProcessorMap,
                                       &Map,
                                       sizeof(Map),
                                       &ReturnedSize);
-		if (!NT_SUCCESS(Status)) {
+	if (!NT_SUCCESS(Status)) {
+		BaseSetLastNTError(Status);
+		return FALSE;
+	}
 
-			BaseSetLastNTError(Status);
-			return FALSE;
-		}
+	if (Node > Map.HighestNodeNumber) {
+		SetLastError(ERROR_INVALID_PARAMETER);
+		return FALSE;
+	}
 
-		if (Node > Map.HighestNodeNumber) {
-			SetLastError(ERROR_INVALID_PARAMETER);
-			return FALSE;
-		}
-
-		*ProcessorMask = Map.ActiveProcessorsAffinityMask[Node];
-		return TRUE;
-	}	
+	*ProcessorMask = Map.ActiveProcessorsAffinityMask[Node];
+	return TRUE;
 }
 
 BOOL 

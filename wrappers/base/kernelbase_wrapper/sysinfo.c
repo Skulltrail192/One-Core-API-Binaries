@@ -80,25 +80,23 @@ SetSystemFileCacheSize(
 	int Flags
 )
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernel32.dll");
-	NTSTATUS status; 
+	NTSTATUS Status; 
 	BOOL result; 
-	char SystemInformation; 
+	SYSTEM_FILECACHE_INFORMATION SystemInformation; 
 	
-	pSetSystemFileCacheSize = (void *)GetProcAddress(hkernel32, "SetSystemFileCacheSize");
-	if(pSetSystemFileCacheSize){
-		return pSetSystemFileCacheSize(MinimumFileCacheSize, MaximumFileCacheSize, Flags);
-	}else{
-		status = NtSetSystemInformation(SystemObjectInformation|0x40, &SystemInformation, 0x24u);
-		if ( !NT_SUCCESS(status) )
-		{
-			BaseSetLastNTError(status);
-			result = FALSE;
-		}
-		else
-		{
-			result = TRUE;
-		}
-		return result;
-	}	
+	SystemInformation.MinimumWorkingSet = MinimumFileCacheSize;
+	SystemInformation.MaximumWorkingSet = MaximumFileCacheSize;
+	SystemInformation.Flags = Flags;
+	
+	Status = NtSetSystemInformation(SystemFileCacheInformationEx, &SystemInformation, sizeof(SYSTEM_FILECACHE_INFORMATION));
+	if ( !NT_SUCCESS(Status) )
+	{
+		BaseSetLastNTError(Status);
+		result = FALSE;
+	}
+	else
+	{
+		result = TRUE;
+	}
+	return result;	
 }

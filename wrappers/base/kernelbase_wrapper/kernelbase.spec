@@ -979,7 +979,7 @@
 @ stdcall Wow64RevertWow64FsRedirection(ptr)
 @ stdcall ReOpenFile(ptr long long long)
 @ stdcall GetNLSVersion(long long ptr) 
-@ stdcall IsNLSDefinedString(long long ptr long long) kernel32.IsNLSDefinedString
+@ stdcall -stub IsNLSDefinedString(long long ptr long long)
 @ stdcall SetFileCompletionNotificationModes(ptr long)
 
 #Missing on XP and 2003 RTM
@@ -1007,12 +1007,12 @@
 @ stdcall CreateProcessInternalA(ptr str str ptr ptr long long ptr str ptr ptr long) CreateProcessInternalExA
 @ stdcall CreateProcessInternalW(ptr wstr wstr ptr ptr long long ptr wstr ptr ptr long) CreateProcessInternalExW
 @ stdcall CreateProcessW(wstr wstr ptr ptr long long ptr wstr ptr ptr) CreateProcessExW
-@ stdcall GetModuleHandleA(str) GetModuleHandleInternalA
-@ stdcall GetModuleHandleW(wstr) GetModuleHandleInternalW
-@ stdcall GetProcAddress(long str) GetProcAddressInternal
+@ stdcall GetModuleHandleA(str) 
+@ stdcall GetModuleHandleW(wstr)
+@ stdcall GetProcAddress(long str) 
 @ stdcall IsProcessorFeaturePresent(long) IsProcessorFeaturePresentInternal
-@ stdcall LoadLibraryA(str) LoadLibraryInternalA
-@ stdcall LoadLibraryW(wstr) LoadLibraryInternalW
+@ stdcall LoadLibraryA(str) 
+@ stdcall LoadLibraryW(wstr) 
 @ stdcall LoadLibraryExA( str long long) LoadLibraryExInternalA
 @ stdcall LoadLibraryExW(wstr long long) LoadLibraryExInternalW
 @ stdcall SetFileApisToANSI() SetpFileApisToANSI

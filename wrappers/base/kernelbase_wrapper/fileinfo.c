@@ -61,26 +61,19 @@ FilenameA2W(
  */
 BOOL WINAPI SetFileCompletionNotificationModes( HANDLE handle, UCHAR flags )
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernel32.dll");
 	NTSTATUS Status;
 	
-	pSetFileCompletionNotificationModes = (void *)GetProcAddress(hkernel32, "SetFileCompletionNotificationModes");
-	
-	if(pSetFileCompletionNotificationModes){
-		return pSetFileCompletionNotificationModes(handle, flags);
-	}else{
-		FILE_IO_COMPLETION_NOTIFICATION_INFORMATION info;
-		IO_STATUS_BLOCK io;
+	FILE_IO_COMPLETION_NOTIFICATION_INFORMATION info;
+	IO_STATUS_BLOCK io;
 
-		info.Flags = flags;
-		Status = NtSetInformationFile( handle, &io, &info, sizeof(info),
-												   FileIoCompletionNotificationInformation );
+	info.Flags = flags;
+	Status = NtSetInformationFile( handle, &io, &info, sizeof(info),
+    							   FileIoCompletionNotificationInformation );
 		
-		if(NT_SUCCESS(Status)){
-			return TRUE;
-		}else{
-			SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
-			return FALSE;
-		}
-	}
+	if(NT_SUCCESS(Status)){
+		return TRUE;
+	}else{
+		SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+		return FALSE;
+	}	
 }

@@ -22,83 +22,58 @@ Revision History:
 
 WINE_DEFAULT_DEBUG_CHANNEL(kernel32);
 
-static BOOL (WINAPI *pGetProcessDEPPolicy)(HANDLE, LPDWORD, PBOOL);
-static BOOL (WINAPI *pSetProcessDEPPolicy)(DWORD);
-static DEP_SYSTEM_POLICY_TYPE (WINAPI *pGetSystemDEPPolicy)();
-
 DEP_SYSTEM_POLICY_TYPE WINAPI 
 GetSystemDEPPolicy(void)
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernel32.dll");
-	
-	pGetSystemDEPPolicy = (void *)GetProcAddress(hkernel32, "GetSystemDEPPolicy");
-	if(pGetSystemDEPPolicy){
-		return pGetSystemDEPPolicy();
-	}else{
-		return SharedUserData->NXSupportPolicy;	
-	}	
+	return SharedUserData->NXSupportPolicy;	
 }
 
 BOOL 
 WINAPI 
 GetProcessDEPPolicy(HANDLE ProcessInformation, LPDWORD lpFlags, PBOOL lpPermanent)
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernel32.dll");
-	NTSTATUS status;
-	ULONG dep_flags;
+	NTSTATUS Status;
+	ULONG depFlags;
 	
-	pGetProcessDEPPolicy = (void *)GetProcAddress(hkernel32, "GetProcessDEPPolicy");
-	if(pGetProcessDEPPolicy){
-		return pGetProcessDEPPolicy(ProcessInformation, lpFlags, lpPermanent);
-	}else{
-
-		status = NtQueryInformationProcess( GetCurrentProcess(), ProcessExecuteFlags,
-											&dep_flags, sizeof(dep_flags), NULL );
-		if (!status)
+	Status = NtQueryInformationProcess( GetCurrentProcess(), ProcessExecuteFlags,
+											&depFlags, sizeof(depFlags), NULL );
+	if (!Status)
+	{
+		if (lpFlags)
 		{
-			if (lpFlags)
-			{
-				*lpFlags = 0;
-				if (dep_flags & MEM_EXECUTE_OPTION_DISABLE)
-					*lpFlags |= PROCESS_DEP_ENABLE;
-				if (dep_flags & MEM_EXECUTE_OPTION_DISABLE_THUNK_EMULATION)
-					*lpFlags |= PROCESS_DEP_DISABLE_ATL_THUNK_EMULATION;
+			*lpFlags = 0;
+			if (depFlags & MEM_EXECUTE_OPTION_DISABLE)
+				*lpFlags |= PROCESS_DEP_ENABLE;
+			if (depFlags & MEM_EXECUTE_OPTION_DISABLE_THUNK_EMULATION)
+				*lpFlags |= PROCESS_DEP_DISABLE_ATL_THUNK_EMULATION;
 			}
 
 			if (lpPermanent)
-				*lpPermanent = (dep_flags & MEM_EXECUTE_OPTION_PERMANENT) != 0;
-
-		}
-		if (status) SetLastError( RtlNtStatusToDosError(status) );
-		return !status;		
+				*lpPermanent = (depFlags & MEM_EXECUTE_OPTION_PERMANENT) != 0;
 	}
+	if (Status) 
+		SetLastError( RtlNtStatusToDosError(Status) );
+	return !Status;		
 }
 
 BOOL 
 WINAPI 
 SetProcessDEPPolicy(DWORD dwFlags)
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernel32.dll");
-	NTSTATUS status;
+	NTSTATUS Status;
 	ULONG depFlags = 0;
-	
-	pSetProcessDEPPolicy = (void *)GetProcAddress(hkernel32, "SetProcessDEPPolicy");
-	if(pSetProcessDEPPolicy){
-		return pSetProcessDEPPolicy(dwFlags);
-	}else{
-		if (dwFlags & PROCESS_DEP_ENABLE)
-			depFlags |= MEM_EXECUTE_OPTION_DISABLE | MEM_EXECUTE_OPTION_PERMANENT;
-		if (dwFlags & PROCESS_DEP_DISABLE_ATL_THUNK_EMULATION)
-			depFlags |= MEM_EXECUTE_OPTION_DISABLE_THUNK_EMULATION;
 
-		status = NtSetInformationProcess( GetCurrentProcess(), ProcessExecuteFlags,
+	if (dwFlags & PROCESS_DEP_ENABLE)
+		depFlags |= MEM_EXECUTE_OPTION_DISABLE | MEM_EXECUTE_OPTION_PERMANENT;
+	if (dwFlags & PROCESS_DEP_DISABLE_ATL_THUNK_EMULATION)
+		depFlags |= MEM_EXECUTE_OPTION_DISABLE_THUNK_EMULATION;
+
+	Status = NtSetInformationProcess( GetCurrentProcess(), ProcessExecuteFlags,
 													  &depFlags, sizeof(depFlags) );
-
-		if(NT_SUCCESS(status)){
-			return TRUE;
-		}else{
-			BaseSetLastNTError(status);
-			return FALSE;
-		}
+	if(NT_SUCCESS(Status)){
+		return TRUE;
+	}else{
+		BaseSetLastNTError(Status);
+		return FALSE;
 	}
 }
