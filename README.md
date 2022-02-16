@@ -6,14 +6,7 @@ Here you can found source code of One-Core-API project. It's is based on reactos
 
 Now we will describe folders present on this repository:
 
-    Packages (x86 and x64, each subfolder contain folder what binaries are placed, and each folder is a installer. You can download and install binaries for example: going to x86\Base installer\update and run update.exe);
-    Decrepated: Installer no more used
-    Documents: Some documents about this project, related with know bug, how use sfxcab (to do installers) and others/
-    Legacy/Repository: Old repository, to remove on next releases;
-    Todo: To do tasks
-    Test: Some binaries and documents to do tests
-
-Packages are divided in: API-SET Installer: contain all api-set implemented on wine. API-SET dlls are introduced on Windows 7 and are required by several applications today; App Compat Installer: update to given new compatbility settings (of newer systems) to older (XP/2003) Base Installer: a base of all one-core-api. This installer is the pre-requisite to all others installers, except Kernel Update Standalone installer. And contain all wrappers used on this project (like kernelbase and ntext) D3d Installer: contain d3d runtime (Directx dlls, mainly directx 10 and directx 11, based on wine d3d, a converter from directx to opengl calls); Kernel Installer - Experimental kernel update with dependency with Base Installer; Kernel Standalone Installer - Experimental Update without dependency with Base Installer, can be installed alone; New Dlls Installer (Aditional Dlls) - provide several new dlls present on new systems, Vista or above;
+Cointains all reactos code and addition of wrappers, new dlls present in Windows Vista, drivers and API-SETs. 
 
 You can run several programs with One-Core-API, like:
 
@@ -33,6 +26,7 @@ You can run several programs with One-Core-API, like:
     Adobe Reader DC (2021)
     Windows 7 games
     Vista Applications
+    K-Lite Codec 15+
     Several other applications
 
 Installation order of packages: Case 1 (Kernel Standalone first): Kernel Standalone -> App Compat Installer: you can't install Base installer and others packages side by side with Kernel Standalone installed;
