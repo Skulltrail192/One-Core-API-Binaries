@@ -40,11 +40,6 @@
 typedef LONG NTSTATUS;
 #endif
 
-#ifndef _NTDEF_
-typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
-typedef NTSTATUS *PNTSTATUS;
-#endif
-
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #define BCRYPT_ALGORITHM_NAME       L"AlgorithmName"
 #define BCRYPT_AUTH_TAG_LENGTH      L"AuthTagLength"
@@ -71,6 +66,7 @@ typedef NTSTATUS *PNTSTATUS;
 #define BCRYPT_ECCPRIVATE_BLOB      L"ECCPRIVATEBLOB"
 #define BCRYPT_RSAPUBLIC_BLOB       L"RSAPUBLICBLOB"
 #define BCRYPT_RSAPRIVATE_BLOB      L"RSAPRIVATEBLOB"
+#define BCRYPT_RSAFULLPRIVATE_BLOB  L"RSAFULLPRIVATEBLOB"
 #define BCRYPT_DSA_PUBLIC_BLOB      L"DSAPUBLICBLOB"
 #define BCRYPT_DSA_PRIVATE_BLOB     L"DSAPRIVATEBLOB"
 #define BCRYPT_PUBLIC_KEY_BLOB      L"PUBLICBLOB"
@@ -142,6 +138,7 @@ static const WCHAR BCRYPT_ECCPUBLIC_BLOB[] = {'E','C','C','P','U','B','L','I','C
 static const WCHAR BCRYPT_ECCPRIVATE_BLOB[] = {'E','C','C','P','R','I','V','A','T','E','B','L','O','B',0};
 static const WCHAR BCRYPT_RSAPUBLIC_BLOB[] = {'R','S','A','P','U','B','L','I','C','B','L','O','B',0};
 static const WCHAR BCRYPT_RSAPRIVATE_BLOB[] = {'R','S','A','P','R','I','V','A','T','E','B','L','O','B',0};
+static const WCHAR BCRYPT_RSAFULLPRIVATE_BLOB[] = {'R','S','A','F','U','L','L','P','R','I','V','A','T','E','B','L','O','B',0};
 static const WCHAR BCRYPT_DSA_PUBLIC_BLOB[] = {'D','S','A','P','U','B','L','I','C','B','L','O','B',0};
 static const WCHAR BCRYPT_DSA_PRIVATE_BLOB[] = {'D','S','A','P','R','I','V','A','T','E','B','L','O','B',0};
 static const WCHAR BCRYPT_PUBLIC_KEY_BLOB[] = {'P','U','B','L','I','C','B','L','O','B',0};
@@ -256,6 +253,11 @@ typedef struct _BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO
     ULONGLONG cbData;
     ULONG dwFlags;
 } BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO, *PBCRYPT_AUTHENTICATED_CIPHER_MODE_INFO;
+
+typedef struct _BCRYPT_KEY_BLOB
+{
+    ULONG Magic;
+} BCRYPT_KEY_BLOB;
 
 typedef struct _BCRYPT_ECCKEY_BLOB
 {
