@@ -51,19 +51,19 @@ static const struct {
         {&IID_IShellLinkW,              "IID_IShellLinkW"},
 	{NULL,NULL}};
 
-BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
-{
-    TRACE("fdwReason %u\n", fdwReason);
+// BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
+// {
+    // TRACE("fdwReason %u\n", fdwReason);
 
-    switch(fdwReason)
-    {
-        case DLL_PROCESS_ATTACH:
-            DisableThreadLibraryCalls(hInstDLL);
-            break;
-    }
+    // switch(fdwReason)
+    // {
+        // case DLL_PROCESS_ATTACH:
+            // DisableThreadLibraryCalls(hInstDLL);
+            // break;
+    // }
 
-    return TRUE;
-}
+    // return TRUE;
+// }
 
 /************************************************************************/
 

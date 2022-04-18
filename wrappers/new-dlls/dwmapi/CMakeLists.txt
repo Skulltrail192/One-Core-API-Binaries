@@ -10,7 +10,7 @@ list(APPEND SOURCE
     ${CMAKE_CURRENT_BINARY_DIR}/dwmapi.def)
 
 add_library(dwmapi SHARED ${SOURCE} version.rc)
-set_module_type(dwmapi win32dll)
+set_module_type(dwmapi win32dll ENTRYPOINT 0)
 target_link_libraries(dwmapi wine)
-add_importlibs(dwmapi msvcrt kernel32 ntdll)
+add_importlibs(dwmapi kernel32 ntdll)
 add_cd_file(TARGET dwmapi DESTINATION reactos/system32 FOR all)

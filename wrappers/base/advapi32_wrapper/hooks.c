@@ -42,7 +42,7 @@ GetTokenInformationInternal (
 	
 	if(TokenInformationClass & TokenIntegrityLevel | TokenElevationType | TokenLinkedToken | TokenElevation){
 		
-		DbgPrint("GetTokenInformationInternal:: Vista Token Cases\n");
+		//DbgPrint("GetTokenInformationInternal:: Vista Token Cases\n");
 		
 		Status = NtQueryInformationToken(TokenHandle,
 										 TokenInformationClass,
@@ -51,7 +51,7 @@ GetTokenInformationInternal (
 										 (PULONG)ReturnLength);
 		if (!NT_SUCCESS(Status))
 		{
-			DbgPrint("GetTokenInformationInternal:: NtQueryInformationToken returned Status: 0x%08lx\n", Status);
+			//DbgPrint("GetTokenInformationInternal:: NtQueryInformationToken returned Status: 0x%08lx\n", Status);
 			SetLastError(RtlNtStatusToDosError(Status));
 			return FALSE;
 		}
@@ -84,7 +84,7 @@ SetTokenInformationInternal (
 									   TokenInformationLength);
 		if (!NT_SUCCESS(Status))
 		{
-			DbgPrint("SetTokenInformationInternal:: NtSetInformationToken returned Status: 0x%08lx\n", Status);			
+			//DbgPrint("SetTokenInformationInternal:: NtSetInformationToken returned Status: 0x%08lx\n", Status);			
 			SetLastError(RtlNtStatusToDosError(Status));
 			return FALSE;
 		}
@@ -204,7 +204,7 @@ BOOL WINAPI GetKernelObjectSecurityInternal(
                                                nLength, lpnLengthNeeded );
 		
 		if(!NT_SUCCESS(Status)){
-			DbgPrint("GetKernelObjectSecurityInternal::NtQuerySecurityObject returned Status: 0x%08lx\n", Status);	
+			//DbgPrint("GetKernelObjectSecurityInternal::NtQuerySecurityObject returned Status: 0x%08lx\n", Status);	
 			RequestedInformation = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION;
 			goto tryAgain;
 		}
@@ -231,7 +231,7 @@ BOOL WINAPI SetKernelObjectSecurityInternal(
 		Status = NtSetSecurityObject(Handle, SecurityInformation, SecurityDescriptor);
 		
 		if(!NT_SUCCESS(Status)){
-			DbgPrint("SetKernelObjectSecurityInternal::NtSetSecurityObject returned Status: 0x%08lx\n", Status);
+			//DbgPrint("SetKernelObjectSecurityInternal::NtSetSecurityObject returned Status: 0x%08lx\n", Status);
 			SecurityInformation = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION;
 			goto tryAgain;			
 		}
@@ -276,7 +276,7 @@ SetNamedSecurityInfoWInternal(
 									 pSacl);
 		
 		if(ret != ERROR_SUCCESS){
-			DbgPrint("SetNamedSecurityInfoWInternal::SetNamedSecurityInfoW returned ret: 0x%08lx\n", ret);	
+			//DbgPrint("SetNamedSecurityInfoWInternal::SetNamedSecurityInfoW returned ret: 0x%08lx\n", ret);	
 			SecurityInfo = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION;
 			goto tryAgain;			
 		}
@@ -324,7 +324,7 @@ SetSecurityInfoInternal(
 							   
 		if(resp != ERROR_SUCCESS)
 		{		
-			DbgPrint("SetSecurityInfoInternal::SetSecurityInfo return: %d\n", resp);	
+			//DbgPrint("SetSecurityInfoInternal::SetSecurityInfo return: %d\n", resp);	
 			SecurityInfo = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION;
 			goto tryAgain;			
 		}			
@@ -368,7 +368,7 @@ GetSecurityInfoInternal(
 		
 		if(resp != ERROR_SUCCESS)
 		{		
-			DbgPrint("GetSecurityInfoInternal::GetSecurityInfo return: %d\n", resp);
+			//DbgPrint("GetSecurityInfoInternal::GetSecurityInfo return: %d\n", resp);
 			SecurityInfo = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION;
 			goto tryAgain;				
 		}
@@ -420,7 +420,7 @@ GetNamedSecurityInfoWInternal(
 									 
 		if(resp != ERROR_SUCCESS)
 		{		
-			DbgPrint("GetNamedSecurityInfoWInternal::GetNamedSecurityInfoW return: %d\n", resp);	
+			//DbgPrint("GetNamedSecurityInfoWInternal::GetNamedSecurityInfoW return: %d\n", resp);	
 			SecurityInfo = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION;
 			goto tryAgain;			
 		}	

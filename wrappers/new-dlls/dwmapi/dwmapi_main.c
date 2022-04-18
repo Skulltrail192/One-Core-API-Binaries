@@ -34,21 +34,6 @@ WINE_DEFAULT_DEBUG_CHANNEL(dwmapi);
 
 #define DWM_E_COMPOSITIONDISABLED  _HRESULT_TYPEDEF_(0x80263001)
 
-
-/* At process attach */
-BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
-{
-    switch(fdwReason)
-    {
-    case DLL_WINE_PREATTACH:
-        return FALSE;  /* prefer native version */
-    case DLL_PROCESS_ATTACH:
-        DisableThreadLibraryCalls( hInstDLL );
-        break;
-    }
-    return TRUE;
-}
-
 /**********************************************************************
  *           DwmIsCompositionEnabled         (DWMAPI.@)
  */
@@ -288,3 +273,12 @@ HRESULT WINAPI DwmSetIconicThumbnail(HWND hwnd, HBITMAP hbmp, DWORD flags)
     FIXME("(%p %p %x) stub\n", hwnd, hbmp, flags);
     return S_OK;
 };
+
+/**********************************************************************
+ *           DwmpGetColorizationParameters         (DWMAPI.@)
+ */
+HRESULT WINAPI DwmpGetColorizationParameters(void *params)
+{
+    FIXME("(%p) stub\n", params);
+    return E_NOTIMPL;
+}

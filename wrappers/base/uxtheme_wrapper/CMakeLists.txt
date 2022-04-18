@@ -10,7 +10,7 @@ list(APPEND SOURCE
     ${CMAKE_CURRENT_BINARY_DIR}/uxtheme_wrapper.def)
 
 add_library(uxtheme_wrapper SHARED ${SOURCE})
-set_module_type(uxtheme_wrapper win32dll)
+set_module_type(uxtheme_wrapper win32dll ENTRYPOINT 0)
 target_link_libraries(uxtheme_wrapper wine)
-add_importlibs(uxtheme_wrapper user32 advapi32 gdi32 msvcrt kernel32 ntdll uxthemebase)
+add_importlibs(uxtheme_wrapper user32 advapi32 gdi32 kernel32 ntdll uxthemebase)
 add_cd_file(TARGET uxtheme_wrapper DESTINATION reactos/system32 FOR all)
