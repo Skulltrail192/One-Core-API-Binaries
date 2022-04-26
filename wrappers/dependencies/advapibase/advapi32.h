@@ -24,6 +24,8 @@
 #include <aclapi.h>
 #include <winsafer.h>
 
+typedef LONG NTSTATUS, *PNTSTATUS;
+
 #define NTOS_MODE_USER
 #include <ndk/iofuncs.h>
 #include <ndk/obfuncs.h>

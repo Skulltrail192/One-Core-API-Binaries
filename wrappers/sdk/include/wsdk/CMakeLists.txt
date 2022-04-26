@@ -46,7 +46,6 @@ list(APPEND SOURCE
 	mfmediaengine.idl 
 	mfplay.idl 
 	mfreadwrite.idl 
-	netiodefwine.h
 	opcbase.idl 	
 	opcobjectmodel.idl 	
 	opcparturi.idl 	
