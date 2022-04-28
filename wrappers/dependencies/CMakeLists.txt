@@ -5,6 +5,7 @@ add_subdirectory(browsebase)
 add_subdirectory(cabiext)
 add_subdirectory(cryptbasex)
 add_subdirectory(d3d9base)
+add_subdirectory(d3dkmt)
 add_subdirectory(fileextd)
 add_subdirectory(gdibase)
 #on future reactos releases, maybe it need be disabled

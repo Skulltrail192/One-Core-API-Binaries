@@ -611,20 +611,71 @@
 #Vista functions
 @ stdcall D3DKMTCheckMonitorPowerState(ptr)
 @ stdcall D3DKMTCheckVidPnExclusiveOwnership(ptr)
-@ stdcall D3DKMTCloseAdapter(ptr)
+#@ stdcall D3DKMTCloseAdapter(ptr)
 @ stdcall D3DKMTCreateDCFromMemory(ptr)
-@ stdcall D3DKMTCreateDevice(ptr)
+#@ stdcall D3DKMTCreateDevice(ptr)
 @ stdcall D3DKMTDestroyDCFromMemory(ptr)
-@ stdcall D3DKMTDestroyDevice(ptr)
-@ stdcall D3DKMTEscape(ptr)
-@ stdcall D3DKMTOpenAdapterFromGdiDisplayName(ptr)
+#@ stdcall D3DKMTDestroyDevice(ptr)
+#@ stdcall D3DKMTEscape(ptr)
+#@ stdcall D3DKMTOpenAdapterFromGdiDisplayName(ptr)
 @ stdcall D3DKMTOpenAdapterFromHdc(ptr)
 @ stdcall D3DKMTQueryStatistics(ptr)
 @ stdcall D3DKMTSetQueuedLimit(ptr)
-@ stdcall D3DKMTSetVidPnSourceOwner(ptr)
+#@ stdcall D3DKMTSetVidPnSourceOwner(ptr)
 @ stdcall GetFontFileData(long long int64 ptr long)
 @ stub LoadImageColorMatcherA
 @ stub LoadImageColorMatcherW 
+
+#Fowarded to d3dkmt ()
+@ stdcall D3DKMTAcquireKeyedMutex(ptr) d3dkmt.D3DKMTAcquireKeyedMutex
+@ stdcall D3DKMTCloseAdapter(ptr) d3dkmt.D3DKMTCloseAdapter
+@ stdcall D3DKMTConfigureSharedResource(ptr) d3dkmt.D3DKMTConfigureSharedResource
+@ stdcall D3DKMTCreateAllocation(ptr) d3dkmt.D3DKMTCreateAllocation
+@ stdcall D3DKMTCreateAllocation2(ptr) d3dkmt.D3DKMTCreateAllocation2
+@ stdcall D3DKMTCreateContext(ptr) d3dkmt.D3DKMTCreateContext
+@ stdcall D3DKMTCreateDevice(ptr) d3dkmt.D3DKMTCreateDevice
+@ stdcall D3DKMTCreateSynchronizationObject(ptr) d3dkmt.D3DKMTCreateSynchronizationObject
+@ stdcall D3DKMTCreateSynchronizationObject2(ptr) d3dkmt.D3DKMTCreateSynchronizationObject2
+@ stdcall D3DKMTDestroyAllocation(ptr) d3dkmt.D3DKMTDestroyAllocation
+@ stdcall D3DKMTDestroyContext(ptr) d3dkmt.D3DKMTDestroyContext
+@ stdcall D3DKMTDestroyDevice(ptr) d3dkmt.D3DKMTDestroyDevice
+@ stdcall D3DKMTDestroyKeyedMutex(ptr) d3dkmt.D3DKMTDestroyKeyedMutex
+@ stdcall D3DKMTDestroySynchronizationObject(ptr) d3dkmt.D3DKMTDestroySynchronizationObject
+@ stdcall D3DKMTEscape(ptr) d3dkmt.D3DKMTEscape
+@ stdcall D3DKMTGetContextSchedulingPriority(ptr) d3dkmt.D3DKMTGetContextSchedulingPriority
+@ stdcall D3DKMTGetDeviceSchedulingPriority(ptr) d3dkmt.D3DKMTGetDeviceSchedulingPriority
+@ stdcall D3DKMTGetDeviceState(ptr) d3dkmt.D3DKMTGetDeviceState
+@ stdcall D3DKMTGetDisplayModeList(ptr) d3dkmt.D3DKMTGetDisplayModeList
+@ stdcall D3DKMTGetMultisampleMethodList(ptr) d3dkmt.D3DKMTGetMultisampleMethodList
+@ stdcall D3DKMTGetRuntimeData(ptr) d3dkmt.D3DKMTGetRuntimeData
+@ stdcall D3DKMTGetSharedPrimaryHandle(ptr) d3dkmt.D3DKMTGetSharedPrimaryHandle
+@ stdcall D3DKMTGetThunkVersion(ptr) d3dkmt.D3DKMTGetThunkVersion
+@ stdcall D3DKMTLock(ptr) d3dkmt.D3DKMTLock
+@ stdcall D3DKMTOpenAdapterFromDeviceName(ptr) d3dkmt.D3DKMTOpenAdapterFromDeviceName
+@ stdcall D3DKMTOpenAdapterFromGdiDisplayName(ptr) d3dkmt.D3DKMTOpenAdapterFromGdiDisplayName
+@ stdcall D3DKMTOpenKeyedMutex(ptr) d3dkmt.D3DKMTOpenKeyedMutex
+@ stdcall D3DKMTOpenResource(ptr) d3dkmt.D3DKMTOpenResource
+@ stdcall D3DKMTOpenResource2(ptr) d3dkmt.D3DKMTOpenResource2
+@ stdcall D3DKMTOpenSynchronizationObject(ptr) d3dkmt.D3DKMTOpenSynchronizationObject
+@ stdcall D3DKMTPresent(ptr) d3dkmt.D3DKMTPresent
+@ stdcall D3DKMTQueryAdapterInfo(ptr) d3dkmt.D3DKMTQueryAdapterInfo
+@ stdcall D3DKMTQueryAllocationResidency(ptr) d3dkmt.D3DKMTQueryAllocationResidency
+@ stdcall D3DKMTQueryResourceInfo(ptr) d3dkmt.D3DKMTQueryResourceInfo
+@ stdcall D3DKMTReleaseKeyedMutex(ptr) d3dkmt.D3DKMTReleaseKeyedMutex
+@ stdcall D3DKMTRender(ptr) d3dkmt.D3DKMTRender
+@ stdcall D3DKMTSetAllocationPriority(ptr) d3dkmt.D3DKMTSetAllocationPriority
+@ stdcall D3DKMTSetContextSchedulingPriority(ptr) d3dkmt.D3DKMTSetContextSchedulingPriority
+@ stdcall D3DKMTSetDeviceSchedulingPriority(ptr) d3dkmt.D3DKMTSetDeviceSchedulingPriority
+@ stdcall D3DKMTSetDisplayMode(ptr) d3dkmt.D3DKMTSetDisplayMode
+@ stdcall D3DKMTSetDisplayPrivateDriverFormat(ptr) d3dkmt.D3DKMTSetDisplayPrivateDriverFormat
+@ stdcall D3DKMTSetGammaRamp(ptr) d3dkmt.D3DKMTSetGammaRamp
+@ stdcall D3DKMTSetVidPnSourceOwner(ptr) d3dkmt.D3DKMTSetVidPnSourceOwner
+@ stdcall D3DKMTSignalSynchronizationObject(ptr) d3dkmt.D3DKMTSignalSynchronizationObject
+@ stdcall D3DKMTSignalSynchronizationObject2(ptr) d3dkmt.D3DKMTSignalSynchronizationObject2
+@ stdcall D3DKMTUnlock(ptr) d3dkmt.D3DKMTUnlock
+@ stdcall D3DKMTWaitForSynchronizationObject(ptr) d3dkmt.D3DKMTWaitForSynchronizationObject
+@ stdcall D3DKMTWaitForSynchronizationObject2(ptr) d3dkmt.D3DKMTWaitForSynchronizationObject2
+@ stdcall D3DKMTWaitForVerticalBlankEvent(ptr) d3dkmt.D3DKMTWaitForVerticalBlankEvent
 
 #Win7 functions
 @ stdcall GetFontFileInfo(long long ptr long long)
