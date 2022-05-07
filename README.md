@@ -1,7 +1,7 @@
 Welcome to One-Core-API binaries!
 
-Here you can found binaries of One-Core-API project. It's compatible with Windows Server 2003 SP2, Windows XP SP3 and Windows XP
-x64 SP2. You can do amazing things installing binaries.
+Here you can find installable binaries of One-Core-API. It's compatible with Windows Server 2003 SP2, Windows XP SP3 and Windows XP
+x64 SP2. You can do amazing things by installing these binaries.
 
 Now we will describe folders present on this repository:
 - Packages (x86 and x64, each subfolder contain folder what binaries are placed, and each folder is a installer. 
@@ -41,11 +41,11 @@ You can run several programs with One-Core-API, like:
 - Adobe Reader DC (2021)
 - Windows 7 games
 - Vista Applications
-- Several other applications
+and several other applications.
 
 **Installation order of packages:**
 **Case 1 (Kernel Standalone first):**
-Kernel Standalone -> App Compat Installer: you can't install Base installer and others packages side by side with Kernel Standalone installed;
+Kernel Standalone -> App Compat Installer: you can't install Base installer and other packages side by side with Kernel Standalone installed;
 
 **App Compat (only one)**
 
