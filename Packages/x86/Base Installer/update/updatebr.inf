@@ -9,8 +9,6 @@ Signature="$Windows NT$"
 3=WinXPSP3
 
 [DefaultBranchesServicePacks.WinNt52]
-0=Srv2k3RTM
-1=Srv2k3SP1
 2=Srv2k3SP2
 
 [SourceInfsBranches]
@@ -19,8 +17,6 @@ SP1RC1="update\update_srv2k3_SP1_RC1.inf"
 [SourceInfsBranches]
 WinXPSP2=update\update_winXP_SP2.inf
 WinXPSP3=update\update_winXP_SP3.inf
-Srv2k3RTM=update\update_srv2k3_RTM.inf
-Srv2k3SP1=update\update_srv2k3_SP1.inf
 Srv2k3SP2=update\update_srv2k3_SP2.inf
 
 [SetupFiles.SP1RC1]

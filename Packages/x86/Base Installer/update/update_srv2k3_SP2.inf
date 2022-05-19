@@ -4,7 +4,7 @@
 	MaxNtMajorVersionToUpdate = 5
 	MaxNtMinorVersionToUpdate = 2
 	MaxNtServicePackVersion   = 512
-	MinNtServicePackVersion   = 256
+	MinNtServicePackVersion   = 0
 	NtBuildToUpdate           = 3790
 	NtMajorVersionToUpdate    = 5
 	NtMinorVersionToUpdate    = 2
@@ -544,6 +544,7 @@
     userbase.dll,2k3SP2\srvuserbase.dll
     uxthemebase.dll,2k3SP2\srvuxthemebase.dll
     ws2_base.dll,2k3SP2\srvws2_base.dll
+	winsta.dll, 2k3SP2\srvwinsta.dll
 	winsrv.dll, 2k3SP2\srvwinsrv.dll
 	win32k.sys, 2k3SP2\srvwin32k.sys	
     advapi32.dll
@@ -606,6 +607,8 @@
     2k3SP2\srvntoskrnl.exe=1
     2k3SP2\srvntkrnlpa.exe=1
 	2k3SP2\srvwin32k.sys=1	
+	2k3SP2\srvwinsrv.dll=1	
+	2k3SP2\srvwinsta.dll=1	
     advapi32.dll = 1
     bcrypt.dll = 1
     comctlext.dll =1
