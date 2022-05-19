@@ -29,6 +29,8 @@ BOOL IsMultiElementFormat(D3DFORMAT Format);
 
 BOOL IsSupportedFormatOp(LPD3D9_DRIVERCAPS pDriverCaps, D3DFORMAT DisplayFormat, DWORD FormatOp);
 
+D3DFORMAT MapDepthStencilFormat(LPD3D9_DRIVERCAPS pDriverCaps, UINT iAdapter,D3DDEVTYPE Type,D3DFORMAT Format);
+
 HRESULT CheckDeviceType(LPD3D9_DRIVERCAPS pDriverCaps, D3DFORMAT DisplayFormat, D3DFORMAT BackBufferFormat, BOOL Windowed);
 
 HRESULT CheckDeviceFormat(LPD3D9_DRIVERCAPS pDriverCaps, D3DFORMAT AdapterFormat, DWORD Usage, D3DRESOURCETYPE RType, D3DFORMAT CheckFormat);

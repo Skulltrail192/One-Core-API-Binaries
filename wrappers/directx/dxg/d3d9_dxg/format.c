@@ -618,3 +618,69 @@ HRESULT CheckDepthStencilMatch(LPD3D9_DRIVERCAPS pDriverCaps, D3DFORMAT AdapterF
 
     return D3D_OK;
 }
+
+D3DFORMAT 
+MapDepthStencilFormat(
+	LPD3D9_DRIVERCAPS pDriverCaps,
+	UINT iAdapter,
+    D3DDEVTYPE   Type, 
+    D3DFORMAT    Format)
+{
+	// DDSURFACEDESC *pTextureList;
+    // UINT           NumTextures;
+	DWORD dwRequiredOperations = 0;
+	
+	if(Format != D3DFMT_D16 && 
+	   Format != D3DFMT_D15S1 && 
+	   Format != D3DFMT_D24X4S4 && 
+	   Format != D3DFMT_D24X8 &&
+	   Format != D3DFMT_D24S8)
+	{
+		return Format;
+	}        
+
+        switch (Format)
+        {
+        case D3DFMT_D24X4S4:
+            if (IsSupportedFormatOp(pDriverCaps, D3DFMT_D24X4S4, dwRequiredOperations))
+            {
+                return D3DFMT_D24X4S4;
+            }
+            break;
+
+        case D3DFMT_D24X8:
+            if (IsSupportedFormatOp(pDriverCaps, D3DFMT_D24X8, dwRequiredOperations))
+            {
+                return D3DFMT_D24X8;
+            }
+            break;
+
+        case D3DFMT_D24S8:
+            if (IsSupportedFormatOp(pDriverCaps, D3DFMT_D24S8, dwRequiredOperations))
+            {
+                return D3DFMT_D24S8;
+            }
+            break;
+
+        case D3DFMT_D16:
+            if (IsSupportedFormatOp(pDriverCaps, D3DFMT_D16, dwRequiredOperations))
+            {
+                return D3DFMT_D16;
+            }
+            return D3DFMT_D16_LOCKABLE;
+
+        case D3DFMT_D15S1:
+            if (IsSupportedFormatOp(pDriverCaps, D3DFMT_D15S1, dwRequiredOperations))
+            {
+                return D3DFMT_D15S1;
+            }
+            break;
+
+        default:
+            // Unexpected format?
+            ASSERT(FALSE);
+            break;
+        }
+
+    return Format;
+}

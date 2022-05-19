@@ -15,7 +15,7 @@ WINE_DEFAULT_DEBUG_CHANNEL(d3d9_puredevice);
 #define UNLOCK_D3DDEVICE9()   if (This->bLockDevice) LeaveCriticalSection(&This->CriticalSection);
 
 /* Convert a IDirect3D9 pointer safely to the internal implementation struct */
-static LPD3D9PUREDEVICE IDirect3DDevice9ToImpl(LPDIRECT3DDEVICE9 iface)
+static LPD3D9PUREDEVICE IDirect3DBaseDevice9ToImpl(LPDIRECT3DDEVICE9 iface)
 {
     if (NULL == iface)
         return NULL;
@@ -26,7 +26,7 @@ static LPD3D9PUREDEVICE IDirect3DDevice9ToImpl(LPDIRECT3DDEVICE9 iface)
 /* IDirect3DDevice9 public interface */
 HRESULT WINAPI IDirect3DDevice9Pure_SetRenderTarget(LPDIRECT3DDEVICE9 iface, DWORD RenderTargetIndex, IDirect3DSurface9* pRenderTarget)
 {
-    LPDIRECT3DDEVICE9_INT This = IDirect3DDevice9ToImpl(iface);
+    //LPDIRECT3DDEVICE9_INT This = IDirect3DDevice9ToImpl(iface);
 
     return D3D_OK;
 }
@@ -54,7 +54,7 @@ HRESULT WINAPI IDirect3DDevice9Pure_GetDepthStencilSurface(LPDIRECT3DDEVICE9 ifa
 
 HRESULT WINAPI IDirect3DDevice9Pure_BeginScene(LPDIRECT3DDEVICE9 iface)
 {
-    LPDIRECT3DDEVICE9_INT This = IDirect3DDevice9ToImpl(iface);
+    //LPDIRECT3DDEVICE9_INT This = IDirect3DDevice9ToImpl(iface);
 
     return D3D_OK;
 }

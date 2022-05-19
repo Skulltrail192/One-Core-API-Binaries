@@ -22,6 +22,11 @@ WINE_DEFAULT_DEBUG_CHANNEL(d3d9_impl);
 #define LOCK_D3D9()     EnterCriticalSection(&This->d3d9_cs);
 #define UNLOCK_D3D9()   LeaveCriticalSection(&This->d3d9_cs);
 
+// Maps D3DMULTISAMPLE_TYPE into the bit to use for the flags.
+// Maps each of the multisampling values (2 to 16) to the bits[1] to bits[15]
+// of wBltMSTypes and wFlipMSTypes
+#define DDI_MULTISAMPLE_TYPE(x) (1 << ((x)-1))
+
 /* Convert a IDirect3D9 pointer safely to the internal implementation struct */
 static LPDIRECT3D9_INT IDirect3D9ToImpl(LPDIRECT3D9 iface)
 {
@@ -640,13 +645,120 @@ static HRESULT WINAPI IDirect3D9Impl_CheckDeviceFormat(LPDIRECT3D9 iface, UINT A
     return hResult;
 }
 
-static HRESULT WINAPI IDirect3D9Impl_CheckDeviceMultiSampleType(LPDIRECT3D9 iface, UINT Adapter, D3DDEVTYPE DeviceType,
-                                                                D3DFORMAT SurfaceFormat, BOOL Windowed,
-                                                                D3DMULTISAMPLE_TYPE MultiSampleType, DWORD* pQualityLevels)
+static 
+HRESULT 
+WINAPI 
+IDirect3D9Impl_CheckDeviceMultiSampleType(
+	LPDIRECT3D9 iface, 
+	UINT Adapter, 
+	D3DDEVTYPE DeviceType,
+    D3DFORMAT SurfaceFormat,
+	BOOL Windowed,
+    D3DMULTISAMPLE_TYPE MultiSampleType, 
+	DWORD* pQualityLevels)
 {
-    UNIMPLEMENTED;
+    // HRESULT hr;
+	// D3DCAPS9* pAdapterCaps = NULL;
+	// DDSURFACEDESC * pSupportedFormatOps;
+	// LPD3D9_DRIVERCAPS pDriverCaps;
+	// UINT i;
 
-    return D3D_OK;
+    // LPDIRECT3D9_INT This = IDirect3D9ToImpl(iface);
+    // LOCK_D3D9();
+
+    // if (Adapter >= This->NumDisplayAdapters)
+    // {
+        // DbgPrint("Invalid Adapter number specified.\n");
+        // UNLOCK_D3D9();
+        // return D3DERR_INVALIDCALL;
+    // }
+
+    // // Check Device Type
+    // if (DeviceType != D3DDEVTYPE_REF &&
+        // DeviceType != D3DDEVTYPE_HAL &&
+        // DeviceType != D3DDEVTYPE_SW)
+    // {
+        // DbgPrint("Invalid device specified to CheckDeviceMultiSampleType.\n");
+        // return D3DERR_INVALIDCALL;
+    // }
+
+    // if (SurfaceFormat == D3DFMT_UNKNOWN)
+    // {
+        // DbgPrint("D3DFMT_UNKNOWN is not a valid format. CheckDeviceMultiSampleType fails.\n");
+        // return D3DERR_INVALIDCALL;
+    // }    
+
+    // hr = GetAdapterCaps(&This->DisplayAdapters[Adapter],
+                        // DeviceType,
+                        // pAdapterCaps);
+    // if (FAILED(hr))
+    // {
+		// DbgPrint("CheckDeviceMultiSampleType::GetAdapterCaps failed\n");
+        // return hr;
+    // }
+
+    // if (MultiSampleType == D3DMULTISAMPLE_NONE)
+    // {
+        // return D3D_OK;
+    // }
+    // else if (MultiSampleType == 1)
+    // {
+        // DbgPrint("Invalid sample type specified. Only enumerated values are supported. CheckDeviceMultiSampleType fails.\n");
+        // return D3DERR_INVALIDCALL;
+    // }
+    // else if (MultiSampleType > D3DMULTISAMPLE_16_SAMPLES)
+    // {
+        // DbgPrint("Invalid sample type specified. CheckDeviceMultiSampleType fails.\n");
+        // return D3DERR_INVALIDCALL;
+    // }
+	
+	// DbgPrint("CheckDeviceMultiSampleType get windowed\n");
+
+    // // Treat Ref/SW Fullscreen the same as Windowed.
+    // if (DeviceType == D3DDEVTYPE_REF ||
+        // DeviceType == D3DDEVTYPE_SW)
+    // {
+        // Windowed = TRUE;
+    // }
+	
+	// DbgPrint("CheckDeviceMultiSampleType getting SurfaceFormat\n");
+
+    // // If it's a depth/stencil, make sure it's a format that the driver understands
+    // SurfaceFormat = MapDepthStencilFormat(&This->DisplayAdapters[Adapter].DriverCaps,
+										  // Adapter,
+										  // DeviceType, 
+										  // SurfaceFormat);
+										  
+    // DbgPrint("CheckDeviceMultiSampleType getting SurfaceFormat sucessful\n");											
+    
+	// pDriverCaps = &This->DisplayAdapters[Adapter].DriverCaps;
+	// pSupportedFormatOps = pDriverCaps->pSupportedFormatOps;
+	
+	// DbgPrint("CheckDeviceMultiSampleType looping pSupportedFormatOps\n");
+	
+    // // let's run through the driver's list and see if it can do it.
+    // for (i = 0; i < pDriverCaps->NumSupportedFormatOps; i++)
+    // {
+        // //We need a match for format, plus all either blt or flip caps
+        // if (SurfaceFormat == (D3DFORMAT) pSupportedFormatOps[i].ddpfPixelFormat.dwFourCC)
+        // {
+            // // Found the format in question... do we have the MS caps?
+            // WORD wMSOps = Windowed ?
+                // pSupportedFormatOps[i].ddpfPixelFormat.MultiSampleCaps.wBltMSTypes :
+                // pSupportedFormatOps[i].ddpfPixelFormat.MultiSampleCaps.wFlipMSTypes;
+
+            // // To determine the bit to use, we map the set of sample-types [2-16] to
+            // // a particular (bit 1 to bit 15) of the WORD.
+            // ASSERT(MultiSampleType > 1);
+            // ASSERT(MultiSampleType <= 16);
+            // if (wMSOps & DDI_MULTISAMPLE_TYPE(MultiSampleType))
+            // {
+                // return D3D_OK;
+            // }
+        // }
+    // }
+
+    return D3DERR_NOTAVAILABLE;
 }
 
 

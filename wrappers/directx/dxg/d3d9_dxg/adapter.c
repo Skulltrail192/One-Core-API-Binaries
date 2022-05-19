@@ -59,8 +59,9 @@ static BOOL GetDriverName(LPDISPLAY_DEVICEA pDisplayDevice, D3DADAPTER_IDENTIFIE
 
         if (ERROR_SUCCESS == RegQueryValueExA(hKey, "InstalledDisplayDrivers", 0, &Type, (LPBYTE)pIdentifier->Driver, &DriverNameLength))
         {
-            pIdentifier->Driver[DriverNameLength] = '\0';
-            SafeAppendString(pIdentifier->Driver, MAX_DEVICE_IDENTIFIER_STRING, ".dll");
+			lstrcat(pIdentifier->Driver, TEXT(".dll"));
+            //pIdentifier->Driver[DriverNameLength] = '\0';
+            //lstrcat(pIdentifier->Driver, MAX_DEVICE_IDENTIFIER_STRING, ".dll");
             bResult = TRUE;
         }
 
@@ -91,15 +92,15 @@ static void GetDriverVersion(LPDISPLAY_DEVICEA pDisplayDevice, D3DADAPTER_IDENTI
         }
     }
 
-    DriverFileSize = GetFileVersionInfoSizeA(pIdentifier->Driver, NULL);
+    DriverFileSize = GetFileVersionInfoSize(pIdentifier->Driver, 0);
     if (DriverFileSize > 0)
     {
         VS_FIXEDFILEINFO* FixedFileInfo = NULL;
         LPVOID pBlock = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, DriverFileSize);
 
-        if (TRUE == GetFileVersionInfoA(pIdentifier->Driver, 0, DriverFileSize, pBlock))
+        if (TRUE == GetFileVersionInfo(pIdentifier->Driver, 0, DriverFileSize, pBlock))
         {
-            if (TRUE == VerQueryValueA(pBlock, "\\", (LPVOID*)&FixedFileInfo, &DriverFileSize))
+            if (TRUE == VerQueryValue(pBlock, "\\", (LPVOID*)&FixedFileInfo, &DriverFileSize))
             {
                 pIdentifier->DriverVersion.HighPart = FixedFileInfo->dwFileVersionMS;
                 pIdentifier->DriverVersion.LowPart = FixedFileInfo->dwFileVersionLS;

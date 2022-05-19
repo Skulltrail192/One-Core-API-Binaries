@@ -19,11 +19,13 @@
 
 #include <main.h>
 
+static const INPUT_MESSAGE_SOURCE msg_source_unavailable = { IMDT_UNAVAILABLE, IMO_UNAVAILABLE };
+
 /***********************************************************************
  *		GetCurrentInputMessageSource (USER32.@)
  */
 BOOL WINAPI GetCurrentInputMessageSource( INPUT_MESSAGE_SOURCE *source )
 {
-    FIXME( "stub\n" );
-    return FALSE;
+    *source = msg_source_unavailable; //Hack for now
+    return TRUE;
 }

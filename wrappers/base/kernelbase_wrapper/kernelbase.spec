@@ -1146,8 +1146,8 @@
 @ stdcall GetErrorMode()
 @ stdcall GetFileAttributesTransactedA(str long ptr ptr)
 @ stdcall GetFileAttributesTransactedW(wstr long ptr ptr)
-@ stdcall GetFileInformationByHandleEx(long long ptr long) ;fileextd.GetFileInformationByHandleEx
-@ stdcall GetFileInformationByHandleExW(long long ptr long) GetFileInformationByHandleEx ;fileextd.GetFileInformationByHandleEx 
+@ stdcall GetFileInformationByHandleEx(long long ptr long) fileextd.GetFileInformationByHandleEx
+@ stdcall GetFileInformationByHandleExW(long long ptr long) fileextd.GetFileInformationByHandleEx ;fileextd.GetFileInformationByHandleEx 
 @ stdcall GetFinalPathNameByHandleA(ptr str long long)
 @ stdcall GetFinalPathNameByHandleW(ptr wstr long long)
 @ stdcall GetLocaleInfoEx(wstr long ptr long)
@@ -1215,7 +1215,7 @@
 @ stdcall MoveFileTransactedA(str str ptr ptr long ptr)
 @ stdcall MoveFileTransactedW(wstr wstr ptr ptr long ptr)
 @ stdcall NormalizeString(long wstr long wstr long) normaliz.NormalizeString
-@ stdcall OpenFileById(long ptr long long ptr long) 
+@ stdcall OpenFileById(long ptr long long ptr long) fileextd.OpenFileById
 @ stdcall QueryActCtxSettingsW(long ptr wstr wstr ptr long ptr)
 @ stdcall QueryFullProcessImageNameA(ptr long ptr ptr) 
 @ stdcall QueryFullProcessImageNameW(ptr long ptr ptr)
@@ -1240,8 +1240,8 @@
 @ stdcall SetEventWhenCallbackReturns(ptr long) ntext.TpCallbackSetEventOnCompletion
 @ stdcall SetFileAttributesTransactedA(str long ptr)
 @ stdcall SetFileAttributesTransactedW(wstr long ptr)
-@ stdcall SetFileInformationByHandle(long long ptr long) ;fileextd.SetFileInformationByHandle
-@ stdcall SetFileInformationByHandleW(long long ptr long) SetFileInformationByHandle ;fileextd.SetFileInformationByHandle
+@ stdcall SetFileInformationByHandle(long long ptr long) fileextd.SetFileInformationByHandle
+@ stdcall SetFileInformationByHandleW(long long ptr long) fileextd.SetFileInformationByHandle ;fileextd.SetFileInformationByHandle
 @ stdcall SetNamedPipeAttribute(ptr long str ptr long)
 @ stdcall SetProcessAffinityUpdateMode(ptr long)
 @ stdcall SetProcessPreferredUILanguages(long wstr ptr)
