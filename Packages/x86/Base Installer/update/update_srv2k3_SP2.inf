@@ -547,18 +547,16 @@
 	winsrv.dll, 2k3SP2\srvwinsrv.dll
 	win32k.sys, 2k3SP2\srvwin32k.sys	
     advapi32.dll
-    ;advapilong.dll
-    ;advapinew.dll	
     bcrypt.dll
     comctlext.dll
 	cryptnew.dll
+	d3dkmt.dll
 	fileextd.dll
     pdhbase.dll
     gdi32.dll
     iphlpapi.dll
     iphlpapibase.dll
     idndl.dll
-    ;kernel32.dll 
     kernelbase.dll
 	msvcrt.dll
     netapi32.dll
@@ -573,7 +571,6 @@
     psapi.dll	
     rpcrt4.dll	
     secur32.dll
-    ;securnew.dll
     setupapi.dll
     shell32.dll
     shlwapi.dll
@@ -610,17 +607,15 @@
     2k3SP2\srvntkrnlpa.exe=1
 	2k3SP2\srvwin32k.sys=1	
     advapi32.dll = 1
-    ;advapilong.dll = 1
-    ;advapinew.dll = 1
     bcrypt.dll = 1
     comctlext.dll =1
 	cryptnew.dll = 1
+	d3dkmt.dll = 1
 	fileextd.dll = 1
     gdi32.dll = 1
     iphlpapi.dll = 1
     iphlpapibase.dll = 1
     idndl.dll = 1
-    ;kernel32.dll = 1
     kernelbase.dll = 1
 	msvcrt.dll = 1
     netapi32.dll = 1

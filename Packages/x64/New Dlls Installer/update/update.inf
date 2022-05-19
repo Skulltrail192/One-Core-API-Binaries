@@ -5249,6 +5249,7 @@
 	CardGames.dll,amd64/CardGames.dll
 	;combase.dll,amd64/combase.dll	- Cause error with .net 4.5 application
 	connect.dll,amd64/connect.dll
+	credui.dll,amd64/credui.dll
 	cryptbase.dll,amd64/cryptbase.dll
 	cryptsp.dll,amd64/cryptsp.dll
 	dbgeng.dll,amd64/dbgeng.dll
@@ -5345,6 +5346,7 @@
 	CardGames.dll,i386/wCardGames.dll
 	;combase.dll,i386/wcombase.dll	- Cause error with .net 4.5 application
 	connect.dll,i386/wconnect.dll
+	credui.dll,i386/wcredui.dll
 	cryptbase.dll,i386/wcryptbase.dll
 	cryptsp.dll,i386/wcryptsp.dll
 	dbgeng.dll,i386/wdbgeng.dll
@@ -5444,6 +5446,7 @@
 	amd64/CardGames.dll = 1 
 	;amd64/combase.dll = 1	- Cause error with .net 4.5 application
 	amd64/connect.dll = 1
+	amd64/credui.dll = 1
 	amd64/cryptbase.dll = 1
 	amd64/cryptsp.dll = 1
 	amd64/dbghelp.dll = 1
@@ -5540,6 +5543,7 @@
 	i386/wCardGames.dll = 1 
 	;i386/wcombase.dll = 1	- Cause error with .net 4.5 application
 	i386/wconnect.dll = 1
+	i386/wcredui.dll = 1
 	i386/wcryptbase.dll = 1
 	i386/wcryptsp.dll = 1
 	i386/wdbghelp.dll = 1

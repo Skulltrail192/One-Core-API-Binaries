@@ -105,7 +105,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	D3DCompiler_47.dll
 	fntcache.dll
 	libwine.dll
-	d3dwine.dll
+	wined3d.dll
 	wineft2.dll
 	winetxc.dll
 	vcruntime140.dll
@@ -132,7 +132,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	dxgi.dll = 1
 	D3DCompiler_47.dll = 1
 	fntcache.dll = 1
-	d3dwine.dll = 1
+	wined3d.dll = 1
 	libwine.dll = 1
 	wineft2.dll = 1
 	winetxc.dll = 1

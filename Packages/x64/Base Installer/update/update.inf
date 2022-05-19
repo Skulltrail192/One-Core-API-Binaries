@@ -2595,11 +2595,10 @@
 	wow64win.dll, XP64SP2/amd64/wow64win.dll
 	win32k.sys, XP64SP2/amd64/win32k.sys	
     advapi32.dll,amd64/advapi32.dll
-    ; advapilong.dll,amd64/advapilong.dll
-    ; advapinew.dll,amd64/advapinew.dll
     bcrypt.dll,amd64/bcrypt.dll
     comctlext.dll,amd64/comctlext.dll
     cryptnew.dll,amd64/cryptnew.dll	
+    d3dkmt.dll,amd64/d3dkmt.dll	
 	fileextd.dll,amd64/fileextd.dll		
     gdi32.dll,amd64/gdi32.dll
     iphlpapi.dll,amd64/iphlpapi.dll
@@ -2607,7 +2606,6 @@
     kernelbase.dll,amd64/kernelbase.dll
     msvcrt.dll,amd64/msvcrt.dll	
     netapi32.dll,amd64/netapi32.dll
-    ; netapinew.dll,amd64/netapinew.dll	
     Nlsdl.dll,amd64/Nlsdl.dll
     normaliz.dll,amd64/normaliz.dll
     nsi.dll,amd64/nsi.dll	
@@ -2620,7 +2618,6 @@
     psapi.dll,amd64/psapi.dll	
     rpcrt4.dll,amd64/rpcrt4.dll
     secur32.dll,amd64/secur32.dll
-    ; securnew.dll,amd64/securnew.dll
     setupapi.dll,amd64/setupapi.dll
     shell32.dll,amd64/shell32.dll	
     shlwapi.dll,amd64/shlwapi.dll	
@@ -2628,7 +2625,6 @@
     user32.dll,amd64/user32.dll
     uxtheme.dll,amd64/uxtheme.dll
 	version.dll,amd64/version.dll
-	; wevtold.dll,amd64/wevtold.dll	
     winbrand.dll,amd64/winbrand.dll		
     ws2_32.dll,amd64/ws2_32.dll
 	
@@ -2651,11 +2647,10 @@
     winstabase.dll,XP64SP2/i386/wwinstabase.dll
     ws2_base.dll,XP64SP2/i386/wws2_base.dll
     advapi32.dll,i386/wadvapi32.dll
-    ; advapilong.dll,i386/wadvapilong.dll
-    ; advapinew.dll,i386/wadvapinew.dll
     bcrypt.dll,i386/wbcrypt.dll
     comctlext.dll,i386/wcomctlext.dll
     cryptnew.dll,i386/wcryptnew.dll
+    d3dkmt.dll,i386/wd3dkmt.dll
 	fileextd.dll,i386/wfileextd.dll
     gdi32.dll,i386/wgdi32.dll
     iphlpapi.dll,i386/wiphlpapi.dll
@@ -2663,7 +2658,6 @@
     kernelbase.dll,i386/wkernelbase.dll	
     msvcrt.dll,i386/wmsvcrt.dll
     netapi32.dll,i386/wnetapi32.dll
-    ; netapinew.dll,i386/wnetapinew.dll	
     Nlsdl.dll,i386/wNlsdl.dll
     normaliz.dll,i386/wnormaliz.dll
     nsi.dll,i386/wnsi.dll
@@ -2676,7 +2670,6 @@
     psapi.dll,i386/wpsapi.dll	
     rpcrt4.dll,i386/wrpcrt4.dll
     secur32.dll,i386/wsecur32.dll
-    ; securnew.dll,i386/wsecurnew.dll
     setupapi.dll,i386/wsetupapi.dll
     shell32.dll,i386/wshell32.dll
     shlwapi.dll,i386/wshlwapi.dll
@@ -2684,7 +2677,6 @@
     user32.dll,i386/wuser32.dll
     uxtheme.dll,i386/wuxtheme.dll
 	version.dll,i386/wversion.dll
-	; wevtold.dll,i386/wwevtold.dll
     winbrand.dll,i386/wwinbrand.dll		
     ws2_32.dll,i386/wws2_32.dll
 	
