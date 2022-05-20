@@ -28,12 +28,13 @@ You can run several programs with One-Core-API, like:
 - Web Storm 2018
 - Intelliji 2018 (maybe other versions works)
 - Filezilla (lastest)
-- Visual Studio Code 1.18
-- Chrome up to version 60
-- Opera up to version 38
-- Firefox up to version 53
+- Visual Studio Code 1.18+
+- Chrome up to version 100!
+- Opera up to version 39
+- Firefox up to version 54
 - JDK 1.8
-- Maxthon 5.1
+- Maxthon 6
+- Epic Browser 94
 - Python 3.6
 - .Net Framework up to 4.8
 - Geekbench 4.2
@@ -41,7 +42,15 @@ You can run several programs with One-Core-API, like:
 - Adobe Reader DC (2021)
 - Windows 7 games
 - Vista Applications
+- Spotify after Windows XP/Vista end of support
 - Several other applications
+- Directx 9EX, 10 and 11 games: 
+  - Need for Speed Most Wanted 2012
+  - Need for Speed The Run
+  - Street Figther V
+  - Injustice: Gods among us
+  - Assassign Creed Black Flgs
+  - Crysis 1,2, and 3
 
 **Installation order of packages:**
 **Case 1 (Kernel Standalone first):**
