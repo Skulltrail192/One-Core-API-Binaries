@@ -1948,7 +1948,10 @@ HRESULT CXTaskDialog::TaskDialogIndirect(const TASKDIALOGCONFIG* pTaskConfig, in
     
   hr = Display(pnButton);
   UINT nID = *pnButton;
-  *pnButton = ConvertToRealId(nID);
+  if(pTaskConfig->dwFlags & TDF_USE_COMMAND_LINKS || pTaskConfig->dwFlags & TDF_USE_COMMAND_LINKS_NO_ICON || pTaskConfig->dwCommonButtons & TDCBF_CLOSE_BUTTON)  
+  {
+	  *pnButton = ConvertToRealId(nID);
+  }
   
   //Update the 2 output parameters before we return
   if (pfVerificationFlagChecked)

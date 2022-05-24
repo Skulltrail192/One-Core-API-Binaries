@@ -668,8 +668,6 @@
 @ stdcall SwapMouseButton(long)
 @ stdcall SwitchDesktop(long) ;NtUserSwitchDesktop
 @ stdcall SwitchToThisWindow(long long)
-@ stdcall SystemParametersInfoA(long long ptr long)
-@ stdcall SystemParametersInfoW(long long ptr long)
 @ stdcall TabbedTextOutA(long long long str long long ptr long)
 @ stdcall TabbedTextOutW(long long long wstr long long ptr long)
 @ stdcall TileChildWindows(long long)
@@ -883,3 +881,5 @@
 
 #Hooks
 @ stdcall GetUserObjectSecurity (long ptr ptr long ptr) GetUserObjectSecurityInternal
+@ stdcall SystemParametersInfoA(long long ptr long) ;SystemParametersInfoAInternal
+@ stdcall SystemParametersInfoW(long long ptr long) ;SystemParametersInfoWInternal

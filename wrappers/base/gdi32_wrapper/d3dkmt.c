@@ -18,6 +18,7 @@
  */
 
 #include <main.h>
+#include <ddrawint.h>
 
 #define MAX_GDI_HANDLES  16384
 #define FIRST_GDI_HANDLE 32
@@ -28,6 +29,17 @@
         ((DWORD)(BYTE)(ch0) | ((DWORD)(BYTE)(ch1) << 8) | \
         ((DWORD)(BYTE)(ch2) << 16) | ((DWORD)(BYTE)(ch3) << 24))
 #endif /* MAKEFOURCC */
+
+/*Hack, i don't know how require these funcions really*/
+DWORD
+APIENTRY
+DdEntry28(
+    _In_ HANDLE hDirectDraw,
+    _Inout_ PDD_GETAVAILDRIVERMEMORYDATA puGetAvailDriverMemoryData);
+	
+HANDLE
+APIENTRY
+DdEntry15(HDC hdc);	
 
 DEFINE_DEVPROPKEY(DEVPROPKEY_GPU_LUID, 0x60b193cb, 0x5276, 0x4d0f, 0x96, 0xfc, 0xf1, 0x73, 0xab, 0xad, 0x3e, 0xc6, 2); 
 
@@ -570,4 +582,63 @@ NTSTATUS WINAPI D3DKMTCheckVidPnExclusiveOwnership( const D3DKMT_CHECKVIDPNEXCLU
         return STATUS_INVALID_PARAMETER;
 
     return get_display_driver()->pD3DKMTCheckVidPnExclusiveOwnership( desc );
+}
+
+/******************************************************************************
+ *           NtGdiDdDDIOpenAdapterFromLuid    (win32u.@)
+ */
+NTSTATUS WINAPI D3DKMTOpenAdapterFromLuid( D3DKMT_OPENADAPTERFROMLUID *desc )
+{
+    static D3DKMT_HANDLE handle_start = 0;
+    struct d3dkmt_adapter *adapter;
+
+    if (!(adapter = malloc( sizeof( *adapter ) ))) return STATUS_NO_MEMORY;
+
+    EnterCriticalSection( &driver_section );
+    desc->hAdapter = adapter->handle = ++handle_start;
+    list_add_tail( &d3dkmt_adapters, &adapter->entry );
+    LeaveCriticalSection( &driver_section );
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS 
+D3DKMTQueryVideoMemoryInfo(
+  D3DKMT_QUERYVIDEOMEMORYINFO *desc
+)
+{
+    DWORD Ret = FALSE;
+    DD_GETAVAILDRIVERMEMORYDATA Data;
+    ZeroMemory(&Data, sizeof(Data));
+
+	//We always want know total memory avaliable.
+    Data.DDSCaps.dwCaps = DDSCAPS_VIDEOMEMORY;
+
+    if (D3DKMT_MEMORY_SEGMENT_GROUP_LOCAL == desc->MemorySegmentGroup)
+    {
+        Data.DDSCaps.dwCaps = DDSCAPS_VIDEOMEMORY | DDSCAPS_LOCALVIDMEM;
+    }
+    else if (D3DKMT_MEMORY_SEGMENT_GROUP_NON_LOCAL == desc->MemorySegmentGroup)
+    {
+        Data.DDSCaps.dwCaps = DDSCAPS_VIDEOMEMORY | DDSCAPS_NONLOCALVIDMEM;
+    }
+
+    if (Data.DDSCaps.dwCaps != 0)
+    {
+        // if (0 == pData->dwTextureType)
+            // Data.DDSCaps.dwCaps |= DDSCAPS_TEXTURE;
+
+        // if (pData->dwTextureType & D3D9_TEXTURETYPE_HALSURFACE)
+            // Data.DDSCaps.dwCaps |= DDSCAPS_TEXTURE | DDSCAPS_3DDEVICE;
+
+        // if (pData->dwTextureType & D3D9_TEXTURETYPE_BACKBUFFER)
+            // Data.DDSCaps.dwCaps |= DDSCAPS_ZBUFFER;        
+
+        Ret = DdEntry28(DdEntry15(CreateCompatibleDC(NULL)), (DD_GETAVAILDRIVERMEMORYDATA*)&Data);
+        desc->Budget = Data.dwTotal;
+        desc->CurrentUsage = Data.dwTotal - Data.dwFree;
+        desc->CurrentReservation = 0;
+        desc->AvailableForReservation = 100;
+    }
+
+    return Ret;	
 }

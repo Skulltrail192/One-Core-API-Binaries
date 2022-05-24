@@ -309,6 +309,26 @@ struct gdi_dc_funcs
     UINT       priority;
 };
 
+typedef struct _D3DKMT_OPENADAPTERFROMLUID {
+        LUID          AdapterLuid;
+		D3DKMT_HANDLE hAdapter;
+} D3DKMT_OPENADAPTERFROMLUID;
+
+typedef enum _D3DKMT_MEMORY_SEGMENT_GROUP {
+  D3DKMT_MEMORY_SEGMENT_GROUP_LOCAL,
+  D3DKMT_MEMORY_SEGMENT_GROUP_NON_LOCAL
+} D3DKMT_MEMORY_SEGMENT_GROUP;
+
+typedef struct _D3DKMT_QUERYVIDEOMEMORYINFO {
+  PVOID D3DKMT_PTR;
+  D3DKMT_HANDLE               hAdapter;
+  D3DKMT_MEMORY_SEGMENT_GROUP MemorySegmentGroup;
+  UINT64       Budget;
+  UINT64       CurrentUsage;
+  UINT64       CurrentReservation;
+  UINT64       AvailableForReservation;
+  UINT                        PhysicalAdapterIndex;
+} D3DKMT_QUERYVIDEOMEMORYINFO;
 
 void *get_any_obj_ptr( HGDIOBJ handle, WORD *type );
 
