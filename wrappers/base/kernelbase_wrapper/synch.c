@@ -739,23 +739,55 @@ BOOL WINAPI DECLSPEC_HOTPATCH GetOverlappedResultEx( HANDLE file, OVERLAPPED *ov
 	}
 }
 
-/******************************************************************************
- *              GetQueuedCompletionStatusEx   (kernelbase.@)
- */
-BOOL WINAPI DECLSPEC_HOTPATCH GetQueuedCompletionStatusEx( HANDLE port, LPOVERLAPPED_ENTRY entries,
-                                                           ULONG count, ULONG *written,
-                                                           DWORD timeout, BOOL alertable )
+static 
+BOOL getQueuedCompletionStatus(
+	HANDLE CompletionPort,
+	LPOVERLAPPED_ENTRY lpEnt,
+	DWORD dwMilliseconds
+) {
+	return GetQueuedCompletionStatus(CompletionPort, 
+		&lpEnt->dwNumberOfBytesTransferred,
+		&lpEnt->lpCompletionKey,
+		&lpEnt->lpOverlapped, dwMilliseconds);
+}
+
+BOOL WINAPI GetQueuedCompletionStatusEx(
+  HANDLE             CompletionPort,
+  LPOVERLAPPED_ENTRY lpCompletionPortEntries,
+  ULONG              ulCount,
+  PULONG             ulNumEntriesRemoved,
+  DWORD              dwMilliseconds,
+  BOOL               fAlertable
+) 
 {
-    LARGE_INTEGER time;
-    NTSTATUS ret;
+	int i;
+	LARGE_INTEGER time;
+	NTSTATUS Status;
+	// validate arguments
+	if(!lpCompletionPortEntries
+	|| !ulCount || !ulNumEntriesRemoved) {
+		RtlSetLastWin32Error(ERROR_INVALID_PARAMETER);
+		return FALSE; }
 
-    TRACE( "%p %p %u %p %u %u\n", port, entries, count, written, timeout, alertable );
+	// partial implementation error
+	if(fAlertable)
+		DbgPrint("GetQueuedCompletionStatusEx: fAlertable");
+		
+	// retrieve multiple entries
+	
+	for(i = 0;i < ulCount; i++)
+	{	
+		if(!getQueuedCompletionStatus(CompletionPort, 
+		lpCompletionPortEntries+i, dwMilliseconds))
+		{
+			break;
+		}
+		
+        Status = NtWaitForSingleObject( CompletionPort, fAlertable, get_nt_timeout( &time, dwMilliseconds ) );
+        if (Status != WAIT_OBJECT_0) break;		
+		//dwMilliseconds = 0;
+	}
 
-    ret = NtRemoveIoCompletionEx( port, (FILE_IO_COMPLETION_INFORMATION *)entries, count,
-                                  written, get_nt_timeout( &time, timeout ), alertable );
-    if (ret == STATUS_SUCCESS) return TRUE;
-    else if (ret == STATUS_TIMEOUT) SetLastError( WAIT_TIMEOUT );
-    else if (ret == STATUS_USER_APC) SetLastError( WAIT_IO_COMPLETION );
-    else SetLastError( RtlNtStatusToDosError(ret) );
-    return FALSE;
+	*ulNumEntriesRemoved = i;
+	return TRUE;
 }

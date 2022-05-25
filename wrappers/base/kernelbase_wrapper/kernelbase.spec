@@ -1173,7 +1173,7 @@
 @ stdcall GetPhysicallyInstalledSystemMemory(ptr)
 @ stdcall GetProductInfo(long long long long ptr) 
 @ stub GetProductName
-;@ stdcall GetQueuedCompletionStatusEx(ptr ptr long ptr long long) it doesn't work with Visual Code for now
+@ stdcall GetQueuedCompletionStatusEx(ptr ptr long ptr long long) ;it doesn't work with Visual Code for now
 @ stdcall GetStringScripts(long wstr long wstr long) idndl.DownlevelGetStringScripts
 @ stdcall GetSystemDefaultLocaleName(ptr long)
 @ stdcall GetSystemPreferredUILanguages(long ptr wstr ptr)

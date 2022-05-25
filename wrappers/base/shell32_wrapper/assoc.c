@@ -1156,3 +1156,25 @@ HRESULT WINAPI SHAssocEnumHandlers(const WCHAR *extra, ASSOC_FILTER filter, IEnu
     *enumhandlers = &enumassoc->IEnumAssocHandlers_iface;
     return S_OK;
 }
+
+HRESULT WINAPI 
+SHAssocEnumHandlersForProtocolByApplication(
+  PCWSTR protocol,
+  REFIID riid,
+  void   **enumhandlers
+)
+{
+    struct enumassochandlers *enumassoc;
+
+    *enumhandlers = NULL;
+
+    enumassoc = SHAlloc(sizeof(*enumassoc));
+    if (!enumassoc)
+        return E_OUTOFMEMORY;
+
+    enumassoc->IEnumAssocHandlers_iface.lpVtbl = &enumassochandlersvtbl;
+    enumassoc->ref = 1;
+
+    *enumhandlers = &enumassoc->IEnumAssocHandlers_iface;
+    return S_OK;
+}

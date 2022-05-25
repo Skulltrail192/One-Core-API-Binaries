@@ -39,7 +39,7 @@
 
 typedef UINT D3DDDI_VIDEO_PRESENT_SOURCE_ID;
 
-typedef UINT D3DKMT_HANDLE;
+//typedef UINT D3DKMT_HANDLE;
 
 typedef struct _D3DKMT_CHECKMONITORPOWERSTATE {
   D3DKMT_HANDLE                  hAdapter;
@@ -308,27 +308,6 @@ struct gdi_dc_funcs
     /* priority order for the driver on the stack */
     UINT       priority;
 };
-
-typedef struct _D3DKMT_OPENADAPTERFROMLUID {
-        LUID          AdapterLuid;
-		D3DKMT_HANDLE hAdapter;
-} D3DKMT_OPENADAPTERFROMLUID;
-
-typedef enum _D3DKMT_MEMORY_SEGMENT_GROUP {
-  D3DKMT_MEMORY_SEGMENT_GROUP_LOCAL,
-  D3DKMT_MEMORY_SEGMENT_GROUP_NON_LOCAL
-} D3DKMT_MEMORY_SEGMENT_GROUP;
-
-typedef struct _D3DKMT_QUERYVIDEOMEMORYINFO {
-  PVOID D3DKMT_PTR;
-  D3DKMT_HANDLE               hAdapter;
-  D3DKMT_MEMORY_SEGMENT_GROUP MemorySegmentGroup;
-  UINT64       Budget;
-  UINT64       CurrentUsage;
-  UINT64       CurrentReservation;
-  UINT64       AvailableForReservation;
-  UINT                        PhysicalAdapterIndex;
-} D3DKMT_QUERYVIDEOMEMORYINFO;
 
 void *get_any_obj_ptr( HGDIOBJ handle, WORD *type );
 

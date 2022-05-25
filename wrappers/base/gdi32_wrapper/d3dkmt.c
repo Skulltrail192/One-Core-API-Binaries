@@ -347,7 +347,7 @@ D3DKMTCheckMonitorPowerState(
  */
 NTSTATUS 
 WINAPI 
-D3DKMTOpenAdapterFromHdc( void *pData )
+D3DKMTOpenAdapterFromHdc( D3DKMT_OPENADAPTERFROMHDC *pData )
 {
     return STATUS_NO_MEMORY;
 }
@@ -357,7 +357,7 @@ D3DKMTOpenAdapterFromHdc( void *pData )
  */
 NTSTATUS 
 WINAPI 
-D3DKMTEscape( const void *pData )
+D3DKMTEscape( const D3DKMT_ESCAPE *pData )
 {
     return STATUS_NO_MEMORY;
 }
@@ -601,7 +601,8 @@ NTSTATUS WINAPI D3DKMTOpenAdapterFromLuid( D3DKMT_OPENADAPTERFROMLUID *desc )
     return STATUS_SUCCESS;
 }
 
-NTSTATUS 
+NTSTATUS
+WINAPI 
 D3DKMTQueryVideoMemoryInfo(
   D3DKMT_QUERYVIDEOMEMORYINFO *desc
 )
