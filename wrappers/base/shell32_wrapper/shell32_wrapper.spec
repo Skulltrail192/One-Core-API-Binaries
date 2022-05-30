@@ -284,7 +284,7 @@
 @ stdcall Control_FillCache_RunDLL(long long long long) 
 @ stdcall Control_FillCache_RunDLLA(long long long long)
 @ stdcall Control_FillCache_RunDLLW(long long long long)
-@ stdcall Control_RunDLL(ptr ptr str long) 
+@ stdcall Control_RunDLL(ptr ptr str long) Control_RunDLLA
 @ stdcall Control_RunDLLA(ptr ptr str long)
 @ stdcall Control_RunDLLAsUserW(ptr ptr wstr long)
 @ stdcall Control_RunDLLW(ptr ptr wstr long)
@@ -520,6 +520,7 @@
 @ stdcall SHGetStockIconInfo(long long ptr)
 @ stdcall SHAssocEnumHandlers(wstr long ptr) ;Redirected to Longhorn shell
 @ stdcall SHSetDefaultProperties(ptr ptr long ptr) ;Redirected to Longhorn shell
+761 stdcall -noname SHChangeNotifyDeregisterWindow(ptr)
 813 stdcall -noname SHUserSetPasswordHint(wstr wstr)
 859 stdcall -noname WPC_InstallState(ptr)
 864 stdcall -noname StampIconForElevation(ptr long long)

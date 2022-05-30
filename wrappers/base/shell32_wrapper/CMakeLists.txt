@@ -14,6 +14,7 @@ spec2def(shell32_wrapper.dll shell32_wrapper.spec)
 list(APPEND SOURCE
 	assoc.c
 	classes.c
+	control.c
 	debughlp.c
 	iconcache.c
     main.c

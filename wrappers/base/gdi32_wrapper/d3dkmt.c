@@ -625,15 +625,6 @@ D3DKMTQueryVideoMemoryInfo(
 
     if (Data.DDSCaps.dwCaps != 0)
     {
-        // if (0 == pData->dwTextureType)
-            // Data.DDSCaps.dwCaps |= DDSCAPS_TEXTURE;
-
-        // if (pData->dwTextureType & D3D9_TEXTURETYPE_HALSURFACE)
-            // Data.DDSCaps.dwCaps |= DDSCAPS_TEXTURE | DDSCAPS_3DDEVICE;
-
-        // if (pData->dwTextureType & D3D9_TEXTURETYPE_BACKBUFFER)
-            // Data.DDSCaps.dwCaps |= DDSCAPS_ZBUFFER;        
-
         Ret = DdEntry28(DdEntry15(CreateCompatibleDC(NULL)), (DD_GETAVAILDRIVERMEMORYDATA*)&Data);
         desc->Budget = Data.dwTotal;
         desc->CurrentUsage = Data.dwTotal - Data.dwFree;

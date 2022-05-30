@@ -304,3 +304,8 @@ HRESULT WINAPI GetCurrentProcessExplicitAppUserModelID(const WCHAR **appid)
     *appid = NULL;
     return E_NOTIMPL;
 }
+
+void SHChangeNotifyDeregisterWindow(HWND hwnd)
+{
+	;
+}

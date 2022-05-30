@@ -881,5 +881,5 @@
 
 #Hooks
 @ stdcall GetUserObjectSecurity (long ptr ptr long ptr) GetUserObjectSecurityInternal
-@ stdcall SystemParametersInfoA(long long ptr long) ;SystemParametersInfoAInternal
-@ stdcall SystemParametersInfoW(long long ptr long) ;SystemParametersInfoWInternal
+@ stdcall SystemParametersInfoA(long long ptr long) SystemParametersInfoAInternal
+@ stdcall SystemParametersInfoW(long long ptr long) SystemParametersInfoWInternal
