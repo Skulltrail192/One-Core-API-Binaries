@@ -305,6 +305,7 @@ HRESULT WINAPI GetCurrentProcessExplicitAppUserModelID(const WCHAR **appid)
     return E_NOTIMPL;
 }
 
+//For Longhorn/Vista comdlg32
 void SHChangeNotifyDeregisterWindow(HWND hwnd)
 {
 	;
