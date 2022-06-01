@@ -5,7 +5,6 @@
 	MaxNtMinorVersionToUpdate = 1
 	MaxNtServicePackVersion   = 768
 	MinNtServicePackVersion   = 768
-	ThisServicePackVersion    = 768
 	NtBuildToUpdate           = 2600
 	NtMajorVersionToUpdate    = 5
 	NtMinorVersionToUpdate    = 1
@@ -539,6 +538,7 @@
     netapibase.dll,XPSP3\xpspnetapibase.dll	
 	ntdsapi.dll,XPSP3\xpspntdsapi.dll	
     olebase.dll,XPSP3\xpspolebase.dll		
+    olebacc.dll,XPSP3\xpspoleacc.dll		
     powrprofbase.dll,XPSP3\xpsppowrprofbase.dll
     rpcrtbase.dll,XPSP3\xpsprpcrtbase.dll
     securbase.dll,XPSP3\xpspsecurbase.dll
@@ -549,7 +549,8 @@
     uxthemebase.dll,XPSP3\xpspuxthemebase.dll
     ws2_base.dll,XPSP3\xpspws2_base.dll
 	winsrv.dll, XPSP3\xpspwinsrv.dll
-	win32k.sys, XPSP3\xpspwin32k.sys	
+	winstabase.dll, XPSP3\xpspwinstabase.dll		
+	win32k.sys, XPSP3\xpspwin32k.sys
     advapi32.dll
     bcrypt.dll
     comctlext.dll
@@ -583,6 +584,8 @@
     uxtheme.dll
 	version.dll	
     winbrand.dll
+    winsta.dll
+    winstanew.dll
     ws2_32.dll
 	
 [SourceDisksNames]
@@ -597,6 +600,7 @@
     XPSP3\xpspnetapibase.dll = 1	
 	XPSP3\xpspntdsapi.dll = 1	
     XPSP3\xpspolebase.dll = 1	
+    XPSP3\xpspoleacc.dll = 1	
     XPSP3\xpsppowrprofbase.dll = 1
     XPSP3\xpsprpcrtbase.dll = 1
     XPSP3\xpspsecurbase.dll = 1
@@ -610,6 +614,7 @@
     XPSP3\xpspntkrpamp.exe=1
     XPSP3\xpspntoskrnl.exe=1
     XPSP3\xpspntkrnlpa.exe=1
+	XPSP3\xpspwinstabase.dll=1	
 	XPSP3\xpspwin32k.sys=1	
     advapi32.dll = 1
     bcrypt.dll = 1
@@ -644,7 +649,9 @@
     user32.dll = 1
 	version.dll = 1		
     uxtheme.dll = 1
-	wevtold.dll = 1
+	;wevtold.dll = 1
+    winsta.dll = 1	
+    winstanew.dll = 1	
     winbrand.dll = 1	
     ws2_32.dll = 1
 	WinSxS\winxp\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll = 1

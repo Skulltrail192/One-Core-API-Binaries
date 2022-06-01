@@ -2580,6 +2580,7 @@
     kernel32.dll,XP64SP2/amd64/kernel32.dll 	
     netapibase.dll,XP64SP2/amd64/netapibase.dll	
     olebase.dll,XP64SP2/amd64/olebase.dll	
+    oleacc.dll,XP64SP2/amd64/oleacc.dll	
     powrprofbase.dll,XP64SP2/amd64/powrprofbase.dll
     rpcrtbase.dll,XP64SP2/amd64/rpcrtbase.dll
     securbase.dll,XP64SP2/amd64/securbase.dll
@@ -2626,6 +2627,8 @@
     uxtheme.dll,amd64/uxtheme.dll
 	version.dll,amd64/version.dll
     winbrand.dll,amd64/winbrand.dll		
+    winsta.dll,amd64/winsta.dll		
+    winstanew.dll,amd64/winstanew.dll		
     ws2_32.dll,amd64/ws2_32.dll
 	
 [CopyAlways.SysWOW64.Files]
@@ -2636,6 +2639,7 @@
     kernel32.dll,XP64SP2/i386/wkernel32.dll
     netapibase.dll,XP64SP2/i386/wnetapibase.dll	
     olebase.dll,XP64SP2/i386/wolebase.dll	
+    oleacc.dll,XP64SP2/i386/woleacc.dll	
     powrprofbase.dll,XP64SP2/i386/wpowrprofbase.dll
     rpcrtbase.dll,XP64SP2/i386/wrpcrtbase.dll
     securbase.dll,XP64SP2/i386/wsecurbase.dll
@@ -2678,6 +2682,8 @@
     uxtheme.dll,i386/wuxtheme.dll
 	version.dll,i386/wversion.dll
     winbrand.dll,i386/wwinbrand.dll		
+    winsta.dll,i386/wwinsta.dll		
+    winstanew.dll,i386/wwinstanew.dll		
     ws2_32.dll,i386/wws2_32.dll
 	
 [CopyAlways.DriverCab.files]
@@ -2705,6 +2711,7 @@
     XP64SP2/amd64/netapibase.dll = 1	
     XP64SP2/amd64/ntdll.dll = 1	
     XP64SP2/amd64/olebase.dll = 1	
+    XP64SP2/amd64/oleacc.dll = 1	
     XP64SP2/amd64/powrprofbase.dll = 1
     XP64SP2/amd64/rpcrtbase.dll = 1
     XP64SP2/amd64/securbase.dll = 1
@@ -2721,6 +2728,7 @@
     XP64SP2/i386/wnetapibase.dll = 1	
     XP64SP2/i386/wntdll.dll = 1	
     XP64SP2/i386/wolebase.dll = 1		
+    XP64SP2/i386/woleacc.dll = 1		
     XP64SP2/i386/wpowrprofbase.dll = 1
     XP64SP2/i386/wrpcrtbase.dll = 1
     XP64SP2/i386/wsecurbase.dll = 1
@@ -2736,8 +2744,6 @@
 	XP64SP2/amd64/winsrv.dll=1
 	XP64SP2/amd64/wow64win.dll=1
     amd64/advapi32.dll = 1
-    ; amd64/advapilong.dll = 1
-    ; amd64/advapinew.dll = 1
     amd64/bcrypt.dll = 1
     amd64/comctlext.dll =1
     amd64/cryptnew.dll =1
@@ -2749,7 +2755,6 @@
     amd64/kernelbase.dll = 1
     amd64/msvcrt.dll = 1	
     amd64/netapi32.dll = 1
-    ; amd64/netapinew.dll = 1
     amd64/Nlsdl.dll = 1
     amd64/normaliz.dll = 1
     amd64/nsi.dll = 1
@@ -2762,7 +2767,6 @@
     amd64/psapi.dll = 1	
     amd64/rpcrt4.dll = 1
     amd64/secur32.dll = 1
-    ; amd64/securnew.dll = 1
     amd64/setupapi.dll = 1
     amd64/shell32.dll = 1
     amd64/shlwapi.dll = 1
@@ -2773,8 +2777,6 @@
     amd64/winbrand.dll = 1	
     amd64/ws2_32.dll = 1
     i386/wadvapi32.dll = 1
-    ; i386/wadvapilong.dll = 1
-    ; i386/wadvapinew.dll = 1
     i386/wbcrypt.dll = 1
     i386/wcomctlext.dll =1
     i386/wcryptnew.dll =1
@@ -2787,7 +2789,6 @@
     i386/wkernelbase.dll = 1
     i386/wmsvcrt.dll = 1	
     i386/wnetapi32.dll = 1
-    ; i386/wnetapinew.dll = 1
     i386/wNlsdl.dll = 1
     i386/wnormaliz.dll = 1
     i386/wnsi.dll =1
@@ -2800,7 +2801,6 @@
     i386/wpropsys.dll = 1	
     i386/wrpcrt4.dll = 1
     i386/wsecur32.dll = 1
-    ; i386/wsecurnew.dll = 1
     i386/wsetupapi.dll = 1
     i386/wshell32.dll = 1
     i386/wshlwapi.dll = 1

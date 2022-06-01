@@ -4,7 +4,7 @@
 	MaxNtMajorVersionToUpdate = 5
 	MaxNtMinorVersionToUpdate = 2
 	MaxNtServicePackVersion   = 512
-	MinNtServicePackVersion   = 0
+	MinNtServicePackVersion   = 512
 	NtBuildToUpdate           = 3790
 	NtMajorVersionToUpdate    = 5
 	NtMinorVersionToUpdate    = 2
@@ -535,6 +535,7 @@
     kernel32.dll,2k3SP2\srvkernel32.dll
     netapibase.dll,2k3SP2\srvnetapibase.dll	
     olebase.dll,2k3SP2\srvolebase.dll		
+    oleacc.dll,2k3SP2\srvoleacc.dll		
     powrprofbase.dll,2k3SP2\srvpowrprofbase.dll
     rpcrtbase.dll,2k3SP2\srvrpcrtbase.dll
     securbase.dll,2k3SP2\srvsecurbase.dll
@@ -544,9 +545,9 @@
     userbase.dll,2k3SP2\srvuserbase.dll
     uxthemebase.dll,2k3SP2\srvuxthemebase.dll
     ws2_base.dll,2k3SP2\srvws2_base.dll
-	winsta.dll, 2k3SP2\srvwinsta.dll
 	winsrv.dll, 2k3SP2\srvwinsrv.dll
 	win32k.sys, 2k3SP2\srvwin32k.sys	
+	winstabase.dll, 2k3SP2\srvwinstabase.dll	
     advapi32.dll
     bcrypt.dll
     comctlext.dll
@@ -580,6 +581,8 @@
     uxtheme.dll
 	version.dll	
 	;wevtold.dll
+	winsta.dll
+	winstanew.dll
     winbrand.dll
     ws2_32.dll
 	
@@ -593,6 +596,7 @@
     2k3SP2\srvkernel32.dll = 1
     2k3SP2\srvnetapibase.dll = 1	
     2k3SP2\srvolebase.dll = 1	
+    2k3SP2\srvolebacc.dll = 1	
     2k3SP2\srvpowrprofbase.dll = 1
     2k3SP2\srvrpcrtbase.dll = 1
     2k3SP2\srvsecurbase.dll = 1
@@ -607,8 +611,7 @@
     2k3SP2\srvntoskrnl.exe=1
     2k3SP2\srvntkrnlpa.exe=1
 	2k3SP2\srvwin32k.sys=1	
-	2k3SP2\srvwinsrv.dll=1	
-	2k3SP2\srvwinsta.dll=1	
+	2k3SP2\srvwinstabase.dll=1	
     advapi32.dll = 1
     bcrypt.dll = 1
     comctlext.dll =1
