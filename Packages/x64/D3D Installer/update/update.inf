@@ -90,6 +90,7 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	d3d10_1.dll,amd64/d3d10_1.dll
 	d3d10core.dll,amd64/d3d10core.dll
 	d3d11.dll,amd64/d3d11.dll
+	d3d12.dll,amd64/d3d12.dll
 	d3dcompiler_47.dll,amd64/d3dcompiler_47.dll
 	dwrite.dll,amd64/dwrite.dll
 	dxdiag.exe,amd64/dxdiag.exe
@@ -114,6 +115,7 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	d3d10_1.dll,i386/wd3d10_1.dll
 	d3d10core.dll,i386/wd3d10core.dll
 	d3d11.dll,i386/wd3d11.dll
+	d3d12.dll,i386/wd3d12.dll
 	d3dcompiler_47.dll,i386/wd3dcompiler_47.dll
 	dwrite.dll,i386/wdwrite.dll
 	dxdiag.exe,i386/wdxdiag.exe
@@ -137,6 +139,7 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	amd64/d3d10_1.dll = 1
 	amd64/d3d10core.dll = 1
 	amd64/d3d11.dll = 1
+	amd64/d3d12.dll = 1
 	amd64/d3dcompiler_47.dll = 1
 	amd64/dwrite.dll = 1
 	amd64/dwrite.dll = 1
@@ -152,6 +155,7 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	i386/wd3d10_1.dll = 1
 	i386/wd3d10core.dll = 1
 	i386/wd3d11.dll = 1
+	i386/wd3d12.dll = 1
 	i386/wd3dcompiler_47.dll = 1
 	i386/wdwrite.dll = 1
 	i386/wdxdiag.exe = 1	

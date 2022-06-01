@@ -98,6 +98,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	d3d10_1.dll
 	d3d10core.dll
 	d3d11.dll
+	d3d12.dll
 	dwrite.dll
 	dxdiag.exe
 	dxdiagn.dll	
@@ -126,6 +127,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	d3d10_1.dll = 1
 	d3d10core.dll = 1
 	d3d11.dll = 1
+	d3d12.dll = 1
 	dwrite.dll = 1
 	dxdiag.exe = 1
 	dxdiagn.dll = 1		
