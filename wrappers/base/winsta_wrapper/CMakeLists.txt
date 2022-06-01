@@ -10,7 +10,7 @@ list(APPEND SOURCE
     ${CMAKE_CURRENT_BINARY_DIR}/winsta_wrapper.def)
 
 add_library(winsta_wrapper SHARED ${SOURCE})
-set_module_type(winsta_wrapper win32dll)
+set_module_type(winsta_wrapper win32dll ENTRYPOINT 0)
 target_link_libraries(winsta_wrapper wine)
-add_importlibs(winsta_wrapper advapi32 msvcrt kernel32 ntdll winstabase winstanew)
+add_importlibs(winsta_wrapper advapi32 kernel32 ntdll winstabase winstanew)
 add_cd_file(TARGET winsta_wrapper DESTINATION reactos/system32 FOR all)

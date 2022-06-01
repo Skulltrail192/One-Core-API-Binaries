@@ -29,21 +29,7 @@
 static BOOL (WINAPI *pWinStationUnRegisterNotificationEvent)(ULONG_PTR);
 static BOOL (WINAPI *pWinStationRegisterNotificationEvent)(HANDLE, ULONG_PTR*, DWORD, DWORD);
 
-WINE_DEFAULT_DEBUG_CHANNEL(bcrypt);
-
-BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
-{
-    TRACE("fdwReason %u\n", fdwReason);
-
-    switch(fdwReason)
-    {
-        case DLL_PROCESS_ATTACH:
-            DisableThreadLibraryCalls(hInstDLL);
-            break;
-    }
-
-    return TRUE;
-}
+WINE_DEFAULT_DEBUG_CHANNEL(winsta);
 
 /**************************************************************************
  *           WinStationUnRegisterNotificationEvent   (WINSTA.@)
