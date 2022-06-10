@@ -63,15 +63,15 @@ list(APPEND SOURCE
 
 add_library(ntext SHARED ${SOURCE})
 
-set_module_type(ntext win32dll ENTRYPOINT LdrInitialize 12)
-# #############################################
-# ## HACK FOR MSVC COMPILATION WITH win32dll ##
-# set_subsystem(ntext console)
-# ################# END  HACK #################
+set_module_type(ntext win32dll ENTRYPOINT 0)
+#############################################
+## HACK FOR MSVC COMPILATION WITH win32dll ##
+set_subsystem(ntext console)
+################# END  HACK #################
 
-# if(MSVC)
-    # add_target_link_flags(ntext "/RELEASE")
-# endif()
+if(MSVC)
+    add_target_link_flags(ntext "/RELEASE")
+endif()
 
 target_link_libraries(ntext libcntpr uuid ${PSEH_LIB})
 

@@ -684,15 +684,15 @@ BOOL WINAPI DECLSPEC_HOTPATCH WaitOnAddress(
 )
 {
   LARGE_INTEGER timeout; 
-  NTSTATUS status; 
+  NTSTATUS Status; 
   BOOL result;
 
   BaseFormatTimeOut(&timeout, dwMilliseconds);
-  status = RtlWaitOnAddress((const void*)Address, CompareAddress, AddressSize, &timeout);
-  BaseSetLastNTError(status);
+  Status = RtlWaitOnAddress((const void*)Address, CompareAddress, AddressSize, &timeout);
+  BaseSetLastNTError(Status);
   result = FALSE;
-  if ( status >= 0 )
-    result = status != 0x102;
+  if ( NT_SUCCESS( )
+    result = Status != 0x102;
   return result;
 }
 

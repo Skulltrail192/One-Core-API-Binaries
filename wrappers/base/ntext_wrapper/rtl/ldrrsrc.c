@@ -45,6 +45,16 @@ ULONG AltResMemBlockCount;
 
 PALT_RESOURCE_MODULE AlternateResourceModules;
 
+
+static RTL_CRITICAL_SECTION LocaleCritSection;
+static RTL_CRITICAL_SECTION_DEBUG critsect_debug =
+{
+    0, 0, &LocaleCritSection,
+    { &critsect_debug.ProcessLocksList, &critsect_debug.ProcessLocksList },
+      0, 0, { (DWORD_PTR)(__FILE__ ": TIME_tz_section") }
+};
+static RTL_CRITICAL_SECTION LocaleCritSection = { &critsect_debug, -1, 0, 0, 0, 0 };
+
 BOOLEAN 
 NTAPI
 LdrAlternateResourcesEnabled(void)
@@ -220,7 +230,7 @@ Return Value:
         return NULL;
         }*/
 
-    RtlEnterCriticalSection(&localeCritSection);
+    RtlEnterCriticalSection(&LocaleCritSection);
 
     AlternateModule = LdrGetAlternateResourceModuleHandle(Module);
 	if(!CustomLangId)
@@ -235,14 +245,14 @@ Return Value:
         //  We tried to load this module before but failed. Don't try
         //  again in the future.
         //
-        RtlLeaveCriticalSection(&localeCritSection);
+        RtlLeaveCriticalSection(&LocaleCritSection);
         return NULL;
         }
     else if (AlternateModule > 0){
         //
         //  We found the previously loaded match
         //
-        RtlLeaveCriticalSection(&localeCritSection);
+        RtlLeaveCriticalSection(&LocaleCritSection);
         return AlternateModule;
         }
 
@@ -507,12 +517,12 @@ Return Value:
     AlternateModule = (HANDLE)((ULONG_PTR)DllBase | 0x00000001);
 
     LdrpSetAlternateResourceModuleHandle(Module, AlternateModule);
-    RtlLeaveCriticalSection(&localeCritSection);
+    RtlLeaveCriticalSection(&LocaleCritSection);
     return AlternateModule;
 
 error_exit:
     LdrpSetAlternateResourceModuleHandle(Module, NO_ALTERNATE_RESOURCE_MODULE);
-    RtlLeaveCriticalSection(&localeCritSection);
+    RtlLeaveCriticalSection(&LocaleCritSection);
     return NULL;
 }
 
@@ -553,9 +563,9 @@ Return Value:
     ULONG ModuleIndex;
     PALT_RESOURCE_MODULE AltModule;
 
-    RtlEnterCriticalSection(&localeCritSection);
+    RtlEnterCriticalSection(&LocaleCritSection);
     if (AlternateResourceModuleCount == 0){
-        RtlLeaveCriticalSection(&localeCritSection);
+        RtlLeaveCriticalSection(&LocaleCritSection);
         return TRUE;
         }
 
@@ -568,7 +578,7 @@ Return Value:
     }
 
     if (ModuleIndex == 0){
-        RtlLeaveCriticalSection(&localeCritSection);
+        RtlLeaveCriticalSection(&LocaleCritSection);
         return FALSE;
         }
     //
@@ -598,7 +608,7 @@ Return Value:
             }
         }
     __except (EXCEPTION_EXECUTE_HANDLER) {
-        RtlLeaveCriticalSection(&localeCritSection);
+        RtlLeaveCriticalSection(&LocaleCritSection);
         return FALSE;
         }
 
@@ -622,14 +632,14 @@ Return Value:
                         (AltResMemBlockCount - MEMBLOCKSIZE) * RESMODSIZE);
 
         if (!AltModule){
-            RtlLeaveCriticalSection(&localeCritSection);
+            RtlLeaveCriticalSection(&LocaleCritSection);
             return FALSE;
             }
 
         AlternateResourceModules = AltModule;
         AltResMemBlockCount -= MEMBLOCKSIZE;
         }
-    RtlLeaveCriticalSection(&localeCritSection);
+    RtlLeaveCriticalSection(&LocaleCritSection);
     return TRUE;
 }
 
@@ -667,7 +677,7 @@ Return Value:
     //
     // Grab the loader lock
     //
-    RtlEnterCriticalSection(&localeCritSection);
+    RtlEnterCriticalSection(&LocaleCritSection);
 
     if (AlternateResourceModuleCount > 0) {
         //
@@ -701,7 +711,7 @@ Return Value:
     // and leave the LoaderLock
     //
     UILangId = 0;
-    RtlLeaveCriticalSection(&localeCritSection);
+    RtlLeaveCriticalSection(&LocaleCritSection);
 
     return TRUE;
 }

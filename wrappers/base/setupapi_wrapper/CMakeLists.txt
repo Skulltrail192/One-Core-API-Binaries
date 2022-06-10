@@ -13,5 +13,5 @@ list(APPEND SOURCE
 add_library(setupapi_wrapper SHARED ${SOURCE})
 set_module_type(setupapi_wrapper win32dll ENTRYPOINT 0)
 target_link_libraries(setupapi_wrapper wine)
-add_importlibs(setupapi_wrapper setupapibase advapi32 msvcrt kernel32 ntdll)
+add_importlibs(setupapi_wrapper setupapibase advapi32 kernel32 ntdll)
 add_cd_file(TARGET setupapi_wrapper DESTINATION reactos/system32 FOR all)

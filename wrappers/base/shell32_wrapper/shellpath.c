@@ -4764,37 +4764,40 @@ HRESULT
 WINAPI 
 SHGetKnownFolderPath(
 	REFKNOWNFOLDERID rfid, 
-	DWORD flags, 
+	DWORD dwflags, 
 	HANDLE token, 
 	PWSTR *path
 )
 {
-     wchar_t folder[512+1] = {0};
-     int index = csidl_from_id( rfid );
-	 LPCWSTR allusers = L"";
-	 LPCWSTR userfolder = L"";
+    wchar_t folder[512+1] = {0};
+    int index = csidl_from_id( rfid );
+	DWORD flags = SHGFP_TYPE_CURRENT;
+	DWORD Size;
 	 
-	 DbgPrint("SHGetKnownFolderPath FOLDERID_UserProgramFiles GUID is = {" GUID_FORMAT "}\n",  GUID_ARG_NO_POINTER(FOLDERID_UserProgramFiles));
-     DbgPrint("SHGetKnownFolderPath REFKNOWNFOLDERID GUID = {" GUID_FORMAT "}\n",  GUID_ARG(rfid));	 
+    DbgPrint("SHGetKnownFolderPath REFKNOWNFOLDERID GUID = {" GUID_FORMAT "}\n",  GUID_ARG(rfid));	 
 	 
     if (index < 0)
         return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
-
-    if (flags & KF_FLAG_CREATE)
+	if( dwflags & KF_FLAG_DEFAULT_PATH)
+		flags = SHGFP_TYPE_DEFAULT;
+	if (dwflags & KF_FLAG_CREATE)
         index |= CSIDL_FLAG_CREATE;
 
-    if (flags & KF_FLAG_DONT_VERIFY)
+    if (dwflags & KF_FLAG_CREATE)
+        index |= CSIDL_FLAG_CREATE;
+
+    if (dwflags & KF_FLAG_DONT_VERIFY)
         index |= CSIDL_FLAG_DONT_VERIFY;
 
-    if (flags & KF_FLAG_NO_ALIAS)
+    if (dwflags & KF_FLAG_NO_ALIAS)
         index |= CSIDL_FLAG_NO_ALIAS;
 
-    if (flags & KF_FLAG_INIT)
+    if (dwflags & KF_FLAG_INIT)
         index |= CSIDL_FLAG_PER_USER_INIT;
 
-    if (flags & ~(KF_FLAG_CREATE|KF_FLAG_DONT_VERIFY|KF_FLAG_NO_ALIAS|KF_FLAG_INIT))
+    if (dwflags & ~(KF_FLAG_CREATE|KF_FLAG_DONT_VERIFY|KF_FLAG_NO_ALIAS|KF_FLAG_INIT))
     {
-        FIXME("flags 0x%08x not supported\n", flags);
+        FIXME("SHGetKnownFolderItem::dwflags 0x%08x not supported\n", dwflags);
         return E_INVALIDARG;
     }
 	
@@ -4804,21 +4807,21 @@ SHGetKnownFolderPath(
 	//FOLDERID_SampleVideos
 	//FOLDERID_SavedGames
 	//DbgPrint("SHGetKnownFolderPath the CSLD is %d\n",index);
-	SHGetFolderPathW(NULL, index, token, 0, folder);	
+	DbgPrint("SHGetKnownFolderPath:: index is: %d\n", index);
+	SHGetFolderPathW(NULL, index, token, flags, folder);	
 	DbgPrint("SHGetKnownFolderPath: Folder is: %s\n",folder);
 	
 	if(IsEqualGUID( rfid , &FOLDERID_Public ))
 	{
-		ExpandEnvironmentStringsW(L"%ALLUSERSPROFILE%", allusers, MAX_PATH);
-		*path = allusers;
-	}else if(IsEqualGUID( rfid , &FOLDERID_QuickLaunch ))
-	{
-		ExpandEnvironmentStringsW(L"%APPDATA%", allusers , MAX_PATH);
-		strcatW(allusers, L"Microsoft\\Internet Explorer\\Quick");
-		*path = allusers;		
+		Size = ARRAY_SIZE(folder);
+		GetAllUsersProfileDirectoryW(*path, &Size);
+		// ExpandEnvironmentStringsW(L"%ALLUSERSPROFILE%", *path, MAX_PATH);
+	}else 
+	if(IsEqualGUID( rfid , &FOLDERID_QuickLaunch )){
+		ExpandEnvironmentStringsW(L"%APPDATA%", *path , MAX_PATH);
+		strcatW(*path, L"Microsoft\\Internet Explorer\\Quick");
 	}else if(IsEqualGUID( rfid , &FOLDERID_UserProfiles )){
-		GetProfilesDirectory(userfolder, NULL);
-		*path = userfolder;
+		GetProfilesDirectoryW(*path, NULL);
 	}else if(IsEqualGUID( rfid , &FOLDERID_Downloads )){
 		return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
 	}else{

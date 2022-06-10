@@ -19,6 +19,25 @@
 
 #include <main.h>
 
+static RTL_CRITICAL_SECTION loader_section;
+static RTL_CRITICAL_SECTION_DEBUG critsect_debug =
+{
+    0, 0, &loader_section,
+    { &critsect_debug.ProcessLocksList, &critsect_debug.ProcessLocksList },
+      0, 0, { (DWORD_PTR)(__FILE__ ": loader_section") }
+};
+static RTL_CRITICAL_SECTION loader_section = { &critsect_debug, -1, 0, 0, 0, 0 };
+
+static RTL_CRITICAL_SECTION dlldir_section;
+static RTL_CRITICAL_SECTION_DEBUG dlldir_critsect_debug =
+{
+    0, 0, &dlldir_section,
+    { &dlldir_critsect_debug.ProcessLocksList, &dlldir_critsect_debug.ProcessLocksList },
+      0, 0, { (DWORD_PTR)(__FILE__ ": dlldir_section") }
+};
+static RTL_CRITICAL_SECTION dlldir_section = { &dlldir_critsect_debug, -1, 0, 0, 0, 0 };
+
+
 struct ldr_notification
 {
     struct list                    entry;
