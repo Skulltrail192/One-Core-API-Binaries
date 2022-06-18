@@ -1,2 +1,0 @@
-msvcrt.dll
-winsta.dll

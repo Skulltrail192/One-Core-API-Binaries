@@ -91,7 +91,6 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 
 [CopyAlways.System32.Files]
     d2d1.dll
-	d2dx.dll
 	d3d9.dll
 	d3d9ex.dll
 	d3d10.dll
@@ -105,10 +104,8 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	dxgi.dll
 	D3DCompiler_47.dll
 	fntcache.dll
-	libwine.dll
 	wined3d.dll
 	wineft2.dll
-	winetxc.dll
 	vcruntime140.dll
 	
 [CopyAlways.Branding.Main.files]
@@ -120,8 +117,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 
 [SourceDisksFiles]
     d2d1.dll = 1
-	d2dx.dll = 1
-	d3d9.dll = 1
+d3d9.dll = 1
 	d3d9ex.dll = 1
 	d3d10.dll = 1
 	d3d10_1.dll = 1
@@ -135,9 +131,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	D3DCompiler_47.dll = 1
 	fntcache.dll = 1
 	wined3d.dll = 1
-	libwine.dll = 1
 	wineft2.dll = 1
-	winetxc.dll = 1
 	vcruntime140.dll = 1
 	Branding\Basebrd\basebrd.dll = 1 
 	Branding\ShellBrd\shellbrd.dll = 1		

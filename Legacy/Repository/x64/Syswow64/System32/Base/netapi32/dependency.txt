@@ -1,5 +1,0 @@
-msvcrt.dll (vista)
-advapi32.dll
-kernel32.dll
-secur32.dll
-winbrand.dll

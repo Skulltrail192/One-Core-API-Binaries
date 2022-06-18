@@ -538,7 +538,7 @@
     netapibase.dll,XPSP3\xpspnetapibase.dll	
 	ntdsapi.dll,XPSP3\xpspntdsapi.dll	
     olebase.dll,XPSP3\xpspolebase.dll		
-    olebacc.dll,XPSP3\xpspoleacc.dll		
+    oleacc.dll,XPSP3\xpspoleacc.dll		
     powrprofbase.dll,XPSP3\xpsppowrprofbase.dll
     rpcrtbase.dll,XPSP3\xpsprpcrtbase.dll
     securbase.dll,XPSP3\xpspsecurbase.dll

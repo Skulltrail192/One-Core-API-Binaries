@@ -1,5 +1,0 @@
-msvcrt.dll(vista)
-advapi32.dll
-vtdll.dll
-comctl32.dll (nova versão)
-

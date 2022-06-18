@@ -1,4 +1,0 @@
-msvcrt
-kernel32
-advapi32
-ncrypt

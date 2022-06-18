@@ -1,3 +1,0 @@
-bcrypt.dll
-kernel32.dll
-vtdll.dll

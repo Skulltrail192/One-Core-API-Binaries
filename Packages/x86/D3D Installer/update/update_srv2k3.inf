@@ -87,7 +87,6 @@
 
 [CopyAlways.System32.Files]
     d2d1.dll
-	d2dx.dll
 	d3d9.dll
 	d3d9ex.dll
 	d3d10.dll
@@ -101,10 +100,8 @@
 	dxgi.dll
 	D3DCompiler_47.dll
 	fntcache.dll
-	libwine.dll
 	wined3d.dll
 	wineft2.dll
-	winetxc.dll
 	vcruntime140.dll
 	
 [CopyAlways.Branding.Main.files]
@@ -116,7 +113,6 @@
 
 [SourceDisksFiles]
     d2d1.dll = 1
-	d2dx.dll = 1
 	d3d9.dll = 1
 	d3d9ex.dll = 1
 	d3d10.dll = 1
@@ -130,10 +126,8 @@
 	dxgi.dll = 1
 	D3DCompiler_47.dll = 1
 	fntcache.dll = 1
-	libwine.dll = 1
 	wined3d.dll = 1
 	wineft2.dll = 1
-	winetxc.dll = 1
 	vcruntime140.dll = 1
 
 [Add.Reg.Uninstall]
