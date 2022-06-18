@@ -979,7 +979,7 @@
 @ stdcall Wow64RevertWow64FsRedirection(ptr)
 @ stdcall ReOpenFile(ptr long long long)
 @ stdcall GetNLSVersion(long long ptr) 
-@ stdcall -stub IsNLSDefinedString(long long ptr long long)
+@ stdcall IsNLSDefinedString(long long ptr long long)
 @ stdcall SetFileCompletionNotificationModes(ptr long)
 
 #Missing on XP and 2003 RTM

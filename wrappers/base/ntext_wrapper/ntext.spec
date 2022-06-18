@@ -64,7 +64,7 @@
 @ stdcall LdrGetProcedureAddress(ptr ptr long ptr)
 @ stdcall LdrHotPatchRoutine(long) ntdll.LdrHotPatchRoutine
 @ stdcall LdrInitShimEngineDynamic(long) ntdll.LdrInitShimEngineDynamic
-@ stdcall LdrInitializeThunk(ptr ptr ptr) LdrInitializeThunkInternal  
+@ stdcall LdrInitializeThunk(ptr ptr ptr)  
 @ stdcall LdrLoadAlternateResourceModule(ptr wstr)
 @ stdcall LdrLoadDll(wstr long ptr ptr)
 @ stdcall LdrLockLoaderLock(long ptr ptr)

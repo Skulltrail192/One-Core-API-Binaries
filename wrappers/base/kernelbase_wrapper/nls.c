@@ -58,6 +58,174 @@ struct enumdateformats_context {
     BOOL   unicode; /* A vs W callback type, only for regular and Ex callbacks */
 };
 
+struct sortguid
+{
+    GUID  id;          /* sort GUID */
+    UINT  flags;       /* flags */
+    UINT  compr;       /* offset to compression table */
+    UINT  except;      /* exception table offset in sortkey table */
+    UINT  ling_except; /* exception table offset for linguistic casing */
+    UINT  casemap;     /* linguistic casemap table offset */
+};
+
+/* flags for sortguid */
+#define FLAG_HAS_3_BYTE_WEIGHTS 0x01
+#define FLAG_REVERSEDIACRITICS  0x10
+#define FLAG_DOUBLECOMPRESSION  0x20
+#define FLAG_INVERSECASING      0x40
+
+struct sort_expansion
+{
+    WCHAR exp[2];
+};
+
+struct jamo_sort
+{
+    BYTE is_old;
+    BYTE leading;
+    BYTE vowel;
+    BYTE trailing;
+    BYTE weight;
+    BYTE pad[3];
+};
+
+struct sort_compression
+{
+    UINT  offset;
+    WCHAR minchar, maxchar;
+    WORD  len[8];
+};
+
+static inline int compression_size( int len ) { return 2 + len + (len & 1); }
+
+union char_weights
+{
+    UINT val;
+    struct { BYTE primary, script, diacritic, _case; };
+};
+
+static const struct sortguid **locale_sorts;
+static const struct sortguid *current_locale_sort;
+
+static struct
+{
+    UINT                           version;         /* NLS version */
+    UINT                           guid_count;      /* number of sort GUIDs */
+    UINT                           exp_count;       /* number of character expansions */
+    UINT                           compr_count;     /* number of compression tables */
+    const UINT                    *keys;            /* sortkey table, indexed by char */
+    const USHORT                  *casemap;         /* casemap table, in l_intl.nls format */
+    const WORD                    *ctypes;          /* CT_CTYPE1,2,3 values */
+    const BYTE                    *ctype_idx;       /* index to map char to ctypes array entry */
+    const struct sortguid         *guids;           /* table of sort GUIDs */
+    const struct sort_expansion   *expansions;      /* character expansions */
+    const struct sort_compression *compressions;    /* character compression tables */
+    const WCHAR                   *compr_data;      /* data for individual compressions */
+    const struct jamo_sort        *jamo;            /* table for Jamo compositions */
+} sort;
+
+static inline int is_private_use_area_char( WCHAR code )
+{
+    return (code >= 0xe000 && code <= 0xf8ff);
+}
+
+static inline WORD get_char_type( DWORD type, WCHAR ch )
+{
+    const BYTE *ptr = sort.ctype_idx + ((const WORD *)sort.ctype_idx)[ch >> 8];
+    ptr = sort.ctype_idx + ((const WORD *)ptr)[(ch >> 4) & 0x0f] + (ch & 0x0f);
+    return sort.ctypes[*ptr * 3 + type / 2];
+}
+
+// static void load_locale_nls(void)
+// {
+    // struct
+    // {
+        // UINT ctypes;
+        // UINT unknown1;
+        // UINT unknown2;
+        // UINT unknown3;
+        // UINT locales;
+        // UINT charmaps;
+        // UINT geoids;
+        // UINT scripts;
+    // } *header;
+    // struct geo_header
+    // {
+        // WCHAR signature[4];  /* L"geo" */
+        // UINT  total_size;
+        // UINT  ids_offset;
+        // UINT  ids_count;
+        // UINT  index_offset;
+        // UINT  index_count;
+    // } *geo_header;
+
+    // LARGE_INTEGER dummy;
+    // const USHORT *map_ptr;
+    // unsigned int i;
+
+    // RtlGetLocaleFileMappingAddress( (void **)&header, &system_lcid, &dummy );
+    // locale_table = (const NLS_LOCALE_HEADER *)((char *)header + header->locales);
+    // lcids_index = (const NLS_LOCALE_LCID_INDEX *)((char *)locale_table + locale_table->lcids_offset);
+    // lcnames_index = (const NLS_LOCALE_LCNAME_INDEX *)((char *)locale_table + locale_table->lcnames_offset);
+    // locale_strings = (const WCHAR *)((char *)locale_table + locale_table->strings_offset);
+    // geo_header = (struct geo_header *)((char *)header + header->geoids);
+    // geo_ids = (const struct geo_id *)((char *)geo_header + geo_header->ids_offset);
+    // geo_index = (const struct geo_index *)((char *)geo_header + geo_header->index_offset);
+    // geo_ids_count = geo_header->ids_count;
+    // geo_index_count = geo_header->index_count;
+    // map_ptr = (const USHORT *)((char *)header + header->charmaps);
+    // for (i = 0; i < NB_CHARMAPS; i++, map_ptr += *map_ptr) charmaps[i] = map_ptr + 1;
+// }
+
+// static void load_sortdefault_nls(void)
+// {
+    // const struct
+    // {
+        // UINT sortkeys;
+        // UINT casemaps;
+        // UINT ctypes;
+        // UINT sortids;
+    // } *header;
+
+    // const WORD *ctype;
+    // const UINT *table;
+    // UINT i;
+    // SIZE_T size;
+    // const struct sort_compression *last_compr;
+
+    // NtGetNlsSectionPtr( 9, 0, NULL, (void **)&header, &size );
+
+    // sort.keys = (UINT *)((char *)header + header->sortkeys);
+    // sort.casemap = (USHORT *)((char *)header + header->casemaps);
+
+    // ctype = (WORD *)((char *)header + header->ctypes);
+    // sort.ctypes = ctype + 2;
+    // sort.ctype_idx = (BYTE *)ctype + ctype[1] + 2;
+
+    // table = (UINT *)((char *)header + header->sortids);
+    // sort.version = table[0];
+    // sort.guid_count = table[1];
+    // sort.guids = (struct sortguid *)(table + 2);
+
+    // table = (UINT *)(sort.guids + sort.guid_count);
+    // sort.exp_count = table[0];
+    // sort.expansions = (struct sort_expansion *)(table + 1);
+
+    // table = (UINT *)(sort.expansions + sort.exp_count);
+    // sort.compr_count = table[0];
+    // sort.compressions = (struct sort_compression *)(table + 1);
+    // sort.compr_data = (WCHAR *)(sort.compressions + sort.compr_count);
+
+    // last_compr = sort.compressions + sort.compr_count - 1;
+    // table = (UINT *)(sort.compr_data + last_compr->offset);
+    // for (i = 0; i < 7; i++) table += last_compr->len[i] * ((i + 5) / 2);
+    // table += 1 + table[0] / 2;  /* skip multiple weights */
+    // sort.jamo = (struct jamo_sort *)(table + 1);
+
+    // locale_sorts = RtlAllocateHeap( GetProcessHeap(), HEAP_ZERO_MEMORY,
+                                    // locale_table->nb_lcnames * sizeof(*locale_sorts) );
+// }
+
 /**************************************************************************
  * NLS_GetLocaleNumber <internal>
  *
@@ -428,4 +596,44 @@ EnumTimeFormatsEx(
     ctxt.unicode = TRUE;
 
     return NLS_EnumTimeFormats(&ctxt);
+}
+
+/******************************************************************************
+ *	IsNLSDefinedString   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsNLSDefinedString( NLS_FUNCTION func, DWORD flags, NLSVERSIONINFO *info,
+                                                  const WCHAR *str, int len )
+{
+    int i;
+
+    if (func != COMPARE_STRING)
+    {
+        SetLastError( ERROR_INVALID_FLAGS );
+        return FALSE;
+    }
+    if (info)
+    {
+        if (info->dwNLSVersionInfoSize != sizeof(*info) &&
+            (info->dwNLSVersionInfoSize != offsetof( NLSVERSIONINFOEX, dwEffectiveId )))
+        {
+            SetLastError( ERROR_INSUFFICIENT_BUFFER );
+            return FALSE;
+        }
+    }
+
+    if (len < 0) len = lstrlenW( str ) + 1;
+
+    for (i = 0; i < len; i++)
+    {
+        if (is_private_use_area_char( str[i] )) return FALSE;
+        if (IS_LOW_SURROGATE( str[i] )) return FALSE;
+        if (IS_HIGH_SURROGATE( str[i] ))
+        {
+            if (++i == len) return FALSE;
+            if (!IS_LOW_SURROGATE( str[i] )) return FALSE;
+            continue;
+        }
+        if (!(get_char_type( CT_CTYPE1, str[i] ) & C1_DEFINED)) return FALSE;
+    }
+    return TRUE;
 }

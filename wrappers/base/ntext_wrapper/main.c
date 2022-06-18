@@ -24,26 +24,33 @@ VOID RtlpInitializeKeyedEvent(VOID);
 VOID RtlpCloseKeyedEvent(VOID);
 void load_global_options(void);
 void init_locale();
-static UNICODE_STRING Kernel32DllName = RTL_CONSTANT_STRING(L"kernel32.dll");
 
-/******************************************************************
- *		LdrInitializeThunk (NTDLL.@)
- *
- * Attach to all the loaded dlls.
- * If this is the first time, perform the full process initialization.
+/*****************************************************
+ *      DllMain
  */
-VOID
-NTAPI
-LdrInitializeThunkInternal(
-    ULONG Unknown1,
-    ULONG Unknown2,
-    ULONG Unknown3,
-    ULONG Unknown4
+BOOL 
+WINAPI 
+LdrInitialize(
+	HANDLE hDll, 
+	DWORD dwReason, 
+	LPVOID reserved
 )
 {
-	load_global_options();		
-	init_locale();
-    //LdrDisableThreadCalloutsForDll(hDll);
-    RtlpInitializeKeyedEvent();	
-	LdrInitializeThunk(Unknown1, Unknown2, Unknown3, Unknown4);
+    if (dwReason == DLL_PROCESS_ATTACH)
+    {
+		// RtlInitializeCriticalSection(&time_tz_section);
+		// RtlInitializeCriticalSection(&localeCritSection);
+		// RtlInitializeCriticalSection(&loader_section);
+		// RtlInitializeCriticalSection(&dlldir_section);
+		load_global_options();		
+		init_locale();
+        // LdrDisableThreadCalloutsForDll(hDll);
+        RtlpInitializeKeyedEvent();
+    }
+    else if (dwReason == DLL_PROCESS_DETACH)
+    {
+        RtlpCloseKeyedEvent();
+    }	
+	
+    return TRUE;
 }

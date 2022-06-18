@@ -691,7 +691,7 @@ BOOL WINAPI DECLSPEC_HOTPATCH WaitOnAddress(
   Status = RtlWaitOnAddress((const void*)Address, CompareAddress, AddressSize, &timeout);
   BaseSetLastNTError(Status);
   result = FALSE;
-  if ( NT_SUCCESS( )
+  if ( NT_SUCCESS( Status) )
     result = Status != 0x102;
   return result;
 }
@@ -751,43 +751,64 @@ BOOL getQueuedCompletionStatus(
 		&lpEnt->lpOverlapped, dwMilliseconds);
 }
 
-BOOL WINAPI GetQueuedCompletionStatusEx(
-  HANDLE             CompletionPort,
-  LPOVERLAPPED_ENTRY lpCompletionPortEntries,
-  ULONG              ulCount,
-  PULONG             ulNumEntriesRemoved,
-  DWORD              dwMilliseconds,
-  BOOL               fAlertable
-) 
-{
-	int i;
-	LARGE_INTEGER time;
-	NTSTATUS Status;
-	// validate arguments
-	if(!lpCompletionPortEntries
-	|| !ulCount || !ulNumEntriesRemoved) {
-		RtlSetLastWin32Error(ERROR_INVALID_PARAMETER);
-		return FALSE; }
+// BOOL WINAPI GetQueuedCompletionStatusEx(
+  // HANDLE             CompletionPort,
+  // LPOVERLAPPED_ENTRY lpCompletionPortEntries,
+  // ULONG              ulCount,
+  // PULONG             ulNumEntriesRemoved,
+  // DWORD              dwMilliseconds,
+  // BOOL               fAlertable
+// ) 
+// {
+	// int i;
+	// LARGE_INTEGER time;
+	// NTSTATUS Status;
+	// // validate arguments
+	// if(!lpCompletionPortEntries
+	// || !ulCount || !ulNumEntriesRemoved) {
+		// RtlSetLastWin32Error(ERROR_INVALID_PARAMETER);
+		// return FALSE; }
 
-	// partial implementation error
-	if(fAlertable)
-		DbgPrint("GetQueuedCompletionStatusEx: fAlertable");
+	// // partial implementation error
+	// if(fAlertable)
+		// DbgPrint("GetQueuedCompletionStatusEx: fAlertable");
 		
-	// retrieve multiple entries
+	// // retrieve multiple entries
 	
-	for(i = 0;i < ulCount; i++)
-	{	
-		if(!getQueuedCompletionStatus(CompletionPort, 
-		lpCompletionPortEntries+i, dwMilliseconds))
-		{
-			break;
-		}
+	// for(i = 0;i < ulCount; i++)
+	// {	
+		// if(!getQueuedCompletionStatus(CompletionPort, 
+		// lpCompletionPortEntries+i, dwMilliseconds))
+		// {
+			// break;
+		// }
 		
-        Status = NtWaitForSingleObject( CompletionPort, fAlertable, get_nt_timeout( &time, dwMilliseconds ) );
-        if (Status != WAIT_OBJECT_0) break;		
-		//dwMilliseconds = 0;
-	}
+        // Status = NtWaitForSingleObject( CompletionPort, fAlertable, get_nt_timeout( &time, dwMilliseconds ) );
+        // if (Status != WAIT_OBJECT_0) break;		
+		// //dwMilliseconds = 0;
+	// }
 
-	*ulNumEntriesRemoved = i;
-	return TRUE;
+	// *ulNumEntriesRemoved = i;
+	// return TRUE;
+// }
+
+/******************************************************************************
+ *              GetQueuedCompletionStatusEx   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH GetQueuedCompletionStatusEx( HANDLE port, OVERLAPPED_ENTRY *entries,
+                                                           ULONG count, ULONG *written,
+                                                           DWORD timeout, BOOL alertable )
+{
+    LARGE_INTEGER time;
+    NTSTATUS ret;
+
+    TRACE( "%p %p %lu %p %lu %u\n", port, entries, count, written, timeout, alertable );
+
+    ret = NtRemoveIoCompletionEx( port, (FILE_IO_COMPLETION_INFORMATION *)entries, count,
+                                  written, get_nt_timeout( &time, timeout ), alertable );
+    if (ret == STATUS_SUCCESS) return TRUE;
+    else if (ret == STATUS_TIMEOUT) SetLastError( WAIT_TIMEOUT );
+    else if (ret == STATUS_USER_APC) SetLastError( WAIT_IO_COMPLETION );
+    else SetLastError( RtlNtStatusToDosError(ret) );
+    return FALSE;
 }

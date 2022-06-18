@@ -39,6 +39,11 @@
 
 #define RtlpWaitOnAddressSpinCount 1024
 
+typedef SIZE_T SYNCSTATUS;
+
+#define CVF_Full	7	//唤醒申请已满，全部唤醒
+#define CVF_Link	8	//修改链表的操作进行中
+
 typedef struct _COND_VAR_WAIT_ENTRY
 {
     /* ListEntry must have an alignment of at least 32-bits, since we

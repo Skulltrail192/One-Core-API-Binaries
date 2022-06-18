@@ -63,7 +63,7 @@ list(APPEND SOURCE
 
 add_library(ntext SHARED ${SOURCE})
 
-set_module_type(ntext win32dll ENTRYPOINT 0)
+set_module_type(ntext win32dll ENTRYPOINT LdrInitialize)
 #############################################
 ## HACK FOR MSVC COMPILATION WITH win32dll ##
 set_subsystem(ntext console)

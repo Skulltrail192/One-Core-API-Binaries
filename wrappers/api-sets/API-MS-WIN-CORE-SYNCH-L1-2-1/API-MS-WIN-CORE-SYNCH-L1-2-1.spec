@@ -54,8 +54,8 @@
 @ stdcall WaitForMultipleObjectsEx(long ptr long long long) kernelbase.WaitForMultipleObjectsEx
 @ stdcall WaitForSingleObject(long long) kernelbase.WaitForSingleObject
 @ stdcall WaitForSingleObjectEx(long long long) kernelbase.WaitForSingleObjectEx
-@ stub WaitOnAddress
+@ stdcall WaitOnAddress(ptr ptr long long) kernelbase.WaitOnAddress
 @ stdcall WakeAllConditionVariable(ptr) kernelbase.WakeAllConditionVariable
-@ stub WakeByAddressAll
-@ stub WakeByAddressSingle
+@ stdcall WakeByAddressAll(ptr) ntext.RtlWakeAddressAll
+@ stdcall WakeByAddressSingle(ptr) ntext.RtlWakeAddressSingle
 @ stdcall WakeConditionVariable(ptr) kernelbase.WakeConditionVariable
