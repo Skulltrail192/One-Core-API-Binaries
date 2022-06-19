@@ -58,8 +58,10 @@ Kernel Standalone -> App Compat Installer: you can't install Base installer and 
 
 **App Compat (only one)**
 
+Note: if not install kernel Standalone not installed first, don't install after
+
 **Case Base Installer first**
-Base Installer -> New Installer (Additional Dlls) -> D3d Installer -> API-SET installer -> App Compat -> Kernel Update
+Base Installer -> New Installer (Additional Dlls) -> D3d Installer -> API-SET installer -> App Compat
 
 **AppCompat Base Installer first**
-App Compat -> Base Installer -> New Installer (Additional Dlls) -> D3d Installer -> API-SET installer -> Kernel Update
+App Compat -> Base Installer -> New Installer (Additional Dlls) -> D3d Installer -> API-SET installer
