@@ -1,35 +1,28 @@
 Welcome to One-Core-API binaries!
 
-Here you can found binaries of One-Core-API project. It's compatible with Windows Server 2003 SP2, Windows XP SP3 and Windows XP
-x64 SP2. You can do amazing things installing binaries.
+This repositry contains binary releases of the One-Core-API project. These are compatible with Windows Server 2003 SP2, Windows XP SP3 and Windows XP
+x64 SP2.
 
-Now we will describe folders present on this repository:
-- Packages (x86 and x64, each subfolder contain folder what binaries are placed, and each folder is a installer. 
-You can download and install binaries for example: going to x86\Base installer\update and run update.exe);
-- Decrepated: Installer no more used
-- Documents: Some documents about this project, related with know bug, how use sfxcab (to do installers) and others/
-- Legacy/Repository: Old repository, to remove on next releases;
+Folders in this repository:
+- Documents: Project documentation, known bugs, sfxcab usage (for making installers), etc.
+- Packages\x86 and Packages\x64: Binary releases categorized by package. You can download and install/update the packages directly from here (i.e. by going to Packages\x86\Base installer\update and runnning update.exe).
 - Todo:  To do tasks
-- Test: Some binaries and documents to do tests
+- Test: Some binaries and documents for testing.
 
-Packages are divided in:
-API-SET Installer: contain all api-set implemented on wine. API-SET dlls are introduced on Windows 7 and are required by several 
-applications today;
-App Compat Installer: update to given new compatbility settings (of newer systems) to older (XP/2003)
-Base Installer: a base of all one-core-api. This installer is the pre-requisite to all others installers, except Kernel Update 
-Standalone installer. And contain all wrappers used on this project (like kernelbase and ntext)
-D3d Installer: contain d3d runtime (Directx dlls, mainly directx 10 and directx 11, based on wine d3d, a converter from directx 
-to opengl calls);
-Kernel Installer - Experimental kernel update with dependency with Base Installer;
-Kernel Standalone Installer - Experimental Update without dependency with Base Installer, can be installed alone;
-New Dlls Installer (Aditional Dlls) - provide several new dlls present on new systems, Vista or above;
+The One-Core-API Binaries project consists of the following packages:
+- Base: One-Core-API base. This package is required by all other packages, except Kernel Standalone, and contains all wrappers used in this project (like kernelbase and ntext);
+- Additional Dlls: Several new dlls introduced in later versions of Windows.
+- API-SET: Contains UCRT dlls based on wine.
+- D3d: D3D runtime (Mainly DX10 and DX11, based on WineD3D);
+- Kernel Standalone: Experimental kernel update. Does not depend on the Base package. This package cannot be installed alongside any other packages, except App Compat.
+- App Compat: Application compatbility settings, backported from later versions of Windows.
 
-You can run several programs with One-Core-API, like:
+One-Core-API allows you to run:
 - Web Storm 2018
-- Intelliji 2018 (maybe other versions works)
-- Filezilla (lastest)
+- Intelliji 2018 (Other versions may work too)
+- Filezilla (latest)
 - Visual Studio Code 1.18+
-- Chrome up to version 100!
+- Chrome up to version 102!
 - Opera up to version 39
 - Firefox up to version 54
 - JDK 1.8
@@ -39,29 +32,38 @@ You can run several programs with One-Core-API, like:
 - .Net Framework up to 4.8
 - Geekbench 4.2
 - Performance Test
-- Adobe Reader DC (2021)
+- Adobe Reader DC (2017)
 - Windows 7 games
-- Vista Applications
-- Spotify after Windows XP/Vista end of support
-- Several other applications
+- Vista native Applications
+- Spotify after Windows XP/Vista end of support, version 1.0.60;
+- Yandex browser (latest)
+- Zoom;
+- Several other applications;
 - Directx 9EX, 10 and 11 games: 
   - Need for Speed Most Wanted 2012
   - Need for Speed The Run
   - Street Figther V
   - Injustice: Gods among us
   - Assassign Creed Black Flgs
-  - Crysis 1,2, and 3
+  - Crysis 1,2, and 3 (directx 10-11 mode)
+  
+Known Limitations:
+- New applications installers may not work, like Chrome, Maxthon, Utorrent, Discord, Team vieweretc crash and application isn't installed. Need 
+use a pre-installed version, copied from other operation system;
+- Some installers like VS Code and Skype genereate a erro "Class is not supported" on shortcut phase creation;
+- Chrome has stability and crash randomy. Extension isn't supported for now. Downloads crash application;
 
 **Installation order of packages:**
-**Case 1 (Kernel Standalone first):**
-Kernel Standalone -> App Compat Installer: you can't install Base installer and others packages side by side with Kernel Standalone installed;
+**Kernel Standalone first:**
+Kernel Standalone -> App Compat: You can't install any other packages alongside the Kernel Standalone package;
 
-**App Compat (only one)**
+**App Compat only:**
+This package can be installed without any other packages
 
 Note: if not install kernel Standalone not installed first, don't install after
 
-**Case Base Installer first**
-Base Installer -> New Installer (Additional Dlls) -> D3d Installer -> API-SET installer -> App Compat
+**Base first**
+Base-> D3d -> API-SET -> Driver Update -> App Compat-> Additional Dlls; 
 
-**AppCompat Base Installer first**
-App Compat -> Base Installer -> New Installer (Additional Dlls) -> D3d Installer -> API-SET installer
+**AppCompat first**
+App Compat -> Base -> Driver Update -> D3d -> API-SET -> Additional Dlls
