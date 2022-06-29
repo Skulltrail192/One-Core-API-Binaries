@@ -1,15 +1,15 @@
-Welcome to One-Core-API binaries!
+**Welcome to One-Core-API binaries!**
 
 This repositry contains binary releases of the One-Core-API project. These are compatible with Windows Server 2003 SP2, Windows XP SP3 and Windows XP
 x64 SP2.
 
-Folders in this repository:
+**Folders in this repository:**
 - Documents: Project documentation, known bugs, sfxcab usage (for making installers), etc.
 - Packages\x86 and Packages\x64: Binary releases categorized by package. You can download and install/update the packages directly from here (i.e. by going to Packages\x86\Base installer\update and runnning update.exe).
 - Todo:  To do tasks
 - Test: Some binaries and documents for testing.
 
-The One-Core-API Binaries project consists of the following packages:
+**The One-Core-API Binaries project consists of the following packages:**
 - Base: One-Core-API base. This package is required by all other packages, except Kernel Standalone, and contains all wrappers used in this project (like kernelbase and ntext);
 - Additional Dlls: Several new dlls introduced in later versions of Windows.
 - API-SET: Contains UCRT dlls based on wine.
@@ -17,7 +17,7 @@ The One-Core-API Binaries project consists of the following packages:
 - Kernel Standalone: Experimental kernel update. Does not depend on the Base package. This package cannot be installed alongside any other packages, except App Compat.
 - App Compat: Application compatbility settings, backported from later versions of Windows.
 
-One-Core-API allows you to run:
+**One-Core-API allows you to run:**
 - Web Storm 2018
 - Intelliji 2018 (Other versions may work too)
 - Filezilla (latest)
@@ -47,7 +47,7 @@ One-Core-API allows you to run:
   - Assassign Creed Black Flgs
   - Crysis 1,2, and 3 (directx 10-11 mode)
   
-Known Limitations:
+**Known Limitations:**
 - New applications installers may not work, like Chrome, Maxthon, Utorrent, Discord, Team vieweretc crash and application isn't installed. Need 
 use a pre-installed version, copied from other operation system;
 - Some installers like VS Code and Skype genereate a erro "Class is not supported" on shortcut phase creation;
