@@ -55,8 +55,8 @@ use a pre-installed version, copied from other operation system;
 - Chrome has stability and crash randomy. Extension isn't supported for now. Downloads crash application;
 
 **Installation order of packages:**
--**App Compat only:** This package can be installed without any other packages
+- **App Compat only:** This package can be installed without any other packages
 
--**Base first**: Base-> D3d -> API-SET -> Driver Update -> App Compat-> Additional Dlls; 
+- **Base first**: Base-> D3d -> API-SET -> Driver Update -> App Compat-> Additional Dlls; 
 
--**AppCompat first**: App Compat -> Base -> Driver Update -> D3d -> API-SET -> Additional Dlls
+- **AppCompat first**: App Compat -> Base -> Driver Update -> D3d -> API-SET -> Additional Dlls
