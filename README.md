@@ -48,22 +48,15 @@ x64 SP2.
   - Crysis 1,2, and 3 (directx 10-11 mode)
   
 **Known Limitations:**
+- The unique language on binaries for now is English. You can install on Windows with another language, however, several dialogs and strings will be displayed in engilsh;
 - New applications installers may not work, like Chrome, Maxthon, Utorrent, Discord, Team vieweretc crash and application isn't installed. Need 
 use a pre-installed version, copied from other operation system;
 - Some installers like VS Code and Skype genereate a erro "Class is not supported" on shortcut phase creation;
 - Chrome has stability and crash randomy. Extension isn't supported for now. Downloads crash application;
 
 **Installation order of packages:**
-**Kernel Standalone first:**
-Kernel Standalone -> App Compat: You can't install any other packages alongside the Kernel Standalone package;
+-**App Compat only:** This package can be installed without any other packages
 
-**App Compat only:**
-This package can be installed without any other packages
+-**Base first**: Base-> D3d -> API-SET -> Driver Update -> App Compat-> Additional Dlls; 
 
-Note: if not install kernel Standalone not installed first, don't install after
-
-**Base first**
-Base-> D3d -> API-SET -> Driver Update -> App Compat-> Additional Dlls; 
-
-**AppCompat first**
-App Compat -> Base -> Driver Update -> D3d -> API-SET -> Additional Dlls
+-**AppCompat first**: App Compat -> Base -> Driver Update -> D3d -> API-SET -> Additional Dlls
