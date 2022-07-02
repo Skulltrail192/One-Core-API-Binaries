@@ -18,34 +18,34 @@ x64 SP2.
 - App Compat: Application compatbility settings, backported from later versions of Windows.
 
 **One-Core-API allows you to run:**
-- Web Storm 2018
-- Intelliji 2018 (Other versions may work too)
-- Filezilla (latest)
-- Visual Studio Code 1.18+
-- Chrome up to version 102!
-- Opera up to version 39
-- Firefox up to version 54
-- JDK 1.8
-- Maxthon 6
-- Epic Browser 94
-- Python 3.6
-- .Net Framework up to 4.8
-- Geekbench 4.2
-- Performance Test
-- Adobe Reader DC (2017)
-- Windows 7 games
-- Vista native Applications
+- Web Storm 2018;
+- Intelliji 2018 (Other versions may work too);
+- Filezilla (latest);
+- Visual Studio Code 1.18;
+- Chrome up to version 102!;
+- Opera up to version 39;
+- Firefox up to version 54;
+- JDK 1.8;
+- Maxthon 6;
+- Epic Browser 94;
+- Python 3.6;
+- .Net Framework up to 4.8;
+- Geekbench 4.2;
+- Performance Test;
+- Adobe Reader DC (2017);
+- Windows 7 games;
+- Vista native Applications;
 - Spotify after Windows XP/Vista end of support, version 1.0.60;
-- Yandex browser (latest)
+- Yandex browser (latest);
 - Zoom;
 - Several other applications;
 - Directx 9EX, 10 and 11 games: 
-  - Need for Speed Most Wanted 2012
-  - Need for Speed The Run
-  - Street Figther V
-  - Injustice: Gods among us
-  - Assassign Creed Black Flgs
-  - Crysis 1,2, and 3 (directx 10-11 mode)
+  - Need for Speed Most Wanted 2012;
+  - Need for Speed The Run;
+  - Street Figther V;
+  - Injustice: Gods among us;
+  - Assassign Creed Black Flgs;
+  - Crysis 1,2, and 3 (directx 10-11 mode);
   
 **Known Limitations:**
 - The unique language on binaries for now is English. You can install on Windows with another language, however, several dialogs and strings will be displayed in engilsh;
@@ -55,8 +55,8 @@ use a pre-installed version, copied from other operation system;
 - Chrome has stability and crash randomy. Extension isn't supported for now. Downloads crash application;
 
 **Installation order of packages:**
-- **App Compat only:** This package can be installed without any other packages
+- **App Compat only:** This package can be installed without any other packages;
 
 - **Base first**: Base-> D3d -> API-SET -> Driver Update -> App Compat-> Additional Dlls; 
 
-- **AppCompat first**: App Compat -> Base -> Driver Update -> D3d -> API-SET -> Additional Dlls
+- **AppCompat first**: App Compat -> Base -> Driver Update -> D3d -> API-SET -> Additional Dlls.
