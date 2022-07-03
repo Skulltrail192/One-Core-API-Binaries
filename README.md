@@ -57,6 +57,8 @@ use a pre-installed version, copied from other operation system;
 - Firefox 54 32 bits not working on Windows XP x64. Chrome 61+ not working too;
 - The packages cannot be integrate with nlite to Windows Iso, because use a tool called "SFXCAB Substitute", not standard Microsoft version;
 - Standard .Net Framework Installers starting 4.6 ins't supported for now. You need a repacked version like did here: https://github.com/abbodi1406/dotNetFx4xW7. And avaliable like here: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251. Other versions are avaliable too, search on forum topics;
+- Palemoon version 27-29 has a wrong dll called api-ms-win-core-memory-l1-1-0.dll. You must delete this file from Palemoon folder installation and Palemoon will work fine;
+- MiniChrome 87 has a issue related with high usage cpu. It is related with UpdateProcThreadAttribute, but, this function is needed for others applications, like standard chrome;
 
 **Installation order of packages:**
 - **App Compat only:** This package can be installed without any other packages;
