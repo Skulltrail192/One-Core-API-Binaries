@@ -4,38 +4,58 @@
 	MaxNtMajorVersionToUpdate = 5
 	MaxNtMinorVersionToUpdate = 2
 	MaxNtServicePackVersion   = 768
-	MinNtServicePackVersion   = 0
+	MinNtServicePackVersion   = 256
 	NtBuildToUpdate           = 3790
 	NtMajorVersionToUpdate    = 5
 	NtMinorVersionToUpdate    = 2
 	Signature                 = "$Windows NT$"
 
 [Configuration]
-    InstallationType     = Hotfix
-    InstallLogFileName   = %SP_SHORT_TITLE%.log
-    EventLogKeyName      = NtServicePack
-    EventLogDllName      = spmsg.dll
-    NoPNPFiles           = 1
-    UnInstallLogFileName = %SP_SHORT_TITLE%Uninst.log
-    UnInstallDirName     = $NtUninstall%SP_SHORT_TITLE%$
+    noPNPfiles=1
+    InstallationType        = Hotfix
+    InstallLogFileName      = %SP_SHORT_TITLE%.log
+    UnInstallLogFileName    = %SP_SHORT_TITLE%Uninst.log
+    UnInstallDirName        = $NtUninstall%SP_SHORT_TITLE%$
+    EventLogKeyName         = NtServicePack
+    EventLogDllName         = spmsg.dll	
     ServiceFileInUseDetect    = 1
     AppFileinUseDetect        = 3
 
 [Strings]
-	APIS_FILE_VERSION       = "6.0.6002.18002"
-	APIS_VERSION             = "3.0.0.0"
-	SP_TITLE                = "One-Core-API API-SETS"
-	LANGTYPEVALUE           = 0x0
-	SP_SHORT_TITLE          = "OCAAS"
-	SERVICE_PACK_NUMBER     = 3
-	COMMENT                 = "One-Core-API API-SETS [See Q100000 for more information]"
-	SERVICEPACKSOURCEFILES  = "One-Core-API API-SETS"
-	Msft                    = "Microsoft"
-	ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
-	PARENT_DISPLAY_NAME     = "Windows Updates"
-	MSFT_Prefix                 = "OneCoreAPIApiSets"
-	MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
-	LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
+	; APIS_VERSION            = "2.6.0.0"
+	; SP_TITLE                = "One-Core-API API-SETS"
+	; LANGTYPEVALUE           = 0x0
+	; SP_SHORT_TITLE          = "OCAAS"
+	; SERVICE_PACK_NUMBER     = 3
+	; ;COMMENT                 = "One-Core-API API-SETS [See Q100000 for more information]"
+	; SERVICEPACKSOURCEFILES  = "One-Core-API API-SETS"
+	; Msft                    = "Microsoft"
+	; ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+	; PARENT_DISPLAY_NAME     = "One-Core-API"
+	; LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
+	
+    SERVICE_PACK_NUMBER     = 3
+    HelpLink = "http://shorthornproject.com"
+    URLInfoAbout = "http://shorthornproject.com"
+    BUILDTIMESTAMP = 2
+    EXPIRETIMESTAMP = 20061203.060222
+	APIS_VERSION            = "2.6.0.0"	
+    UPDATE                	= "Update"
+    HOTFIX                	= "Hotfix"
+    SECURITY_UPDATE       	= "Security Update"
+    LangTypeValue           = 0x0
+    WSEDIR                  = "1033"
+    LCID                    = "0409"
+    W32ID                   = "0009"
+    ServicePackSourceFiles  = "One-Core-API API-SETS Source Files"
+    SP_SHORT_TITLE          = "OCAAS"
+    SP_TITLE                = "One-Core-API API-SETS"
+    PARENT_DISPLAY_NAME     = "One-Core-API"
+    LOC_UPDATE="Update"
+    LOC_CRITICALUPDATE="Critical Update"
+    LOC_HOTFIX="Hotfix"
+    LOC_SECURITY_UPDATE="Security Update"
+	LatestUpdateFail        = "Please Install latest One-Core-API Base first!"	
 
 [Prerequisite]
 	condition=SingleOp,LatestUpdateCheck2.Section
@@ -43,27 +63,28 @@
 [LatestUpdateCheck2.Section]
     EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCAB",Installed,0x10001,==,1
     Display_String="%LatestUpdateFail%"	
-
-[UninstallSections]
-    Add.Reg, Add.Reg.Uninstall
-    Del.Reg, Del.Reg.Uninstall
 	
 [Product.Add.Reg]
-	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed",0x10001,1
-	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Backup Dir",0,""
-	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed By",0,""
-	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed On",0,""
-	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Service Pack",0x10001,%SERVICE_PACK_NUMBER%
-	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Valid",0x10001,1
-	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","Flags",0,""
-	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","New File",0,""
-	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","New Link Date",0,""
-	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","Old Link Date",0,""
-	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
-	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%APIS_VERSION%
-	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
-	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
-	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSION%"	
+    HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Setup", "LogLevel", 0x10001, 0
+    HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
+    HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentDisplayName",0x00000000,"%PARENT_DISPLAY_NAME%"
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Installed",0x10001,1
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Comments",0,%SP_TITLE%
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Backup Dir",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Fix Description",0,%SP_TITLE%
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Installed By",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Installed On",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Service Pack",0x10001,%SERVICE_PACK_NUMBER%
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Valid",0x10001,1
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"Flags",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"New File",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"New Link Date",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"Old Link Date",0,""
+	HKLM,SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%,"DisplayVersion",0x00000000,%APIS_VERSION%
+    HKLM,SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%,"ReleaseType",0,%HOTFIX%
+
+[ProductInstall.ReplaceFilesIfExist]
+    CopyFiles=System32.files
 
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg
@@ -382,6 +403,8 @@
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
 
+[DirectoriesToCleanUp.Uninstall]
+
 [SourceDisksFiles]
    "API-MS-WIN-APPMODEL-IDENTITY-L1-1-0.dll" = 1
    "API-MS-WIN-APPMODEL-RUNTIME-L1-1-0.dll" = 1
@@ -683,11 +706,22 @@
    "ext-ms-win-uxtheme-themes-l1-1-0.dll" = 1
    "ext-ms-win-xaml-pal-l1-1-0.dll" = 1
    "ucrtbase.dll" = 1
+   
+[UninstallSections]
+    GlobalRegistryChanges, GlobalRegistryChanges.UnInstall
+    Add.Reg, Add.Reg.Uninstall
+    Del.Reg, Del.Reg.Uninstall  
 
 [Save.Reg.For.Uninstall]
-
-	HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
-	HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
-	HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
 	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
 	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"
+	
+[GlobalRegistryChanges.UnInstall]
+    AddReg=Add.Reg
+    DelReg=Del.Reg	
+	
+[Del.Reg.Uninstall]
+	HKLM,SOFTWARE\Microsoft\Updates\Windows Server 2003\SP%SERVICE_PACK_NUMBER%\%SP_SHORT_TITLE%
+	HKLM,SOFTWARE\Microsoft\Updates\Windows XP\SP%SERVICE_PACK_NUMBER%\%SP_SHORT_TITLE%
+	HKLM,SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP%SERVICE_PACK_NUMBER%\%SP_SHORT_TITLE%
+	

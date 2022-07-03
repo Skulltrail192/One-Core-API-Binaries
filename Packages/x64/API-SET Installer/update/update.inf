@@ -23,8 +23,9 @@
     AppFileinUseDetect        = 3
 
 [Strings]
-	APIS_FILE_VERSION       = "6.0.6002.18002"
-	APIS_VERSION             = "3.0.0.0"
+    HelpLink 				= "http://shorthornproject.com"
+    URLInfoAbout 			= "http://shorthornproject.com"
+	APIS_VERSION            = "2.6.0.0"
 	SP_TITLE                = "One-Core-API API-SETS"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAAS"
@@ -33,9 +34,7 @@
 	SERVICEPACKSOURCEFILES  = "One-Core-API API-SETS"
 	Msft                    = "Microsoft"
 	ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
-	PARENT_DISPLAY_NAME     = "Windows Updates"
-	MSFT_Prefix             = "OneCoreAPIApiSets"
-	MSFT_Namespace          = "http://ns.microsoft.com/photo/1.0"
+	PARENT_DISPLAY_NAME     = "One-Core-API"
 	LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 
 [Prerequisite]
@@ -44,10 +43,6 @@
 [LatestUpdateCheck2.Section]
     EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCAB",Installed,0x10001,==,1
     Display_String="%LatestUpdateFail%"	
-
-[UninstallSections]
-    Add.Reg, Add.Reg.Uninstall
-    Del.Reg, Del.Reg.Uninstall
 	
 [Product.Add.Reg]
 	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed",0x10001,1
@@ -63,6 +58,7 @@
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%APIS_VERSION%
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
+    HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentDisplayName",0x00000000,"%PARENT_DISPLAY_NAME%"	
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
 	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSION%"	
 
@@ -1286,10 +1282,26 @@
    "i386/ext-ms-win-xaml-pal-l1-1-0.dll" = 1
    "i386/ucrtbase.dll" = 1
    
+[UninstallSections]
+    GlobalRegistryChanges, GlobalRegistryChanges.UnInstall
+    Add.Reg, Add.Reg.Uninstall
+    Del.Reg, Del.Reg.Uninstall
+	
 [Save.Reg.For.Uninstall]
+    HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Setup","LogLevel"
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%
 
-	HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
-	HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
-	HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
-	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
-	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"
+[LinkItems.Create.Uninstall]
+
+[GlobalRegistryChanges.UnInstall]
+    AddReg=Add.Reg
+    DelReg=Del.Reg
+
+[Del.Reg.Uninstall]
+	HKLM,SOFTWARE\Microsoft\Updates\Windows Server 2003\SP%SERVICE_PACK_NUMBER%\%SP_SHORT_TITLE%
+	HKLM,SOFTWARE\Microsoft\Updates\Windows XP\SP%SERVICE_PACK_NUMBER%\%SP_SHORT_TITLE%
+	HKLM,SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP%SERVICE_PACK_NUMBER%\%SP_SHORT_TITLE%
+
+[Add.Reg.Uninstall]
+
+[PreRequisite.Uninstall]

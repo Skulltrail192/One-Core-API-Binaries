@@ -24,23 +24,16 @@
     AppFileinUseDetect        = 3
 
 [Strings]
-	BASE_FILE_VERSION       = "6.0.6000.16385"
-	BASE_VERSION             = "3.0.0.0"
+    HelpLink = "http://shorthornproject.com"
+    URLInfoAbout = "http://shorthornproject.com"
+	BASE_VERSION            = "2.6.0.0"
 	SP_TITLE                = "One-Core-API Base"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAB"
 	SERVICE_PACK_NUMBER     = 3
-	COMMENT                 = "One-Core-API Base [See Q100000 for more information]"
-	SERVICEPACKSOURCEFILES  = "One-Core-API Base"
-	Msft                    = "Microsoft"
-	ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
-	PARENT_DISPLAY_NAME     = "Windows Updates"
-	MSFT_Prefix                 = "MicrosoftOneCoreAPIBase"
-	MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
-
-[UninstallSections]
-    Add.Reg, Add.Reg.Uninstall
-    Del.Reg, Del.Reg.Uninstall
+	;COMMENT                 = "One-Core-API Base [See Q100000 for more information]"
+	SERVICEPACKSOURCEFILES  = "One-Core-API Base Source Files"
+	PARENT_DISPLAY_NAME     = "One-Core-API"
 	
 [Product.Add.Reg]
 	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed",0x10001,1
@@ -56,8 +49,9 @@
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%BASE_VERSION%
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
+    HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentDisplayName",0x00000000,"%PARENT_DISPLAY_NAME%"	
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
-	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSION%"
+	;HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSION%"
 
 	HKLM, Software\Classes\CLSID\{51653423-E62D-4FF7-894A-DABB2B8E21E2}, , 0, "CrawlStartPages Task Handler"
 	HKLM, Software\Classes\CLSID\{B056521A-9B10-425E-B616-1FCD828DB3B1}, , 0, "PSFactoryBuffer"
@@ -2500,6 +2494,10 @@
 [ProductInstall.MultiprocessorFiles]
     CopyFiles=Multiprocessor.Kernel.files	
 	
+[ProcessesToRun]
+    "regsvr32.exe /s propsys.dll"	
+    "Syswow64/regsvr32.exe /s Syswow64/propsys.dll"	
+	
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg
 
@@ -2519,14 +2517,11 @@
     CopyAlways.DriverCab.files=65623 ; Destination determined at runtime
     Uniprocessor.Kernel.files=11    ; %windir%\system32 (don't delay until reboot)
     Multiprocessor.Kernel.files=11  ; %windir%\system32 (don't delay until reboot)
-	ACPI.CoreDriverFiles = 12 ; %windir%\system32\drivers	
-	
-[ProductInstall.ReplaceFilesIfExist]
-	CopyFiles = ACPI.CoreDriverFiles	
 
 [MustReplace.System32.files]
     ntdll.dll,XP64SP2/amd64/ntdll.dll
 	crypt32.dll,XP64SP2/amd64/crypt32.dll	
+	smss.exe,XP64SP2/amd64/smss.exe	
 	winsrv.dll, XP64SP2/amd64/winsrv.dll
 	wow64win.dll, XP64SP2/amd64/wow64win.dll
 	win32k.sys, XP64SP2/amd64/win32k.sys	
@@ -2537,9 +2532,6 @@
 	
 [System32.files]
 	win32k.sys, XP64SP2/amd64/win32k.sys
-	
-[ACPI.CoreDriverFiles]
-	acpi.sys, XP64SP2/amd64/Drivers\acpi.sys 	
 
 [MustReplace.WinSxS.Main.files]		
 	"WinSxS\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E\comctl32.dll"
@@ -2550,7 +2542,9 @@
 [CopyAlways.WinSxS.Main.files]	
 	"WinSxS\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E\comctl32.dll"
 	"WinSxS\wow64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_B8C2A5B7\comctl32.dll"
+	"WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.3790.3959_x-ww_8251BDDE\gdiplus.dll"
 	"WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591\gdiplus.dll"
+	"WinSxS\amd64_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.3790.3959_x-ww_B45BA3BE\gdiplus.dll"
 	"WinSxS\amd64_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_54820B71\gdiplus.dll"
 	
 [CopyAlways.WinSxS.Manifests.files]	
@@ -2602,6 +2596,7 @@
     d3dkmt.dll,amd64/d3dkmt.dll	
 	fileextd.dll,amd64/fileextd.dll		
     gdi32.dll,amd64/gdi32.dll
+    gdiplusnew.dll,amd64/gdiplusnew.dll
     iphlpapi.dll,amd64/iphlpapi.dll
     idndl.dll,amd64/idndl.dll
     kernelbase.dll,amd64/kernelbase.dll
@@ -2657,6 +2652,7 @@
     d3dkmt.dll,i386/wd3dkmt.dll
 	fileextd.dll,i386/wfileextd.dll
     gdi32.dll,i386/wgdi32.dll
+    gdiplusnew.dll,i386/wgdiplusnew.dll
     iphlpapi.dll,i386/wiphlpapi.dll
     idndl.dll,i386/widndl.dll
     kernelbase.dll,i386/wkernelbase.dll	
@@ -2690,7 +2686,6 @@
     ntoskrnl.exe,XP64SP2/amd64/ntoskrnl.exe
     ntkrnlmp.exe,XP64SP2/amd64/ntkrnlmp.exe
 	hal.dll,XP64SP2/amd64/hal.dll
-	acpi.sys,XP64SP2/amd64/Drivers\acpi.sys	
 
 [Uniprocessor.Kernel.files]
     ntoskrnl.exe,XP64SP2/amd64/ntoskrnl.exe
@@ -2717,6 +2712,7 @@
     XP64SP2/amd64/securbase.dll = 1
     XP64SP2/amd64/setupapibase.dll = 1
     XP64SP2/amd64/shellbase.dll = 1
+    XP64SP2/amd64/smss.dll = 1
     XP64SP2/amd64/userbase.dll = 1
     XP64SP2/amd64/uxthemebase.dll = 1
     XP64SP2/amd64/winstabase.dll = 1
@@ -2749,6 +2745,7 @@
     amd64/cryptnew.dll =1
     amd64/fileextd.dll =1		
     amd64/gdi32.dll = 1
+    amd64/gdiplusnew.dll = 1
     amd64/iphlpapi.dll = 1
     amd64/iphlpapibase.dll = 1
     amd64/idndl.dll = 1
@@ -2782,6 +2779,7 @@
     i386/wcryptnew.dll =1
     i386/wfileextd.dll =1		
     i386/wgdi32.dll = 1
+    i386/wgdiplusnew.dll = 1
     i386/wiphlpapi.dll = 1
     i386/wiphlpapibase.dll = 1
     i386/widndl.dll = 1
@@ -2813,7 +2811,9 @@
     i386/wws2_32.dll = 1
 	"WinSxS\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E\comctl32.dll" = 1	
 	"WinSxS\wow64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_B8C2A5B7\comctl32.dll" = 1	
+	"WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.3790.3959_x-ww_8251BDDE\gdiplus.dll" = 1
 	"WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591\gdiplus.dll" = 1
+	"WinSxS\amd64_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.3790.3959_x-ww_B45BA3BE\gdiplus.dll" = 1
 	"WinSxS\amd64_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_54820B71\gdiplus.dll" = 1
 	"WinSxS\manifests\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E.cat" = 1
 	"WinSxS\manifests\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E.manifest" = 1
@@ -2836,8 +2836,6 @@
     GlobalRegistryChanges, GlobalRegistryChanges.UnInstall
     Add.Reg, Add.Reg.Uninstall
     Del.Reg, Del.Reg.Uninstall
-    DestinationDirs,DestinationDirs.Uninstall
-    RestoreFiles,RestoreFiles.Uninstall
 	
 [DestinationDirs.Uninstall]
     Links.Delfiles=16407	
@@ -2847,9 +2845,14 @@
     DelReg=Del.Reg
 
 [Save.Reg.For.Uninstall]
-
-	HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
-	HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
-	HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
 	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
 	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"
+	
+[Del.Reg.Uninstall]
+	HKLM,SOFTWARE\Microsoft\Updates\Windows Server 2003\SP%SERVICE_PACK_NUMBER%\%SP_SHORT_TITLE%
+	HKLM,SOFTWARE\Microsoft\Updates\Windows XP\SP%SERVICE_PACK_NUMBER%\%SP_SHORT_TITLE%
+	HKLM,SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP%SERVICE_PACK_NUMBER%\%SP_SHORT_TITLE%
+
+[Add.Reg.Uninstall]
+
+[PreRequisite.Uninstall]	
