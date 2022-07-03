@@ -53,6 +53,9 @@ x64 SP2.
 use a pre-installed version, copied from other operation system;
 - Some installers like VS Code and Skype genereate a erro "Class is not supported" on shortcut phase creation;
 - Chrome has stability and crash randomy. Extension isn't supported for now. Downloads crash application;
+- Firefox 55 or above is working, only mypal 68;
+- Firefox 54 32 bits not working on Windows XP x64. Chrome 61+ not working too;
+- The packages cannot be integrate with nlite to Windows Iso, because use a tool called "SFXCAB Substitute", not standard Microsoft version;
 
 **Installation order of packages:**
 - **App Compat only:** This package can be installed without any other packages;
