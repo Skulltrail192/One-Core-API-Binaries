@@ -56,6 +56,7 @@ use a pre-installed version, copied from other operation system;
 - Firefox 55 or above is working, only mypal 68;
 - Firefox 54 32 bits not working on Windows XP x64. Chrome 61+ not working too;
 - The packages cannot be integrate with nlite to Windows Iso, because use a tool called "SFXCAB Substitute", not standard Microsoft version;
+- Standard .Net Framework Installers starting 4.6 ins't supported for now. You need a repacked version like did here: https://github.com/abbodi1406/dotNetFx4xW7. And avaliable like here: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251. Other versions are avaliable too, search on forum topics;
 
 **Installation order of packages:**
 - **App Compat only:** This package can be installed without any other packages;
