@@ -25,14 +25,13 @@
 [Strings]
     HelpLink 				= "http://shorthornproject.com"
     URLInfoAbout 			= "http://shorthornproject.com"
-	D3DR_VERSION            = "2.6.0.0"
+	D3DR_VERSION            = "2.7.0.0"
 	SP_TITLE                = "One-Core-API D3D Runtime"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAD3DR"
 	SERVICE_PACK_NUMBER     = 3
 	;COMMENT                 = "One-Core-API D3D Runtime [See Q100000 for more information]"
 	SERVICEPACKSOURCEFILES  = "One-Core-API D3D Runtime"
-	PARENT_DISPLAY_NAME     = "Windows Updates"
 	LatestBaseUpdateFail    = "Please Install latest One-Core-API Base first!"
 	LatestAPISetUpdateFail  = "Please Install latest One-Core-API API-SET first!"
     PARENT_DISPLAY_NAME     = "One-Core-API"

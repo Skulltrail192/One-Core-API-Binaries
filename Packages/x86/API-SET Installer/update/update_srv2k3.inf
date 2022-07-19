@@ -22,31 +22,14 @@
     AppFileinUseDetect        = 3
 
 [Strings]
-	; APIS_VERSION            = "2.6.0.0"
-	; SP_TITLE                = "One-Core-API API-SETS"
-	; LANGTYPEVALUE           = 0x0
-	; SP_SHORT_TITLE          = "OCAAS"
-	; SERVICE_PACK_NUMBER     = 3
-	; ;COMMENT                 = "One-Core-API API-SETS [See Q100000 for more information]"
-	; SERVICEPACKSOURCEFILES  = "One-Core-API API-SETS"
-	; Msft                    = "Microsoft"
-	; ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
-	; PARENT_DISPLAY_NAME     = "One-Core-API"
-	; LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
-	
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-    BUILDTIMESTAMP = 2
-    EXPIRETIMESTAMP = 20061203.060222
-	APIS_VERSION            = "2.6.0.0"	
+	APIS_VERSION            = "2.7.0.0"	
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
     SECURITY_UPDATE       	= "Security Update"
     LangTypeValue           = 0x0
-    WSEDIR                  = "1033"
-    LCID                    = "0409"
-    W32ID                   = "0009"
     ServicePackSourceFiles  = "One-Core-API API-SETS Source Files"
     SP_SHORT_TITLE          = "OCAAS"
     SP_TITLE                = "One-Core-API API-SETS"

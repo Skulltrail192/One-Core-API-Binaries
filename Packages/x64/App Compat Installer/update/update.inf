@@ -25,7 +25,7 @@
 [Strings]
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	APPC_VERSION            = "2.6.0.0"
+	APPC_VERSION            = "2.7.0.0"
 	SP_TITLE                = "One-Core-API App Compat"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAAC"

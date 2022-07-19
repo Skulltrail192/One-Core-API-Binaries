@@ -25,16 +25,11 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-    BUILDTIMESTAMP = 2
-    EXPIRETIMESTAMP = 20061203.060222
-	BASE_VERSION            = "2.6.0.0"	
+	BASE_VERSION            = "2.7.0.0"	
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
     SECURITY_UPDATE       	= "Security Update"
     LangTypeValue           = 0x0
-    WSEDIR                  = "1033"
-    LCID                    = "0409"
-    W32ID                   = "0009"
     ServicePackSourceFiles  = "One-Core-API Base Source Files"
     SP_SHORT_TITLE          = "OCAB"
     SP_TITLE                = "One-Core-API Base"
@@ -444,6 +439,12 @@
 	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbs, 0, "program"
 	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "program"
 	
+	;Special key to bypass palemon and some others application startup error
+	HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\KnownDLLs","API-MS-WIN-CORE-MEMORY-L1-1-0",0x0,"API-MS-WIN-CORE-MEMORY-L1-1-0.DLL"
+	
+	;key to prevent .net framework 4.5+ installation error when Windows XP is without any previous .net Framework installed
+	HKLM,"Software\Microsoft\.NETFramework","InstallRoot",0x0,"C:\WINDOWS\Microsoft.NET\Framework\"
+	
 [ProductInstall.ReplaceFilesIfExist]
     CopyFiles=System32.files
 	
@@ -452,6 +453,7 @@
 
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files
+	CopyFiles                  = CopyAlways.System32.Mui.0409.files
 	CopyFiles                  = CopyAlways.WinSxS.Main.files
 	CopyFiles                  = CopyAlways.WinSxS.Manifests.files
 	CopyFiles                  = CopyAlways.WinSxS.Policies.files
@@ -475,6 +477,7 @@
 [DestinationDirs]
 	System32.files=11                   ; %windir%\system32 (replace if exist)
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+	CopyAlways.System32.Mui.0409.files=11  ; %windir%\system32 (don't delay until reboot)
 	CopyAlways.WinSxS.Main.files = 10 ; %windir%
 	CopyAlways.WinSxS.Manifests.files = 10 ; %windir%
 	CopyAlways.WinSxS.Policies.files = 10 ; %windir%
@@ -514,7 +517,10 @@
 [Multiprocessor.Kernel.files]
     ntkrnlpa.exe,XPSP3\xpspntkrpamp.exe
     ntoskrnl.exe,XPSP3\xpspntkrnlmp.exe
-	hal.dll,XPSP3\xpsphalmacpi.dll		
+	hal.dll,XPSP3\xpsphalmacpi.dll
+
+[CopyAlways.System32.Mui.0409.files]
+	mui\0409\mscorees.dll,mui\0409\mscorees.dll	
 	
 [MustReplace.WinSxS.Main.files]	
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winxp\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
@@ -542,8 +548,7 @@
 	crypt32.dll,XPSP3\xpspcrypt32.dll
     gdibase.dll,XPSP3\xpspgdibase.dll	
     kernel32.dll,XPSP3\xpspkernel32.dll
-    netapibase.dll,XPSP3\xpspnetapibase.dll	
-	;ntdsapi.dll,XPSP3\xpspntdsapi.dll	
+    netapibase.dll,XPSP3\xpspnetapibase.dll
     olebase.dll,XPSP3\xpspolebase.dll		
     oleacc.dll,XPSP3\xpspoleacc.dll		
     powrprofbase.dll,XPSP3\xpsppowrprofbase.dll
@@ -559,8 +564,10 @@
 	winstabase.dll, XPSP3\xpspwinstabase.dll		
 	win32k.sys, XPSP3\xpspwin32k.sys
     advapi32.dll
+	API-MS-WIN-CORE-MEMORY-L1-1-0.dll
     bcrypt.dll
     comctlext.dll
+	cryptext.dll
 	cryptnew.dll
 	d3dkmt.dll
 	fileextd.dll
@@ -571,11 +578,14 @@
     iphlpapibase.dll
     idndl.dll
     kernelbase.dll
+    mscoree.dll
+    ;msctfime.ime
 	msvcrt.dll
     netapi32.dll
+    netfxperf.dll
     Nlsdl.dll
     normaliz.dll		
-    nsi.dll		
+    nsi.dll
 	ntext.dll	
 	ole32.dll
     pdh.dll	
@@ -627,9 +637,11 @@
 	XPSP3\xpspwinstabase.dll=1	
 	XPSP3\xpspwin32k.sys=1	
     advapi32.dll = 1
+	API-MS-WIN-CORE-MEMORY-L1-1-0.dll = 1	
     bcrypt.dll = 1
     comctlext.dll =1
 	cryptnew.dll = 1
+	cryptext.dll = 1
 	d3dkmt.dll = 1
 	fileextd.dll = 1
     gdi32.dll = 1
@@ -638,8 +650,12 @@
     iphlpapibase.dll = 1
     idndl.dll = 1
     kernelbase.dll = 1
+    mscoree.dll = 1
+    mscorees.dll = 1	
+	msctfime.ime = 1
 	msvcrt.dll = 1
     netapi32.dll = 1
+	netfxperf.dll = 1
     Nlsdl.dll = 1
     normaliz.dll = 1
     nsi.dll = 1
@@ -665,6 +681,7 @@
     winstanew.dll = 1	
     winbrand.dll = 1	
     ws2_32.dll = 1
+	mui\0409\mscorees.dll = 1
 	WinSxS\winxp\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll = 1
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.cat = 1
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.manifest = 1

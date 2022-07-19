@@ -24,9 +24,9 @@
     AppFileinUseDetect        = 3
 
 [Strings]
-    HelpLink = "http://shorthornproject.com"
-    URLInfoAbout = "http://shorthornproject.com"
-	BASE_VERSION            = "2.6.0.0"
+    HelpLink 				= "http://shorthornproject.com"
+    URLInfoAbout 			= "http://shorthornproject.com"
+	BASE_VERSION            = "2.7.0.0"
 	SP_TITLE                = "One-Core-API Base"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAB"
@@ -2464,17 +2464,13 @@
 	HKLM, Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbe, 0, "program"
 	HKLM, Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbs, 0, "program"
 	HKLM, Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "program"
-	
-	;gameux
-	HKLM,"SOFTWARE\Classes\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}",,0x0,"GameExplorer Class"
-	HKLM,"SOFTWARE\Classes\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\InprocServer32",,0x0,"C:\Windows\System32\gameux.dll"
-	HKLM,"SOFTWARE\Classes\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\InprocServer32","ThreadingModel",0x0,"Both"
-	HKLM,"SOFTWARE\Classes\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\Programmable",,0x10
-	
-	HKCR,"Wow6432Node\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}",,0x0,"GameExplorer Class"
-	HKCR,"Wow6432Node\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\InprocServer32",,0x0,"C:\Windows\SysWOW64\gameux.dll"
-	HKCR,"Wow6432Node\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\InprocServer32","ThreadingModel",0x0,"Both"
-	HKCR,"Wow6432Node\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\Programmable",,0x10		
+
+	;Special key to bypass palemon and some others application startup error
+	HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\KnownDLLs","API-MS-WIN-CORE-MEMORY-L1-1-0",0x0,"API-MS-WIN-CORE-MEMORY-L1-1-0.DLL"
+
+	;key to prevent .net framework 4.5+ installation error when Windows XP is without any previous .net Framework installed
+	HKLM,"Software\Microsoft\.NETFramework","InstallRoot",0x0,"C:\WINDOWS\Microsoft.NET\Framework64\"
+	HKLM,"Software\Wow6432Node\Microsoft\.NETFramework","InstallRoot",0x0,"C:\WINDOWS\Microsoft.NET\Framework\"
 
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files
@@ -2521,7 +2517,6 @@
 [MustReplace.System32.files]
     ntdll.dll,XP64SP2/amd64/ntdll.dll
 	crypt32.dll,XP64SP2/amd64/crypt32.dll	
-	smss.exe,XP64SP2/amd64/smss.exe	
 	winsrv.dll, XP64SP2/amd64/winsrv.dll
 	wow64win.dll, XP64SP2/amd64/wow64win.dll
 	win32k.sys, XP64SP2/amd64/win32k.sys	
@@ -2590,9 +2585,11 @@
 	wow64win.dll, XP64SP2/amd64/wow64win.dll
 	win32k.sys, XP64SP2/amd64/win32k.sys	
     advapi32.dll,amd64/advapi32.dll
+	API-MS-WIN-CORE-MEMORY-L1-1-0.DLL,amd64/API-MS-WIN-CORE-MEMORY-L1-1-0.DLL
     bcrypt.dll,amd64/bcrypt.dll
     comctlext.dll,amd64/comctlext.dll
     cryptnew.dll,amd64/cryptnew.dll	
+    cryptext.dll,amd64/cryptext.dll	
     d3dkmt.dll,amd64/d3dkmt.dll	
 	fileextd.dll,amd64/fileextd.dll		
     gdi32.dll,amd64/gdi32.dll
@@ -2600,8 +2597,10 @@
     iphlpapi.dll,amd64/iphlpapi.dll
     idndl.dll,amd64/idndl.dll
     kernelbase.dll,amd64/kernelbase.dll
+    mscoree.dll,amd64/mscoree.dll
     msvcrt.dll,amd64/msvcrt.dll	
     netapi32.dll,amd64/netapi32.dll
+    netfxperf.dll,amd64/netfxperf.dll
     Nlsdl.dll,amd64/Nlsdl.dll
     normaliz.dll,amd64/normaliz.dll
     nsi.dll,amd64/nsi.dll	
@@ -2625,6 +2624,7 @@
     winsta.dll,amd64/winsta.dll		
     winstanew.dll,amd64/winstanew.dll		
     ws2_32.dll,amd64/ws2_32.dll
+	mui/0409/mscorees.dll,amd64/mui/0409/mscorees.dll
 	
 [CopyAlways.SysWOW64.Files]
     advapibase.dll,XP64SP2/i386/wadvapibase.dll
@@ -2646,9 +2646,11 @@
     winstabase.dll,XP64SP2/i386/wwinstabase.dll
     ws2_base.dll,XP64SP2/i386/wws2_base.dll
     advapi32.dll,i386/wadvapi32.dll
+	API-MS-WIN-CORE-MEMORY-L1-1-0.DLL,i386/wAPI-MS-WIN-CORE-MEMORY-L1-1-0.DLL
     bcrypt.dll,i386/wbcrypt.dll
     comctlext.dll,i386/wcomctlext.dll
     cryptnew.dll,i386/wcryptnew.dll
+    cryptext.dll,i386/wcryptext.dll
     d3dkmt.dll,i386/wd3dkmt.dll
 	fileextd.dll,i386/wfileextd.dll
     gdi32.dll,i386/wgdi32.dll
@@ -2656,8 +2658,10 @@
     iphlpapi.dll,i386/wiphlpapi.dll
     idndl.dll,i386/widndl.dll
     kernelbase.dll,i386/wkernelbase.dll	
+    mscoree.dll,i386/wmscoree.dll
     msvcrt.dll,i386/wmsvcrt.dll
     netapi32.dll,i386/wnetapi32.dll
+    netfxperf.dll,i386/wnetfxperf.dll
     Nlsdl.dll,i386/wNlsdl.dll
     normaliz.dll,i386/wnormaliz.dll
     nsi.dll,i386/wnsi.dll
@@ -2681,6 +2685,7 @@
     winsta.dll,i386/wwinsta.dll		
     winstanew.dll,i386/wwinstanew.dll		
     ws2_32.dll,i386/wws2_32.dll
+	mui/0409/mscorees.dll,i386/mui/0409/wmscorees.dll
 	
 [CopyAlways.DriverCab.files]
     ntoskrnl.exe,XP64SP2/amd64/ntoskrnl.exe
@@ -2712,7 +2717,6 @@
     XP64SP2/amd64/securbase.dll = 1
     XP64SP2/amd64/setupapibase.dll = 1
     XP64SP2/amd64/shellbase.dll = 1
-    XP64SP2/amd64/smss.dll = 1
     XP64SP2/amd64/userbase.dll = 1
     XP64SP2/amd64/uxthemebase.dll = 1
     XP64SP2/amd64/winstabase.dll = 1
@@ -2740,9 +2744,11 @@
 	XP64SP2/amd64/winsrv.dll=1
 	XP64SP2/amd64/wow64win.dll=1
     amd64/advapi32.dll = 1
+	amd64/API-MS-WIN-CORE-MEMORY-L1-1-0.DLL = 1
     amd64/bcrypt.dll = 1
     amd64/comctlext.dll =1
     amd64/cryptnew.dll =1
+    amd64/cryptext.dll =1
     amd64/fileextd.dll =1		
     amd64/gdi32.dll = 1
     amd64/gdiplusnew.dll = 1
@@ -2750,8 +2756,10 @@
     amd64/iphlpapibase.dll = 1
     amd64/idndl.dll = 1
     amd64/kernelbase.dll = 1
-    amd64/msvcrt.dll = 1	
+    amd64/mscoree.dll = 1
+    amd64/msvcrt.dll = 1
     amd64/netapi32.dll = 1
+    amd64/netfxperf.dll = 1
     amd64/Nlsdl.dll = 1
     amd64/normaliz.dll = 1
     amd64/nsi.dll = 1
@@ -2773,10 +2781,13 @@
 	; amd64/wevtold.dll = 1
     amd64/winbrand.dll = 1	
     amd64/ws2_32.dll = 1
+	amd64/mui/0409/mscorees.dll = 1
     i386/wadvapi32.dll = 1
+	i386/wAPI-MS-WIN-CORE-MEMORY-L1-1-0.DLL
     i386/wbcrypt.dll = 1
     i386/wcomctlext.dll =1
     i386/wcryptnew.dll =1
+    i386/wcryptext.dll =1
     i386/wfileextd.dll =1		
     i386/wgdi32.dll = 1
     i386/wgdiplusnew.dll = 1
@@ -2785,8 +2796,11 @@
     i386/widndl.dll = 1
 	i386/wiertutil.dll = 1
     i386/wkernelbase.dll = 1
-    i386/wmsvcrt.dll = 1	
+    i386/wmscoree.dll = 1
+    i386/wmscorees.dll = 1	
+    i386/wmsvcrt.dll = 1
     i386/wnetapi32.dll = 1
+    i386/wnetfxperf.dll = 1
     i386/wNlsdl.dll = 1
     i386/wnormaliz.dll = 1
     i386/wnsi.dll =1
@@ -2809,6 +2823,7 @@
 	; i386/wwevtold.dll = 1
     i386/wwinbrand.dll = 1	
     i386/wws2_32.dll = 1
+	i386/mui/0409/wmscorees.dll = 1
 	"WinSxS\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E\comctl32.dll" = 1	
 	"WinSxS\wow64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_B8C2A5B7\comctl32.dll" = 1	
 	"WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.3790.3959_x-ww_8251BDDE\gdiplus.dll" = 1

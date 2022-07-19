@@ -23,7 +23,7 @@
     AppFileinUseDetect        = 3
 	
 [Strings]
-	OCAAD_VERSION           = "2.6.0.0"
+	OCAAD_VERSION           = "2.7.0.0"
 	SP_TITLE                = "One-Core-API Additional Dlls"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAAD"
@@ -5034,7 +5034,7 @@
     HKCR,SystemFileAssociations\.ico,ExtendedTileInfo
     HKCR,Wow6432Node\SystemFileAssociations\.ico,ExtendedTileInfo
 
-; register our MSFT namespace in XMP
+	; register our MSFT namespace in XMP
     HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Prefix%,%MSFT_Prefix%
     HKCR,Wow6432Node\CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Prefix%,%MSFT_Prefix%
     HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
@@ -5214,6 +5214,17 @@
 	HKCR,"CLSID\{49f171dd-b51a-40d3-9a6c-52d674cc729d}",,0x0,"UIAutomationCrossBitnessHook64 Class"
 	HKCR,"AppID\{60a90a2f-858d-42af-8929-82be9d99e8a1}",,0x0,"UIAutomationCrossBitnessHook32 Class"
 	HKCR,"AppID\{49f171dd-b51a-40d3-9a6c-52d674cc729d}",,0x0,"UIAutomationCrossBitnessHook64 Class"
+
+	;gameux
+	HKLM,"SOFTWARE\Classes\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}",,0x0,"GameExplorer Class"
+	HKLM,"SOFTWARE\Classes\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\InprocServer32",,0x0,"C:\Windows\System32\gameux.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\InprocServer32","ThreadingModel",0x0,"Both"
+	HKLM,"SOFTWARE\Classes\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\Programmable",,0x10
+	
+	HKCR,"Wow6432Node\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}",,0x0,"GameExplorer Class"
+	HKCR,"Wow6432Node\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\InprocServer32",,0x0,"C:\Windows\SysWOW64\gameux.dll"
+	HKCR,"Wow6432Node\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\InprocServer32","ThreadingModel",0x0,"Both"
+	HKCR,"Wow6432Node\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\Programmable",,0x10	
 
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files

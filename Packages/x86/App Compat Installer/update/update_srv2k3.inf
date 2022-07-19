@@ -23,14 +23,11 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	APPC_VERSION            = "2.6.0.0"	
+	APPC_VERSION            = "2.7.0.0"	
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
     SECURITY_UPDATE       	= "Security Update"
     LangTypeValue           = 0x0
-    WSEDIR                  = "1033"
-    LCID                    = "0409"
-    W32ID                   = "0009"
     ServicePackSourceFiles  = "One-Core-API AppCompat Source Files"
     SP_SHORT_TITLE          = "OCAAC"
     SP_TITLE                = "One-Core-API AppCompat"
