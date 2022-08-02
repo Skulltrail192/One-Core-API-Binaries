@@ -23,7 +23,7 @@
     AppFileinUseDetect        = 3
 	
 [Strings]
-	OCAAD_VERSION           = "2.7.0.0"
+	OCAAD_VERSION           = "2.8.0.0"
 	SP_TITLE                = "One-Core-API Additional Dlls"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAAD"
@@ -31,7 +31,6 @@
 	;COMMENT                 = "One-Core-API Additional Dlls [See Q100000 for more information]"
 	SERVICEPACKSOURCEFILES  = "One-Core-API Additional Dlls"
 	PARENT_DISPLAY_NAME     = "One-Core-API"
-	CLSID_WIC_Prefix        = "{BB5ACC38-F216-4CEC-A6C5-5F6E739763A9}" 
 	LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 
 [Prerequisite]
@@ -5268,6 +5267,7 @@
 	dxva2.dll,amd64/dxva2.dll
 	;esent.dll,amd64/esent.dll
 	evr.dll,amd64/evr.dll
+	expand.exe,amd64/expand.exe
 	explorerframe.dll,amd64/explorerframe.dll
 	fntcache.dll,amd64/fntcache.dll
 	FWPUCLNT.dll,amd64/FWPUCLNT.dll
@@ -5297,6 +5297,7 @@
 	photometadatahandler.dll,amd64/photometadatahandler.dll
 	pkgmgr.exe,amd64/pkgmgr.exe
 	prntvpt.dll,amd64/prntvpt.dll		
+	puiapi.dll,amd64/puiapi.dll		
 	pwrshplugin.dll,amd64/pwrshplugin.dll		
 	RstrtMgr.dll,amd64/RstrtMgr.dll
 	rtworkq.dll,amd64/rtworkq.dll
@@ -5365,6 +5366,7 @@
 	dxva2.dll,i386/wdxva2.dll
 	;esent.dll,i386/wesent.dll
 	evr.dll,i386/wevr.dll
+	expand.exe,i386/wexpand.exe
 	explorerframe.dll,i386/wexplorerframe.dll
 	fntcache.dll,i386/wfntcache.dll
 	FWPUCLNT.dll,i386/wFWPUCLNT.dll
@@ -5394,6 +5396,7 @@
 	photometadatahandler.dll,i386/wphotometadatahandler.dll
 	pkgmgr.exe,i386/wpkgmgr.exe
 	prntvpt.dll,i386/wprntvpt.dll		
+	puiapi.dll,i386/wpuiapi.dll		
 	pwrshplugin.dll,i386/wpwrshplugin.dll		
 	RstrtMgr.dll,i386/wRstrtMgr.dll
 	rtworkq.dll,i386/wrtworkq.dll
@@ -5465,6 +5468,7 @@
 	amd64/dxva2.dll = 1
 	;amd64/esent.dll = 1
 	amd64/evr.dll = 1
+	amd64/expand.exe = 1
 	amd64/explorerframe.dll = 1
 	amd64/fntcache.dll = 1	
 	amd64/FWPUCLNT.dll = 1	
@@ -5562,6 +5566,7 @@
 	i386/wdxva2.dll = 1
 	;i386/wesent.dll = 1 
 	i386/wevr.dll = 1
+	i386/wexpand.exe = 1
 	i386/wexplorerframe.dll = 1
 	i386/wfntcache.dll = 1	
 	i386/wFWPUCLNT.dll = 1	

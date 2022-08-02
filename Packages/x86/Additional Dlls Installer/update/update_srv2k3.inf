@@ -29,7 +29,7 @@
     Display_String="%LatestUpdateFail%"		
 	
 [Strings]
-	OCAAD_VERSION           = "2.7.0.0"
+	OCAAD_VERSION           = "2.8.0.0"
 	SP_TITLE                = "One-Core-API Additional Dlls"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAAD"
@@ -2798,6 +2798,7 @@
 	"eappprxy.dll"	
 	"esent.dll"
 	"evr.dll"
+	"expand.exe"
 	"explorerframe.dll"
 	"FWPUCLNT.dll"	
 	"gameux.dll"
@@ -2824,6 +2825,7 @@
 	"photometadatahandler.dll"
 	"pkgmgr.exe"
 	"prntvpt.dll"		
+	"puiapi.dll"		
 	"pwrshplugin.dll"		
 	"RstrtMgr.dll"
 	"rtworkq.dll"
@@ -2850,7 +2852,7 @@
 	"wdscore.dll"
 	"wer.dll"
 	"wevtapi.dll"	
-	"wevtapibase.dll"
+	;"wevtapibase.dll"
 	"wevtbase.dll"
 	"wevtsvc.dll"
 	"wfapi.dll"
@@ -2897,6 +2899,7 @@
 	"eappprxy.dll" = 1	
 	"esent.dll" = 1
 	"evr.dll" = 1
+	"expand.exe" = 1
 	"explorerframe.dll" = 1
 	"FWPUCLNT.dll" = 1	
 	"gameux.dll" = 1
@@ -2923,6 +2926,7 @@
 	"photometadatahandler.dll" = 1
 	"pkgmgr.exe" = 1
 	"prntvpt.dll" = 1		
+	"puiapi.dll" = 1		
 	"pwrshplugin.dll" = 1		
 	"RstrtMgr.dll" = 1
 	"rtworkq.dll" = 1
@@ -2949,7 +2953,7 @@
 	"wdscore.dll" = 1
 	"wer.dll" = 1
 	"wevtapi.dll" = 1	
-	"wevtapibase.dll" = 1
+	;"wevtapibase.dll" = 1
 	"wevtbase.dll" = 1
 	"wevtsvc.dll" = 1
 	"wfapi.dll" = 1

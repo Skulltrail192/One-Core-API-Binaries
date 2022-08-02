@@ -23,9 +23,9 @@
 
 [Strings]
     SERVICE_PACK_NUMBER     = 3
-    HelpLink 				= "http://shorthornproject.com"
-    URLInfoAbout 			= "http://shorthornproject.com"
-	OCADU_VERSION           = "2.7.0.0"
+    HelpLink = "http://shorthornproject.com"
+    URLInfoAbout = "http://shorthornproject.com"
+	OCADU_VERSION           = "2.8.0.0"
 	SP_TITLE                = "One-Core-API Driver Update"
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
@@ -56,10 +56,40 @@
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentDisplayName",0x00000000,"%PARENT_DISPLAY_NAME%"
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
-	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%OCADU_VERSION%"
-	
+	HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_010601","ClassGUID",0x00000000,"{4d36e96a-e325-11ce-bfc1-08002be10318}"
+	HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_010601","Service",0x00000000,"storahci"
+	HKLM,"SYSTEM\CurrentControlSet\Services\storahci","ErrorControl",0x00010001,1
+	HKLM,"SYSTEM\CurrentControlSet\Services\storahci","Group",0x00000000,"SCSI Miniport"
+	HKLM,"SYSTEM\CurrentControlSet\Services\storahci","ImagePath",0x00020000,"system32\DRIVERS\storahci.sys"
+	HKLM,"SYSTEM\CurrentControlSet\Services\storahci","Start",0x00010001,3
+	HKLM,"SYSTEM\CurrentControlSet\Services\storahci","Type",0x00010001,1	
+	HKLM,"SYSTEM\CurrentControlSet\Services\storahci\Parameters", "PnpInterface", 0x00010001, 0x00000001
+	HKLM,"SYSTEM\CurrentControlSet\Services\storahci\Parameters", "BusType", 0x00010001, 0x0000000B	
+	HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_010802","ClassGUID",0x00000000,"{4D36E97B-E325-11CE-BFC1-08002BE10318}"
+	HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_010802","Service",0x00000000,"nvme"
+	HKLM,"SYSTEM\CurrentControlSet\Services\nvme","ErrorControl",0x00010001,1
+	HKLM,"SYSTEM\CurrentControlSet\Services\nvme","Group",0x00000000,"SCSI Miniport"
+	HKLM,"SYSTEM\CurrentControlSet\Services\nvme","ImagePath",0x00020000,"system32\DRIVERS\nvme.sys"
+	HKLM,"SYSTEM\CurrentControlSet\Services\nvme","Start",0x00010001,3
+	HKLM,"SYSTEM\CurrentControlSet\Services\nvme","Type",0x00010001,1	
+	HKLM,"SYSTEM\CurrentControlSet\Services\nvme\Parameters\Device", "Namespaces", 0x00010001, 0x00000010
+	HKLM,"SYSTEM\CurrentControlSet\Services\nvme\Parameters\Device", "MaxTXSize", 0x00010001, 0x00020000	
+	HKLM,"SYSTEM\CurrentControlSet\Services\nvme\Parameters\Device", "AdQEntries", 0x00010001, 0x0000000B	
+	HKLM,"SYSTEM\CurrentControlSet\Services\nvme\Parameters\Device", "IoQEntries", 0x00010001, 0x00000080	
+	HKLM,"SYSTEM\CurrentControlSet\Services\nvme\Parameters\Device", "IoQEntries", 0x00010001, 0x00000400	
+	HKLM,"SYSTEM\CurrentControlSet\Services\nvme\Parameters\Device", "IntCoalescingTime", 0x00010001, 0x00000000	
+	HKLM,"SYSTEM\CurrentControlSet\Services\nvme\Parameters\Device", "IntCoalescingEntries", 0x00010001, 0x00000000	
+		
 [ProductInstall.DontDelayUntilReboot]
     CopyFiles=MustReplace.System32.files
+	
+[ProductInstall.CopyFilesAlways]
+    CopyFiles=Drivers.CoreDriverFiles	
+    CopyFiles=CopyAlways.System32.files
+    CopyFiles=CopyAlways.Drivers.files
+    CopyFiles=CopyAlways.DriverCab.files
+    CopyFiles=CopyAlways.Inf.files
+    CopyFiles=CopyAlways.CatRoot.Main.files
 	
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg
@@ -68,33 +98,54 @@
     AddReg=Product.Add.Reg
 	
 [DestinationDirs]
-	ACPI.CoreDriverFiles = 12 ; %windir%\system32\drivers	
+	Drivers.CoreDriverFiles = 12 ; %windir%\system32\drivers
+    CopyAlways.System32.files=11      ; %windir%\system32 (copy even if don't exist)
+    CopyAlways.DriverCab.files=65623  ; Destination determined at runtime
+    CopyAlways.Drivers.files=12       ; %windir%\system32\drivers (copy even if don't exist)
+    CopyAlways.Inf.files=17           ; %windir%\system32\inf (copy even if don't exist)
 	
 [ProductInstall.ReplaceFilesIfExist]
-	CopyFiles = ACPI.CoreDriverFiles	
-
-[MustReplace.System32.files]
-	acpi.sys,Drivers\acpi.sys
+	CopyFiles = Drivers.CoreDriverFiles	
+	
+[CopyAlways.CatRoot.Main.files]	
+	CatRoot\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}\nvme86.cat, CatRoot\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}\nvme86.cat	
 	
 [System32.files]
 	
-[ACPI.CoreDriverFiles]
-	acpi.sys, Drivers\acpi.sys 
+[Drivers.CoreDriverFiles]
+	acpi.sys, drivers\acpi.sys
+	disk.sys, drivers\disk.sys
+	nvme.sys, drivers\nvme.sys
+	partmgr.sys, drivers\partmgr.sys
+	storahci.sys, drivers\storahci.sys
+	storport.sys, drivers\storport.sys
+	winusb.sys, drivers\winusb.sys
 
 [CopyAlways.DriverCab.files]
-	acpi.sys,Drivers\acpi.sys	
+	acpi.sys, drivers\acpi.sys
+	disk.sys, drivers\disk.sys
+	nvme.sys, drivers\nvme.sys
+	partmgr.sys, drivers\partmgr.sys
+	storahci.sys, drivers\storahci.sys
+	storport.sys, drivers\storport.sys
+	winusb.sys, drivers\winusb.sys
+	
+[CopyAlways.Inf.files]
+    nvme.inf, inf\nvme.inf
+    storahci.inf, inf\storahci.inf	
 
-[Uniprocessor.Kernel.files]
-	
-[Multiprocessor.Kernel.files]
-	
-[CopyAlways.System32.Files]
+[CopyAlways.System32.files]
+	winusb.dll, usermode\winusb.dll
 	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
 
 [SourceDisksFiles]
-    Drivers\acpi.sys = 1
+    drivers\acpi.sys = 1
+    drivers\disk.sys = 1
+    drivers\partmgr.sys = 1
+    drivers\storahci.sys = 1
+    drivers\storport.sys = 1
 
 [UninstallSections]
     GlobalRegistryChanges, GlobalRegistryChanges.UnInstall
