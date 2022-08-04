@@ -29,7 +29,7 @@
     Display_String="%LatestUpdateFail%"		
 	
 [Strings]
-	OCAAD_VERSION           = "2.8.0.0"
+	OCAAD_VERSION           = "2.8.0.1"
 	SP_TITLE                = "One-Core-API Additional Dlls"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAAD"

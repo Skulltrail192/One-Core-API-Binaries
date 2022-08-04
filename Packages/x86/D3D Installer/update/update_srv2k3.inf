@@ -34,7 +34,7 @@
     Display_String="%LatestAPISetUpdateFail%"		
 	
 [Strings]
-	D3DR_VERSION            = "2.8.0.0"
+	D3DR_VERSION            = "2.8.0.1"
 	SP_TITLE                = "One-Core-API D3D Runtime"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAD3DR"
