@@ -25,7 +25,8 @@ x64 SP2.
 - Chrome up to version 102!;
 - Opera up to version 39;
 - Firefox up to version 54;
-- JDK 1.8;
+- JDK 1.8 (only Windows XP x64 for now);
+- OpenJDK until version 11 (maybe others versions works);
 - Maxthon 6;
 - Epic Browser 94;
 - Python 3.6;
@@ -52,13 +53,16 @@ x64 SP2.
 - New applications installers may not work, like Chrome, Maxthon, Utorrent, Discord, Team vieweretc crash and application isn't installed. Need 
 use a pre-installed version, copied from other operation system;
 - Some installers like VS Code and Skype genereate a erro "Class is not supported" on shortcut phase creation;
-- Chrome has stability and crash randomy. Extension isn't supported for now. Downloads crash application;
+- Chrome has stability and crash randomy. Extension isn't supported for now. Downloads crash application or has network error, depend of version;
 - Firefox 55 or above is not working, only mypal 68 (firefox fork);
 - Firefox 54 32 bits not working on Windows XP x64. Chrome 61+ not working too;
 - The packages cannot be integrate with nlite to Windows Iso, because use a tool called "SFXCAB Substitute", not standard Microsoft version;
 - Standard .Net Framework Installers starting 4.6 ins't supported for now. You need a repacked version like did here: https://github.com/abbodi1406/dotNetFx4xW7. And avaliable like here: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251. Other versions are avaliable too, search on forum topics;
-- Palemoon version 27-29 has a wrong dll called api-ms-win-core-memory-l1-1-0.dll. You must delete this file from Palemoon folder installation and Palemoon will work fine;
+- Palemoon version 27-31 not download anything. Download not start;
 - MiniChrome 87 has a issue related with high usage cpu. It is related with UpdateProcThreadAttribute, but, this function is needed for others applications, like standard chrome;
+- Opera 39+ not crash on start;
+- Ntoskrnl_emu cannot be used together with one-core-api for now;
+- Qt5 application what use Dwrite crash on startup. Has some glitches like black screen if you delete dwrite (application start and can be used, however)
 
 **Installation order of packages:**
 - **App Compat only:** This package can be installed without any other packages;
