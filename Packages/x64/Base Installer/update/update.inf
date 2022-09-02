@@ -4,7 +4,7 @@
 	MaxNtMajorVersionToUpdate = 5
 	MaxNtMinorVersionToUpdate = 2
 	MaxNtServicePackVersion   = 512
-	MinNtServicePackVersion   = 512
+	MinNtServicePackVersion   = 256
 	ThisServicePackVersion    = 512
 	NtBuildToUpdate           = 3790
 	NtMajorVersionToUpdate    = 5
@@ -26,7 +26,7 @@
 [Strings]
     HelpLink 				= "http://shorthornproject.com"
     URLInfoAbout 			= "http://shorthornproject.com"
-	BASE_VERSION            = "2.8.0.1"
+	BASE_VERSION            = "2.9.0.0"
 	SP_TITLE                = "One-Core-API Base"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAB"
@@ -2473,6 +2473,7 @@
 	HKLM,"Software\Wow6432Node\Microsoft\.NETFramework","InstallRoot",0x0,"C:\WINDOWS\Microsoft.NET\Framework\"
 
 [ProductInstall.CopyFilesAlways]
+	CopyFiles				   = Drivers.CoreDriverFiles
     CopyFiles                  = CopyAlways.System32.files
 	CopyFiles                  = CopyAlways.SysWOW64.files
 	CopyFiles                  = CopyAlways.WinSxS.Main.files
@@ -2501,6 +2502,7 @@
     AddReg=Product.Add.Reg
 
 [DestinationDirs]
+	Drivers.CoreDriverFiles = 12 ; %windir%\system32\drivers
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
 	CopyAlways.SysWOW64.files=10,SysWOW64  ; %windir%\SysWOW64 (don't delay until reboot)
 	CopyAlways.WinSxS.Main.files = 10 ; %windir%
@@ -2513,6 +2515,12 @@
     CopyAlways.DriverCab.files=65623 ; Destination determined at runtime
     Uniprocessor.Kernel.files=11    ; %windir%\system32 (don't delay until reboot)
     Multiprocessor.Kernel.files=11  ; %windir%\system32 (don't delay until reboot)
+
+[ProductInstall.ReplaceFilesIfExist]
+	CopyFiles = Drivers.CoreDriverFiles	
+
+[Drivers.CoreDriverFiles]
+	ntoskrn8.sys, drivers\ntoskrn8.sys
 
 [MustReplace.System32.files]
     ntdll.dll,XP64SP2/amd64/ntdll.dll
@@ -2836,6 +2844,7 @@
     i386/wwinbrand.dll = 1	
     i386/wws2_32.dll = 1
 	i386/mui/0409/wmscorees.dll = 1
+	drivers\ntoskrn8.sys = 1
 	"WinSxS\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E\comctl32.dll" = 1	
 	"WinSxS\wow64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_B8C2A5B7\comctl32.dll" = 1	
 	"WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.3790.3959_x-ww_8251BDDE\gdiplus.dll" = 1

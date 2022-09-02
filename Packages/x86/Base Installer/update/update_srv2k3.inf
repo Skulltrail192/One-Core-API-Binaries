@@ -25,7 +25,7 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	BASE_VERSION            = "2.8.0.1"	
+	BASE_VERSION            = "2.9.0.0"	
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
     SECURITY_UPDATE       	= "Security Update"
@@ -451,6 +451,7 @@
     CopyFiles=MustReplace.System32.files	
 
 [ProductInstall.CopyFilesAlways]
+	CopyFiles				   = Drivers.CoreDriverFiles
     CopyFiles                  = CopyAlways.System32.files
     CopyFiles                  = CopyAlways.System32.Mui.0409.files
 	CopyFiles                  = CopyAlways.WinSxS.Main.files
@@ -474,6 +475,7 @@
     "regsvr32.exe /s propsys.dll"
 
 [DestinationDirs]
+	Drivers.CoreDriverFiles = 12 ; %windir%\system32\drivers
 	System32.files=11                   ; %windir%\system32 (replace if exist)
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
     CopyAlways.System32.Mui.0409.files=11  ; %windir%\system32 (don't delay until reboot)
@@ -484,6 +486,12 @@
     CopyAlways.DriverCab.files=65623 ; Destination determined at runtime
     Uniprocessor.Kernel.files=11    ; %windir%\system32 (don't delay until reboot)
     Multiprocessor.Kernel.files=11  ; %windir%\system32 (don't delay until reboot)
+	
+[ProductInstall.ReplaceFilesIfExist]
+	CopyFiles = Drivers.CoreDriverFiles	
+
+[Drivers.CoreDriverFiles]
+	ntoskrn8.sys, drivers\ntoskrn8.sys	
 
 [System32.files]
 	win32k.sys, 2k3SP2\srvwin32k.sys
@@ -687,6 +695,7 @@
     winstanew.dll = 1	
     winbrand.dll = 1	
     ws2_32.dll = 1
+	drivers\ntoskrn8.sys = 1
 	mui\0409\mscorees.dll = 1
 	WinSxS\winsrv2k3\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll = 1
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.cat = 1
