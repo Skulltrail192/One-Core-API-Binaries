@@ -49,6 +49,7 @@ x64 SP2.
   - Crysis 1,2, and 3 (directx 10-11 mode);
   
 **Known Limitations:**
+- When you install Windows XP or Windows Server 2003 on VirtualBox, by default, APIC option is disabled. For now, One-Core-API has limitation on cannot be installed on Machine with only PIC mode (ACPI option) enabled. So, you MUST enable APIC mode on VM options to use One-Core-API on Windows XP/2003 inside Virtual Box; 
 - The unique language on binaries for now is English. You can install on Windows with another language, however, several dialogs and strings will be displayed in engilsh;
 - New applications installers may not work, like Chrome, Maxthon, Utorrent, Discord, Team vieweretc crash and application isn't installed. Need 
 use a pre-installed version, copied from other operation system;
@@ -61,7 +62,6 @@ use a pre-installed version, copied from other operation system;
 - Palemoon version 27-31 not download anything. Download not start;
 - MiniChrome 87 has a issue related with high usage cpu. It is related with UpdateProcThreadAttribute, but, this function is needed for others applications, like standard chrome;
 - Opera 39+ not crash on start;
-- Ntoskrnl_emu cannot be used together with one-core-api for now;
 - Qt5 application what use Dwrite crash on startup. Has some glitches like black screen if you delete dwrite (application start and can be used, however)
 
 **Installation order of packages:**
