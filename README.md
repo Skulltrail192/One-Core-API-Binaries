@@ -40,6 +40,7 @@ x64 SP2.
 - Yandex browser (latest);
 - Zoom;
 - Several other applications;
+- Winrar 6.11 (latest);
 - Directx 9EX, 10 and 11 games: 
   - Need for Speed Most Wanted 2012;
   - Need for Speed The Run;
