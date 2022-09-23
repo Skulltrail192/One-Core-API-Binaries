@@ -26,7 +26,7 @@ x64 SP2.
 - Opera up to version 39;
 - Firefox up to version 54;
 - JDK 1.8 (only Windows XP x64 for now);
-- OpenJDK until version 11 (maybe others versions works);
+- OpenJDK until version 11 (maybe others versions works). You can download from: https://bell-sw.com/pages/downloads/#/java-11-lts;
 - Maxthon 6;
 - Epic Browser 94;
 - Python 3.6;
