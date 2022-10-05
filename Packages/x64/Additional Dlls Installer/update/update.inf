@@ -23,7 +23,7 @@
     AppFileinUseDetect        = 3
 	
 [Strings]
-	OCAAD_VERSION           = "2.9.0.0"
+	OCAAD_VERSION           = "2.10.0.0"
 	SP_TITLE                = "One-Core-API Additional Dlls"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAAD"

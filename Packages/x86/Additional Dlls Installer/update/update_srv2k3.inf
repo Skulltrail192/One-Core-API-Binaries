@@ -29,7 +29,7 @@
     Display_String="%LatestUpdateFail%"		
 	
 [Strings]
-	OCAAD_VERSION           = "2.9.0.0"
+	OCAAD_VERSION           = "2.10.0.0"
 	SP_TITLE                = "One-Core-API Additional Dlls"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAAD"
@@ -2774,6 +2774,7 @@
 	MustReplace.System32.files=11       ; %windir%\system32 (don't delay until reboot)
 	
 [MustReplace.System32.files]	
+	"credui.dll"
 	"dbghelp.dll"	
 
 [CopyAlways.System32.Files]
@@ -2796,7 +2797,7 @@
 	"dwmapi.dll"
 	"eappcfg.dll"
 	"eappprxy.dll"	
-	"esent.dll"
+	;"esent.dll" - Cause error with Help and Support on Windows XP
 	"evr.dll"
 	"expand.exe"
 	"explorerframe.dll"

@@ -25,7 +25,7 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	OCADU_VERSION           = "2.9.0.0"
+	OCADU_VERSION           = "2.10.0.0"
 	SP_TITLE                = "One-Core-API Driver Update"
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
@@ -66,19 +66,19 @@
 	HKLM,"SYSTEM\CurrentControlSet\Services\storahci\Parameters", "PnpInterface", 0x00010001, 0x00000001
 	HKLM,"SYSTEM\CurrentControlSet\Services\storahci\Parameters", "BusType", 0x00010001, 0x0000000B	
 	HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_010802","ClassGUID",0x00000000,"{4D36E97B-E325-11CE-BFC1-08002BE10318}"
-	HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_010802","Service",0x00000000,"nvme"
-	HKLM,"SYSTEM\CurrentControlSet\Services\nvme","ErrorControl",0x00010001,1
-	HKLM,"SYSTEM\CurrentControlSet\Services\nvme","Group",0x00000000,"SCSI Miniport"
-	HKLM,"SYSTEM\CurrentControlSet\Services\nvme","ImagePath",0x00020000,"system32\DRIVERS\nvme.sys"
-	HKLM,"SYSTEM\CurrentControlSet\Services\nvme","Start",0x00010001,3
-	HKLM,"SYSTEM\CurrentControlSet\Services\nvme","Type",0x00010001,1	
-	HKLM,"SYSTEM\CurrentControlSet\Services\nvme\Parameters\Device", "Namespaces", 0x00010001, 0x00000010
-	HKLM,"SYSTEM\CurrentControlSet\Services\nvme\Parameters\Device", "MaxTXSize", 0x00010001, 0x00020000	
-	HKLM,"SYSTEM\CurrentControlSet\Services\nvme\Parameters\Device", "AdQEntries", 0x00010001, 0x0000000B	
-	HKLM,"SYSTEM\CurrentControlSet\Services\nvme\Parameters\Device", "IoQEntries", 0x00010001, 0x00000080	
-	HKLM,"SYSTEM\CurrentControlSet\Services\nvme\Parameters\Device", "IoQEntries", 0x00010001, 0x00000400	
-	HKLM,"SYSTEM\CurrentControlSet\Services\nvme\Parameters\Device", "IntCoalescingTime", 0x00010001, 0x00000000	
-	HKLM,"SYSTEM\CurrentControlSet\Services\nvme\Parameters\Device", "IntCoalescingEntries", 0x00010001, 0x00000000	
+	HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_010802","Service",0x00000000,"stornvme"
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme","ErrorControl",0x00010001,1
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme","Group",0x00000000,"SCSI Miniport"
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme","ImagePath",0x00020000,"system32\DRIVERS\stornvme.sys"
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme","Start",0x00010001,3
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme","Type",0x00010001,1	
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "Namespaces", 0x00010001, 0x00000010
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "MaxTXSize", 0x00010001, 0x00020000	
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "AdQEntries", 0x00010001, 0x0000000B	
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "IoQEntries", 0x00010001, 0x00000080	
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "IoQEntries", 0x00010001, 0x00000400	
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "IntCoalescingTime", 0x00010001, 0x00000000	
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "IntCoalescingEntries", 0x00010001, 0x00000000	
 		
 [ProductInstall.DontDelayUntilReboot]
     CopyFiles=MustReplace.System32.files
@@ -108,14 +108,14 @@
 	CopyFiles = Drivers.CoreDriverFiles	
 	
 [CopyAlways.CatRoot.Main.files]	
-	CatRoot\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}\nvme86.cat, CatRoot\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}\nvme86.cat	
+	CatRoot\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}\stornvme.cat, CatRoot\{F750E6C3-38EE-11D1-85E5-00C04FC295EE}\stornvme.cat	
 	
 [System32.files]
 	
 [Drivers.CoreDriverFiles]
 	acpi.sys, drivers\acpi.sys
 	disk.sys, drivers\disk.sys
-	nvme.sys, drivers\nvme.sys
+	stornvme.sys, drivers\stornvme.sys
 	partmgr.sys, drivers\partmgr.sys
 	storahci.sys, drivers\storahci.sys
 	storport.sys, drivers\storport.sys
@@ -124,14 +124,14 @@
 [CopyAlways.DriverCab.files]
 	acpi.sys, drivers\acpi.sys
 	disk.sys, drivers\disk.sys
-	nvme.sys, drivers\nvme.sys
+	stornvme.sys, drivers\stornvme.sys
 	partmgr.sys, drivers\partmgr.sys
 	storahci.sys, drivers\storahci.sys
 	storport.sys, drivers\storport.sys
 	winusb.sys, drivers\winusb.sys
 	
 [CopyAlways.Inf.files]
-    nvme.inf, inf\nvme.inf
+    stornvme.inf, inf\stornvme.inf
     storahci.inf, inf\storahci.inf	
 
 [CopyAlways.System32.files]

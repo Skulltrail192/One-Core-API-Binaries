@@ -25,7 +25,7 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	BASE_VERSION            = "2.9.0.0"	
+	BASE_VERSION            = "2.10.0.0"	
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
     SECURITY_UPDATE       	= "Security Update"
@@ -473,6 +473,7 @@
 
 [ProcessesToRun]
     "regsvr32.exe /s propsys.dll"
+	"updatehal.exe"
 
 [DestinationDirs]
 	Drivers.CoreDriverFiles = 12 ; %windir%\system32\drivers
@@ -580,6 +581,7 @@
 	cryptext.dll
 	cryptnew.dll
 	d3dkmt.dll
+	devcon.exe
 	fileextd.dll
     pdhbase.dll
     gdi32.dll
@@ -656,6 +658,7 @@
 	cryptnew.dll = 1
 	cryptext.dll = 1
 	d3dkmt.dll = 1
+	devcon.exe = 1
 	fileextd.dll = 1
     gdi32.dll = 1
 	gdiplusnew.dll = 1
@@ -687,7 +690,8 @@
     shlwapi.dll = 1
     sspicli.dll = 1
     user32.dll = 1
-	version.dll = 1		
+	version.dll = 1	
+	updatehal.exe = 1
     uxtheme.dll = 1
 	;wevtold.dll = 1
     wevtapibase.dll = 1	
