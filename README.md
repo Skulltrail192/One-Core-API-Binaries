@@ -26,7 +26,7 @@ x64 SP2.
 - Opera up to version 39;
 - Firefox up to version 54;
 - JDK 1.8 (only Windows XP x64 for now);
-- OpenJDK until version 11 (maybe others versions works);
+- OpenJDK until version 11 (maybe others versions works). You can download from: https://bell-sw.com/pages/downloads/#/java-11-lts;
 - Maxthon 6;
 - Epic Browser 94;
 - Python 3.6;
@@ -40,6 +40,8 @@ x64 SP2.
 - Yandex browser (latest);
 - Zoom;
 - Several other applications;
+- Node 10.24;
+- Winrar 6.11 (latest);
 - Directx 9EX, 10 and 11 games: 
   - Need for Speed Most Wanted 2012;
   - Need for Speed The Run;
@@ -49,6 +51,7 @@ x64 SP2.
   - Crysis 1,2, and 3 (directx 10-11 mode);
   
 **Known Limitations:**
+- When you install Windows XP or Windows Server 2003 on VirtualBox, by default, APIC option is disabled. For now, One-Core-API has limitation on cannot be installed on Machine with only PIC mode (ACPI option) enabled. So, you MUST enable APIC mode on VM options to use One-Core-API on Windows XP/2003 inside Virtual Box; 
 - The unique language on binaries for now is English. You can install on Windows with another language, however, several dialogs and strings will be displayed in engilsh;
 - New applications installers may not work, like Chrome, Maxthon, Utorrent, Discord, Team vieweretc crash and application isn't installed. Need 
 use a pre-installed version, copied from other operation system;
@@ -60,8 +63,7 @@ use a pre-installed version, copied from other operation system;
 - Standard .Net Framework Installers starting 4.6 ins't supported for now. You need a repacked version like did here: https://github.com/abbodi1406/dotNetFx4xW7. And avaliable like here: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251. Other versions are avaliable too, search on forum topics;
 - Palemoon version 27-31 not download anything. Download not start;
 - MiniChrome 87 has a issue related with high usage cpu. It is related with UpdateProcThreadAttribute, but, this function is needed for others applications, like standard chrome;
-- Opera 39+ not crash on start;
-- Ntoskrnl_emu cannot be used together with one-core-api for now;
+- Opera 39+ crash on start;
 - Qt5 application what use Dwrite crash on startup. Has some glitches like black screen if you delete dwrite (application start and can be used, however)
 
 **Installation order of packages:**
@@ -88,4 +90,10 @@ Firefox Dev 54**
 ![Capturar](https://user-images.githubusercontent.com/5159776/178078132-da504607-a1ca-4f8d-ae25-6a7eb367bdaa.PNG)
 **Avast and Chromium 68**
 ![Avast](https://user-images.githubusercontent.com/5159776/178078208-c13b3448-ee6a-4c56-9d94-d0c62d51949e.PNG)
+**Visual Code 1.70**
+![VisualCode1 70](https://user-images.githubusercontent.com/5159776/192194220-9f4f324d-b0d8-4c40-a378-2c25c81eff16.PNG)
+Windows 7 Paint
+![Windows7 Paint](https://user-images.githubusercontent.com/5159776/192194273-de70c23e-8731-4fb6-96c1-9bee98947269.PNG)
+
+
 
