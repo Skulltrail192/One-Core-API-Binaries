@@ -8,4 +8,6 @@ if "%arch%" == "" (
 
 %ProjectDir%\Release\Tools\SFXCAB.exe "%output%\%d3d-exe%" "%root%\%d3d%" -r:update/update.exe -ipd -iswu
 
-pause
+ECHO Done!
+
+timeout 3>nul

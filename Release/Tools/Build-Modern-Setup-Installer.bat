@@ -7,3 +7,7 @@ if "%arch%" == "" (
 )
 
 %ProjectDir%\Release\Tools\SFXCAB.exe "%output%\%modern-exe%" "%root%\%modern%" -r:update/update.exe -ipd -iswu
+
+ECHO Done!
+
+timeout 3>nul

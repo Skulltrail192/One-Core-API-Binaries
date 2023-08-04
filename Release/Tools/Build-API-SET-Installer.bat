@@ -10,6 +10,6 @@ if "%arch%" == "" (
 
 ECHO Done!
 
-timeout 2>nul
+timeout 3 > NUL
 
 cls

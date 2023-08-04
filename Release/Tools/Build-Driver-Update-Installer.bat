@@ -8,4 +8,6 @@ if "%arch%" == "" (
 
 %ProjectDir%\Release\Tools\SFXCAB.exe "%output%\%driver-update-exe%" "%root%\%driver-update%" -r:update/update.exe -ipd -iswu
 
-pause
+ECHO Done!
+
+timeout 3>nul

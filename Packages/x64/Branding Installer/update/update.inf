@@ -138,7 +138,7 @@
 	winbrand.dll, System32\winbrand.dll
 
 [CopyAlways.SysWOW64.files]
-	winbrand.dll, Syswow64\winbrand.dll	
+	winbrand.dll, Syswow64\wwinbrand.dll	
 	
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg

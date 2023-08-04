@@ -5088,14 +5088,14 @@
 	Resources\en-US\bootres.dll.mui, Windows\Boot\Resources\en-US\bootres.dll.mui
 
 [System32.Boot.Files]
-	winload.efi, Windows\System32\Boot\winload.efi
-	winload.exe, Windows\System32\Boot\winload.exe
-	winresume.efi, Windows\System32\Boot\winresume.efi
-	winresume.exe, Windows\System32\Boot\winresume.exe
-	en-US\winload.efi.mui, Windows\System32\Boot\en-US\winload.efi.mui
-	en-US\winload.exe.mui, Windows\System32\Boot\en-US\winload.exe.mui
-	en-US\winresume.efi.mui, Windows\System32\Boot\en-US\winresume.efi.mui
-	en-US\winresume.exe.mui, Windows\System32\Boot\en-US\winresume.exe.mui
+	winload.efi, Windows\System32\winload.efi
+	winload.exe, Windows\System32\winload.exe
+	winresume.efi, Windows\System32\winresume.efi
+	winresume.exe, Windows\System32\winresume.exe
+	en-US\winload.efi.mui, Windows\System32\en-US\winload.efi.mui
+	en-US\winload.exe.mui, Windows\System32\en-US\winload.exe.mui
+	en-US\winresume.efi.mui, Windows\System32\en-US\winresume.efi.mui
+	en-US\winresume.exe.mui, Windows\System32\en-US\winresume.exe.mui
 	
 [System32.CodeIntegrity.Files]
 	driver.stl, Windows\System32\CodeIntegrity\driver.stl
@@ -5584,32 +5584,32 @@
 	en-US\winresume.exe.mui, Windows\System32\en-US\winresume.exe.mui
 	
 [CopyAlways.SysWow64.files]
-	BOOTICE.exe, Windows\SysWOW64\BOOTICE.exe
-	cmiv2.dll, Windows\SysWOW64\cmiv2.dll
-	setupapi.dll, Windows\SysWOW64\setupapi.dll
-	setupapibase.dll, Windows\SysWOW64\setupapibase.dll
-	slc.dll, Windows\Syswow64\slc.dll
-    spcfs.dll, Windows\Syswow64\spcfs.dll
-    spcrypt.dll, Windows\Syswow64\spcrypt.dll
-    spdrm.dll, Windows\Syswow64\spdrm.dll
-    spevent.dll, Windows\Syswow64\spevent.dll
-    spie.dll, Windows\Syswow64\spie.dll
-    splkg.dll, Windows\Syswow64\splkg.dll
-    spmedia.dll, Windows\Syswow64\spmedia.dll
-    spmm.dll, Windows\Syswow64\spmm.dll
-    spnet.dll, Windows\Syswow64\spnet.dll
-    spoobe.dll, Windows\Syswow64\spoobe.dll
-    spopk.dll, Windows\Syswow64\spopk.dll
-    sppnp.dll, Windows\Syswow64\sppnp.dll
-    spshell.dll, Windows\Syswow64\spshell.dll
-    spsms.dll, Windows\Syswow64\spsms.dll
-    spsr.dll, Windows\Syswow64\spsr.dll
-    sptapi.dll, Windows\Syswow64\sptapi.dll
-    spwl.dll, Windows\Syswow64\spwl.dll
-    spwpa.dll, Windows\Syswow64\spwpa.dll
-    spwu.dll, Windows\Syswow64\spwu.dll
-	sysdm.cpl, Windows\SysWOW64\sysdm.cpl
-	syssetup.dll, Windows\SysWOW64\syssetup.dll
+	BOOTICE.exe, Windows\SysWOW64\wBOOTICE.exe
+	cmiv2.dll, Windows\SysWOW64\wcmiv2.dll
+	setupapi.dll, Windows\SysWOW64\wsetupapi.dll
+	setupapibase.dll, Windows\SysWOW64\wsetupapibase.dll
+	slc.dll, Windows\SysWOW64\wslc.dll
+    spcfs.dll, Windows\SysWOW64\wspcfs.dll
+    spcrypt.dll, Windows\SysWOW64\wspcrypt.dll
+    spdrm.dll, Windows\SysWOW64\wspdrm.dll
+    spevent.dll, Windows\SysWOW64\wspevent.dll
+    spie.dll, Windows\SysWOW64\wspie.dll
+    splkg.dll, Windows\SysWOW64\wsplkg.dll
+    spmedia.dll, Windows\SysWOW64\wspmedia.dll
+    spmm.dll, Windows\SysWOW64\wspmm.dll
+    spnet.dll, Windows\SysWOW64\wspnet.dll
+    spoobe.dll, Windows\SysWOW64\wspoobe.dll
+    spopk.dll, Windows\SysWOW64\wspopk.dll
+    sppnp.dll, Windows\SysWOW64\wsppnp.dll
+    spshell.dll, Windows\SysWOW64\wspshell.dll
+    spsms.dll, Windows\SysWOW64\wspsms.dll
+    spsr.dll, Windows\SysWOW64\wspsr.dll
+    sptapi.dll, Windows\SysWOW64\wsptapi.dll
+    spwl.dll, Windows\SysWOW64\wspwl.dll
+    spwpa.dll, Windows\SysWOW64\wspwpa.dll
+    spwu.dll, Windows\SysWOW64\wspwu.dll
+	sysdm.cpl, Windows\SysWOW64\wsysdm.cpl
+	syssetup.dll, Windows\SysWOW64\wsyssetup.dll
 	
 [MustReplace.System32.files]
 	umpnpmgr.dll, Windows\System32\umpnpmgr.dll
