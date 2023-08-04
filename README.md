@@ -6,19 +6,20 @@ x64 SP2.
 **Folders in this repository:**
 - Documents: Project documentation, known bugs, sfxcab usage (for making installers), etc.
 - Packages\x86 and Packages\x64: Binary releases categorized by package. You can download and install/update the packages directly from here (i.e. by going to Packages\x86\Base installer\update and runnning update.exe).
-- Todo:  To do tasks
-- Test: Some binaries and documents for testing.
+- Todo: To do tasks
+- Test: Some binaries and documents for testing;
+- Release: Scripts to generate a new binaries release;
+- Output: Binaries output, you can generate using scripts on Release folder;
 
 **The One-Core-API Binaries project consists of the following packages:**
-- Base: One-Core-API base. Main package of One-Core-API and is required by all other packages, except Kernel Standalone, and contains all wrappers used in this project (like kernelbase and ntext);
-- Additional Dlls: Several new dlls introduced in later versions of Windows.
-- API-SET: Contains UCRT dlls based on wine.
-- D3d: D3D runtime (Mainly DX10 and DX11, based on WineD3D);
-- App Compat: Application compatbility settings, backported from later versions of Windows.
-- Driver Update: Bring updated acpi driver what support ACPI 2.0, new drivers like Storachi (for AHCI driver controllers), NVME
-(for NVME M.2 driver controllers) and USBXHCI (USB 3.0); 
-- Branding: New branding system introduced on Windows Vista, required to D3D and Modern Setup packages;
-- Modern Setup: bring support to turn Windows XP/2003 installation  installable using Windows Vista or above Setup engines; 
+- **Base**: Main package of One-Core-API and is required by all other packages, except App Compat, Modern Setup (x86 only) and Driver Update, and contains all wrappers used in this project (like kernelbase and ntext);
+- **Additional Dlls**: Several new dlls introduced in later versions of Windows.
+- **API-SET**: Contains UCRT dlls based on wine.
+- **D3d**: D3D runtime (Mainly DX10 and DX11, based on WineD3D);
+- **App Compat**: Application compatbility settings, backported from later versions of Windows.
+- **Driver Update**: Bring updated acpi driver what support ACPI 2.0, new drivers like Storachi (for AHCI driver controllers), NVME (for NVME M.2 driver controllers) and USBXHCI (USB 3.0); 
+- **Branding**: New branding system introduced on Windows Vista, required to D3D and Modern Setup packages;
+- **Modern Setup**: bring support to turn Windows XP/2003 installation  installable using Windows Vista or above Setup engines; 
 
 **One-Core-API allows you to run:**
 - Web Storm 2018;
@@ -77,9 +78,11 @@ use a pre-installed version, copied from other operation system;
   - **x86**: Branding -> Modern Setup -> Base-> API-SET -> D3d -> Driver Update -> App Compat-> Additional Dlls;
   - **x64**: Base -> Branding -> Modern Setup -> Base-> API-SET -> D3d -> Driver Update -> App Compat-> Additional Dlls;
      
-- **Modern Setup Only**:
+- **Modern Setup Only** (Recommended install Driver Update too):
   - **x86**: Branding -> Modern Setup;
   - **x64**: Base -> Branding -> Modern Setup;
+ 
+- **Driver Update Only**: Driver Update; 
 
 - **AppCompat first**: App Compat -> Base -> Driver Update -> D3d -> API-SET -> Additional Dlls.
 
