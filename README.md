@@ -21,6 +21,12 @@ x64 SP2.
 - **Branding**: New branding system introduced on Windows Vista, required to D3D and Modern Setup packages;
 - **Modern Setup**: bring support to turn Windows XP/2003 installation  installable using Windows Vista or above Setup engines; 
 
+**Main Features**:
+- Increase memory support for 128 GB for x86 and 2 TB for x64 by default;
+- Allow support for run newer programs designed for modern Windows OS;
+- Allow support for new hardware with new drivers controllers;
+- Allow support for install Windows on any computers, with generalized hardware; 
+
 **One-Core-API allows you to run:**
 - Web Storm 2018;
 - Intelliji 2018 (Other versions may work too);
