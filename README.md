@@ -21,7 +21,7 @@ x64 SP2.
 - Web Storm 2018;
 - Intelliji 2018 (Other versions may work too);
 - Filezilla (latest);
-- Visual Studio Code 1.18;
+- Visual Studio Code 1.71;
 - Chrome up to version 102!;
 - Opera up to version 39;
 - Firefox up to version 54;
