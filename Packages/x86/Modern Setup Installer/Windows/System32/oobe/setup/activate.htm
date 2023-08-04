@@ -1,0 +1,86 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="oobestyl.css">
+</head>
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="window.parent.Activation_LoadMe(); window.parent.Agent_Activate('Activation');"
+      onunload="window.parent.Agent_Deactivate();">
+
+<table border=0 cellpadding=0 cellspacing=0 width=100% height=100%>
+<tr>
+    <td ID=leftmargincell width=7%></td>
+    <td ID=maincell valign=middle class="text-primary">
+
+    <br><br>
+    <span ID=Activation1Title class="title">
+    <ID id=Activation_Title_Text1>Ready to activate Windows?</ID>
+    </span>
+
+    <br><br>
+    <div>
+    <ID id=activation_paragraph1>To help reduce software piracy, please activate your copy of Windows now.<br><br><B>You don't need to give your name or other personal information when you activate Windows.</B><br><br><ID id=activation_paragraph2>If you wait to activate, you can still use Windows, but you will receive periodic reminders. After&nbsp;<span id=Number_Days_Left1 class="text-primary" ></span>&nbsp;day(s), you must activate Windows before you can continue to use it. </id>
+    </div>
+
+    <br>
+    <span class="text-primary">
+        <ID id="txtMoreInfo">Microsoft is committed to your privacy. For more information, <a TABINDEX=4 style="text-decoration:underline;" href="javascript:window.parent.navigatetoPrivacy('Activation_Policy');">read the Windows Product Activation Privacy Statement</a>.</ID>
+    </span>
+
+    <br><br>
+    <span class="text-primary">
+        <ID id="txtDoyouwanttoActivateNow">Do you want to activate Windows now?</ID>
+    </span>
+
+    <br><br>
+    <SPAN TABINDEX=-1>
+        <table>
+        <tr>
+            <td>&nbsp;&nbsp;
+            <input TABINDEX=1 ACCESSKEY="Y" type="radio" ID="rb_act_1" value="" name="activate_check" onClick="window.parent.ActivationRadioClicked(); window.parent.OnClick();" onfocus="window.parent.OnFocus();">
+            </td>
+            <td>
+            <LABEL id="rb_txt1" for="rb_act_1">
+            <span id="act_spn1" class="text-primary"><ID id=activation_choice1><u>Y</u>es, activate Windows over the Internet now</id></span>
+            </LABEL>
+            </td>
+        </tr>
+        <tr>
+            <td>&nbsp;&nbsp;
+            <input TABINDEX=2 ACCESSKEY="O" type="radio" ID="rb_act_2" value="" name="activate_check" onClick="window.parent.ActivationRadioClicked(); window.parent.OnClick();" onfocus="window.parent.OnFocus();">
+            </td>
+            <td>
+            <LABEL id="rb_txt2" for="rb_act_2">
+            <span id="act_spn2" class="text-primary"><ID id=activation_choice2>N<u>o</u>, remind me every few days</id></span>
+            </LABEL>
+            </td>
+        </tr>
+        </table>
+    </SPAN>
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=6  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:hidden;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=-1 ACCESSKEY="S" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=7  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+
+</body>
+</html>
+

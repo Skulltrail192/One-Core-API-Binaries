@@ -1,0 +1,153 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="oobestyl.css">
+
+</head>
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" tabindex=-1
+      onload="window.parent.Reg1_LoadMe(); window.parent.Agent_Activate('Reg1');"
+      onunload="window.parent.Agent_Deactivate();">
+
+<table border=0 cellpadding=0 cellspacing=0 width=100% height=100%>
+<tr>
+    <td ID=leftmargincell width=7%></td>
+    <td ID=maincell valign=middle class="text-primary">
+
+    <br><br>
+    <span ID=Reg1Title class="title" style="visibility:hidden">
+        <!-- This gets filled in dynamically. -->
+    </span>
+
+    <br><br>
+
+    <div>
+    <span id=Reg1Intro style="visibility:hidden">
+        <!-- This gets filled in dynamically. -->
+    </span>
+    </div>
+
+    <br>
+    <!-- We use table within a table to indent the inner table -->
+    <SPAN TABINDEX=-1>
+    <table>
+    <tr>
+        <td width=15>&nbsp;</td>
+        <td>
+
+        <table cellspacing=0 cellpadding=0>
+        <tr ID=OEMRow1>
+            <td colspan=2>
+            <span id="reg1_oem_TxtQuestion" class="text-primary" style="visibility:hidden; font-weight:bold">
+                <!-- This gets filled in dynamically. -->
+            </span>
+            </td>
+        </tr>
+        <tr ID=OEMRow2>
+            <td>
+                <span ID="Reg1oem1" class="text-primary" style="visibility:hidden">
+                <input TABINDEX=-1 ACCESSKEY="E" type="radio" ID="rb_reg_oem_yes" value="" name="reg1_check2" onClick="window.parent.Reg1RadioClicked();">
+                </span>&nbsp;
+            </td>
+            <td>
+                <span ID="Reg1oem2" class="text-primary" style="visibility:hidden">
+                <LABEL TABINDEX=-1 id="reg1_txt3" for="rb_reg_oem_yes">
+                <span id="reg1_spn3" class="text-primary">
+                    <!--
+                        This gets filled in dynamically.
+                        WARNING!!! the dynamic text contains the shortcut key.
+                     -->
+                </span>
+                </LABEL>
+                </span>&nbsp;
+            </td>
+        </tr>
+        <tr ID=OEMRow3>
+            <td>
+                <span ID="Reg1oem3" class="text-primary" style="visibility:hidden">
+                <input TABINDEX=-1 ACCESSKEY="t" type="radio" ID="rb_reg_oem_no" value="" name="reg1_check2" onClick="window.parent.Reg1RadioClicked();">
+                </span>&nbsp;
+            </td>
+            <td>
+                <span ID="Reg1oem4" class="text-primary" style="visibility:hidden">
+                <LABEL TABINDEX=-1 id="reg1_txt4" for="rb_reg_oem_no">
+                <span id="reg1_spn4" class="text-primary"><ID id="txtReg16">No, no<u>t</u> at this time</ID></span>
+                </LABEL>
+                </span>&nbsp;
+            </td>
+        </tr>
+        <tr ID=MSRow1>
+            <td colspan=2>
+            <span id="reg1_ms_TxtQuestion" class="text-primary" style="visibility:hidden"><B><ID id="txtReg1">Are you ready to register online with Microsoft?</ID></B></span>
+            </td>
+        </tr>
+        <tr ID=MSRow2>
+            <td>
+                <input TABINDEX=-1 ACCESSKEY="Y" type="radio" ID="rb_reg_ms_yes" value="" name="reg1_check1" style="visibility:hidden" onClick="window.parent.Reg1RadioClicked();">
+            </td>
+            <td>
+                <LABEL TABINDEX=-1 id="reg1_txt1" for="rb_reg_ms_yes" style="visibility:hidden">
+                <span id="reg1_spn1" class="text-primary"><ID id="txtReg11"><u>Y</u>es, I'd like to register with Microsoft now</ID></span>
+                </LABEL>
+            </td>
+        </tr>
+        <tr ID=MSRow3>
+            <td>
+                <input TABINDEX=-1 ACCESSKEY="O" type="radio" ID="rb_reg_ms_no" value="" name="reg1_check1" style="visibility:hidden" onClick="window.parent.Reg1RadioClicked();">
+            </td>
+            <td>
+                <LABEL TABINDEX=-1 id="reg1_txt2" for="rb_reg_ms_no" style="visibility:hidden">
+                <span id="reg1_spn2" class="text-primary"><ID id="txtReg12">N<u>o</u>, not at this time</ID></span>
+                </LABEL>
+            </td>
+        </tr>
+        </table>
+
+        </td>
+    </tr>
+    </table>
+
+    </SPAN>
+
+    <br>
+    <span class="text-primary">
+        <span id=Reg1Info style="display:none;"><ID id="txtReg17">Microsoft is committed to protecting your privacy and does not share your information.</ID><br></span>
+        <span ID="Reg1MS1" class="text-primary" style="display:none;">
+            <ID id="txtReg18">Show me <a TABINDEX=5 id="txtMSReglink" style="text-decoration:underline;" href="javascript:window.parent.navigatetoPrivacy('MS');">the Windows Registration Privacy Statement</a>.</ID>
+        <br>
+        </span>
+        <span ID="Reg1oem5" class="text-primary" style="display:none;">
+            <!--
+                This gets filled in dynamically.
+                WARNING!!! the dynamic text contains an anchor along with a TABINDEX, etc.
+             -->
+        </span>
+    </span>
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=7  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:hidden;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=-1 ACCESSKEY="S" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=8  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+
+
+</body>
+</html>
+

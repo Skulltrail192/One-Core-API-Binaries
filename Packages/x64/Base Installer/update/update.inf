@@ -26,7 +26,7 @@
 [Strings]
     HelpLink 				= "http://shorthornproject.com"
     URLInfoAbout 			= "http://shorthornproject.com"
-	BASE_VERSION            = "2.10.0.0"
+	BASE_VERSION            = "3.0.0"
 	SP_TITLE                = "One-Core-API Base"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAB"
@@ -2469,8 +2469,8 @@
 	HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\KnownDLLs","API-MS-WIN-CORE-MEMORY-L1-1-0",0x0,"API-MS-WIN-CORE-MEMORY-L1-1-0.DLL"
 
 	;key to prevent .net framework 4.5+ installation error when Windows XP is without any previous .net Framework installed
-	HKLM,"Software\Microsoft\.NETFramework","InstallRoot",0x0,"C:\WINDOWS\Microsoft.NET\Framework64\"
-	HKLM,"Software\Wow6432Node\Microsoft\.NETFramework","InstallRoot",0x0,"C:\WINDOWS\Microsoft.NET\Framework\"
+	HKLM,"Software\Microsoft\.NETFramework","InstallRoot",0x0,"%SystemRoot%\Microsoft.NET\Framework64\"
+	HKLM,"Software\Wow6432Node\Microsoft\.NETFramework","InstallRoot",0x0,"%SystemRoot%\Microsoft.NET\Framework\"
 
 [ProductInstall.CopyFilesAlways]
 	CopyFiles				   = Drivers.CoreDriverFiles
@@ -2479,6 +2479,7 @@
 	CopyFiles                  = CopyAlways.WinSxS.Main.files
 	CopyFiles                  = CopyAlways.WinSxS.Manifests.files
 	CopyFiles                  = CopyAlways.WinSxS.Policies.files
+	CopyFiles				   = CopyAlways.DriverCab.files	
 	
 [ProductInstall.DontDelayUntilReboot]
     CopyFiles=MustReplace.System32.files
@@ -2493,7 +2494,11 @@
 	
 [ProcessesToRun]
     "regsvr32.exe /s propsys.dll"	
-    "Syswow64/regsvr32.exe /s Syswow64/propsys.dll"	
+    "Syswow64/regsvr32.exe /s Syswow64/propsys.dll"
+
+[ProcessesToRunAfterCopying]
+	"certupdate.exe" /Y /C /Q
+	"cmd /C SCHTASKS /CREATE /SC MONTHLY /TN ""Root Certificate Update"" /TR ""C:\Windows\Syswow64\certupdate.exe /Y /C /Q""  /ru system"
 	
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg
@@ -2660,6 +2665,7 @@
     advapi32.dll,i386/wadvapi32.dll
 	API-MS-WIN-CORE-MEMORY-L1-1-0.DLL,i386/wAPI-MS-WIN-CORE-MEMORY-L1-1-0.DLL
     bcrypt.dll,i386/wbcrypt.dll
+    certupdate.exe
     comctlext.dll,i386/wcomctlext.dll
     comdlg32.dll,i386/wcomdlg32.dll
     cryptnew.dll,i386/wcryptnew.dll

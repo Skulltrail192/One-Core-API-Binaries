@@ -1,0 +1,130 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="oobestyl.css">
+</head>
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="window.parent.IcsLoadMe();window.parent.Agent_Activate('ICS');"
+      onunload="window.parent.Agent_Deactivate();">
+
+<table border=0 cellpadding=0 cellspacing=0 width=100% height=100%>
+<tr>
+    <td ID=leftmargincell width=7%></td>
+    <td ID=maincell valign=top class="text-primary">
+
+    <br><br>
+    <span id="title_ics0" style="display:none" class="title"><ID id="txtICS4">Checking your Internet connectivity</ID><br><br></span>
+    <span id="title_ics1" style="display:none" class="title"><ID id="txtICS">Will this computer connect to the Internet directly, or through a network?</ID><br><br></span>
+    <span id="title_ics2" style="display:none" class="title"><ID id="txtICS1">How will this computer connect to the Internet?</ID><br><br></span>
+
+    <span id=text_description_ics0 class="text-primary" style="display:none">
+        <ID id="txtICS5">Please wait for a moment while Windows checks to see if this computer is already connected to the Internet.</ID>
+    </span>    
+    <span id=text_description_ics1 class="text-primary" style="display:none">
+        <ID id="txtICS2">You can set up this computer to connect to the Internet directly, or through a network of connected computers, if you have one. In either case, Windows Firewall helps protect your computer from unauthorized access over the Internet.<br><br>Will this computer connect to the Internet through a network?</ID>
+    </span>
+    <span id=text_description_ics2 class="text-primary" style="display:none">
+        <ID id="txtICS3">The following options are available to connect this computer to the Internet. Which one would you like to use?</ID>
+    </span>
+
+    <br><br>
+    <SPAN TABINDEX=-1>
+    
+    <span id="img_status_ics0" style="display:none">
+        <center>
+        <p><img src="../images/dialup.gif" width="324" height="72"></p>
+        </center>
+    </span>
+    
+    <table border=0 cellpadding=4 cellspacing=0>
+    <tr>
+        <td valign=top>
+        <span class="text-primary" id="TXT_MODEM01" style="display:none">
+            <input TABINDEX=5 ID="radio_ChooseModem" name="ICSChoice" type="radio" onClick="window.parent.OnClick();" onfocus="window.parent.OnFocus();">
+        </span>
+        </td>
+        <td valign=top>
+        <span class="text-primary" id="TXT_MODEM02" style="display:none">
+            <LABEL TABINDEX=-1 ACCESSKEY="M" id=TXTLABEL_MODEM for=radio_ChooseModem class="text-primary">
+            <ID id="ICS_str5_ID">Telephone <u>m</u>odem</ID><br>
+            </LABEL>
+        </span>
+        <span class="text-primary" id="TXT_MODEM02x" style="display:none">
+            <ID id="ICS_str5_IDx">This option allows you to connect to the Internet using your existing telephone line. You won't be able to use the telephone while you're connected to the Internet, unless you get another phone line just for connecting to the Internet.</ID>
+        </span>
+        </td>
+    </tr>
+    <tr>
+        <td valign=top>
+        <span class="text-primary" id="radio_ics1" style="display:none">
+            <input TABINDEX=3 ID="radio_ChooseDSLCable" name="ICSChoice" type="radio" onClick="window.parent.OnClick();" onfocus="window.parent.OnFocus();" checked>
+        </span>
+        </td>
+        <td valign=top>
+            <LABEL TABINDEX=-1 ACCESSKEY="C" id=TXTLABEL_DSLCABLE for=radio_ChooseDSLCable class="text-primary">
+                <span id=radio_description1_ics1 class="text-primary" style="display:none">
+                    <ID id="txtICS4">Yes, this <u>c</u>omputer will connect through a local area network or home network</ID>
+                </span>
+                <span id=radio_description1_ics2 class="text-primary" style="display:none">
+                    <ID id="txtICS5">Digital subscriber line (DSL) or <u>c</u>able modem</ID><br>
+                </span>
+            </LABEL>
+            <span id=radio_description1_ics2x class="text-primary" style="display:none">
+                <ID id="txtICS5x">This option allows you to use your telephone while you're connected to the Internet. A cable modem uses a cable television network to make the connection, and you can watch TV while you're connected. Both of these options are generally faster than telephone modems.</ID>
+            </span>
+        </td>
+    </tr>
+    <tr>
+        <td valign=top>
+        <span class="text-primary" id="radio_ics2" style="display:none">
+            <input TABINDEX=4 ID="radio_ChooseLAN" name="ICSChoice" type="radio" onClick="window.parent.OnClick();" onfocus="window.parent.OnFocus();">
+        </span>
+        </td>
+        <td valign=top>
+            <LABEL TABINDEX=-1 ACCESSKEY="O" id=TXTLABEL_LAN for=radio_ChooseLAN class="text-primary">
+                <span id=radio_description2_ics1 class="text-primary" style="display:none">
+                    <ID id="txtICS7">N<u>o</u>, this computer will connect directly to the Internet</ID>
+                </span>
+                <span id=radio_description2_ics2 class="text-primary" style="display:none">
+                    <ID id="txtICS8">L<u>o</u>cal area network (LAN)</ID><br>
+                </span>
+            </LABEL>
+            <span id=radio_description2_ics2x class="text-primary" style="display:none">
+                <ID id="txtICS8x">A LAN is a group of connected computers and devices within a limited area, such as your home or a floor of an office building. With a LAN, your computer will connect to the Internet through another computer on the network.</ID>
+            </span>
+        </td>
+    </tr>
+    </table>
+    </SPAN>
+
+    <br>
+    <span id=text_description2_ics1 class="text-primary" style="display:none">
+    <ID id="txtICS10">If you're not sure whether your computer is on a network, select No above. You can always change this option after you finish setting up Windows. Just click <B>Control Panel</B> on the <B>Start</B> menu, and then click &nbsp;<B>Network and Internet Connections</B>.<br><br>If you don't want this computer to connect to the Internet now, click Skip.</ID>
+    </span>
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=5  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:visible;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=6  ACCESSKEY="S" style="visibility:visible;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=7  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+
+</body>
+</html>
+

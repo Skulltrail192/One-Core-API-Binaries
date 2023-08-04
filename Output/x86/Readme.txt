@@ -1,0 +1,1 @@
+This folder contains output of One-Core-API Binaries package for x86

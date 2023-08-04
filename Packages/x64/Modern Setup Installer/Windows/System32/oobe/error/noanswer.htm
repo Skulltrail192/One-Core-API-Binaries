@@ -1,0 +1,98 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="../setup/oobestyl.css">
+</head>
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="window.parent.NoAnsw_LoadMe();window.parent.Agent_Activate('NoAnswer');"
+      onunload="window.parent.Agent_Deactivate();">
+
+<table border=0 cellpadding=0 cellspacing=0 width=100% height=100%><tr><td ID=leftmargincell width=7%></td>
+<td ID=maincell valign=middle class="text-primary">
+<br><br>
+
+    <span class="title"><id id="na1">Our call center could not be reached</id></span><br>
+    <br>
+    <p><span class="text-primary"><id id="na2">To restore the phone number that originally appeared in the box above, click the <b>Restore</b> button below:</id></span>
+
+         <table border=0 cellspacing=0 cellpadding=0>
+           <tr>
+            <td valign="top">
+              <span class="text-primary"><id id="na3">The phone number being dialed was </id></span>
+            </td>
+            <td valign="top">
+             <SPAN ID="spanDisplayNumber" class="text-primary" DIR="LTR"></SPAN>
+            </td>
+           </tr>
+           <tr>
+            <td style="padding-left: 1em;"><input ACCESSKEY="D" type="radio" id="DialRuleYes" name="DialRuleChoice" CHECKED TABINDEX=1 onclick="window.parent.SelectDialRule(); edtPhoneNumber.focus();">
+                <span id="spn_staticDialRuleYes" class="text-primary" onclick="document.all.DialRuleYes.click();"><u>D</u>ial exactly this number: </span>
+            </td>
+            <td style="padding-left: 2em;">
+                <input DIR=LTR TABINDEX=2 class="dial-number-box" type="text" id="edtPhoneNumber" onfocus="this.select();" name="textfield" size="23" maxlength="25">
+            </td>
+           </tr>
+           <tr>
+            <td style="padding-left: 1em;"><input ACCESSKEY="A" type="radio" id="DialRuleNo" name="DialRuleChoice" TABINDEX=3 onclick="window.parent.SelectDialRule(); edtCallWaiting.focus();">
+                <span id="spn_staticDialRuleNo" class="text-primary" onclick="document.all.DialRuleNo.click();">Di<u>a</u>l a number with these rules: </span>
+            </td>
+            <td style="padding-left: 2em;">
+                <span id="spn_staticDialRuleNoa" class="text-secondary"><id id="Disable_call_waiting_text">Disable <u>c</u>all waiting </id></span><input DIR=LTR ACCESSKEY="C" class="dial-number-box" type="text" id="edtCallWaiting" onfocus="this.select();" name="textfield" size="7" maxlength="10" TABINDEX=4>
+            </td>
+           </tr>
+           <tr>
+            <td>&nbsp;</td>
+            <td style="padding-left: 2em;">
+                <span id="spn_staticDialRuleNob" class="text-secondary"><id id="Set_Outside_line_text"><u>O</u>utside line </id></span><input DIR=LTR ACCESSKEY="O" class="dial-number-box" type="text" id="edtOutsideLine" onfocus="this.select();" name="textfield" size="4" maxlength="4" TABINDEX=5>
+            </td>
+           </tr>
+           <tr>
+            <td colspan=2>
+                <span style="padding-left: 1.8em;" id="spn_staticDialRuleNoc" class="text-primary"><id id="Set_Dial_Signal_text">Dialing using:</id></span>
+                <span style="padding-left: 1em;"><input name="DialSignalChoice" type="radio" tabindex="6" id="DialTone" CHECKED><LABEL TABINDEX=-1 ACCESSKEY="T" id="spn_staticDialTone" for="DialTone" class="text-secondary"><id id="Set_Tone_text"><u>T</u>one</id></LABEL></span>
+                <span style="padding-left: 2em;"><input name="DialSignalChoice" type="radio" tabindex="7" id="DialPulse"><LABEL TABINDEX=-1 ACCESSKEY="P" id="spn_staticDialPulse" for="DialPulse" class="text-secondary"><id id="Set_Pulse_text"><u>P</u>ulse</id></LABEL></span>
+            </td>
+           </tr>
+
+         </table>
+         <br>
+         <span class="text-primary"><id id="txtNoAnswerHints">Here are some hints before you try to connect again:</id></span>
+         <ul>
+         <li><span class="text-primary"><id id="na31">If this is the correct phone number, wait a few minutes and then click <b>Redial</b>.</id></span></li><br>
+         <li><span class="text-primary"><id id="na32">If this is not the correct phone number, type the correct number in the box above. If you need to dial an extra number to reach an outside line, include it at the beginning of the phone number.</id></span></li><br>
+         <li><span class="text-primary"><id id="na33"> If this phone number is outside your local area, include 1 + the area code. You'll need long distance phone service to complete the call.</id></span></li>
+         </ul>
+         <p><span class="text-primary-btndesc"><id id="na4">To try to connect again, click <b>Redial</b>. To skip this step, click <b>Skip</b>.</id></span></p>
+       </span></p>
+    <DIV class="text-error" ID=error_mesg style="display:none; padding-top:20px"></div>
+    <br>
+    <br>
+    </span><br>
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnRestore" class="newbuttonsNext" TABINDEX=8 ACCESSKEY="E"  style="visibility:visible;" onclick="window.parent.RestoreDialRule();"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="RestoreBtnLocalText" style="visibility:visible;"><label for=btnRestore><ID id=noanswer_restore>R<u>e</u>store</ID></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:visible;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=9  ACCESSKEY="S" style="visibility:visible;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnRedial_Text"><u>R</u>edial</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=10  ACCESSKEY="R" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+
+
+</body>
+</html>

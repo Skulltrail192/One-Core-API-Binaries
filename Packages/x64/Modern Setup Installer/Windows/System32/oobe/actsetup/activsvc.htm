@@ -1,0 +1,176 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="aregstyl.css" id=deskstyle1>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="aregsty2.css" id=deskstyle2 disabled>
+    <META HTTP-EQUIV="MSThemeCompatible" CONTENT="Yes">
+<script>
+
+
+
+
+
+
+
+var g_Activation_Install_ID         = "";
+var g_Activation_Install_ID_Full    = "";
+
+function Local_LoadMe() {
+
+    if (window.parent.g_Load_InstallID)
+    {
+        try
+        {
+            g_Activation_Install_ID = window.external.GetInstallationID();
+        }
+        catch(e)
+        {
+            g_Activation_Install_ID = "NOT FOUND.";
+        }
+
+        var i;
+        g_Activation_Install_ID_Full = "";
+
+        for (i = 0; i < g_Activation_Install_ID.length-6; i += 6)
+        {
+            
+            
+            
+            g_Activation_Install_ID_Full += g_Activation_Install_ID.substring(i,i+6) + "-";
+        }
+
+        
+        
+        
+        g_Activation_Install_ID_Full += g_Activation_Install_ID.substring(i,g_Activation_Install_ID.length);
+
+        spn_install_id.innerText = g_Activation_Install_ID_Full;
+    }
+}
+
+</script>
+</head>
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" topMargin=0 rightmargin=0 leftmargin=0 tabindex=-1
+      onload="window.parent.ActivationSvc_LoadMe(); Local_LoadMe();">
+
+<table border=0 cellpadding=0 cellspacing=0 width=100% height=100%>
+<tr>
+    <td ID=leftmargincell width=5% height=99%></td>
+    <td ID=maincell valign=top class="text-primary">
+
+    <span ID=Title_Text class="title" style="display:none;"><ID id="txtActiveSvc">Activate Windows by phone</ID></span>
+
+    <br>
+    <span id="act_spn01" class="text-primary"><ID id="txtActiveSvc1"><B>Just four steps, and you're done...</B></ID></span>
+    <BR>
+
+    <TABLE BORDER=0 WIDTH="100%" CELLSPACING=5 CELLPADDING=5>
+    <TR class="text-primary">
+        <TD VALIGN=TOP width="10%" nowrap>
+            <ID id="txtActiveSvc2"><B><u>S</u>tep 1:</B></ID>
+        </TD>
+        <TD VALIGN=TOP>
+            <select TABINDEX=1 class="editbox-text-primary" id=selPhoneCountry size=1 ACCESSKEY="S" onfocus="window.parent.OnFocus();" onchange="window.parent.PhoneCountries_Changed();">
+            </select>
+        </TD>
+    </TR>
+    <TR class="text-primary">
+        <TD VALIGN=TOP nowrap>
+            <ID id="txtActiveSvc4"><B>Step 2:</B></ID>
+        </TD>
+        <TD VALIGN=TOP>
+            <span id="act_spn03"><ID id="txtActiveSvc5">Call a number below to speak with a customer service representative:</ID></span>
+            <TABLE BORDER=0>
+            <TR class="text-primary">
+                <TD WIDTH=20>&nbsp;</TD><TD><ID ID="act_txt05">Toll-free number: </id><ID ID="act_txt05x"><span ID=ChosenTollNumber></span></ID></TD><TD>&nbsp;</TD>
+            </TR>
+            <TR class="text-primary">
+                <TD WIDTH=20>&nbsp;</TD><TD><ID ID="act_txt06">Toll number: </id><ID ID="act_txt06x"><span ID=ChosenPhoneNumber DIR=LTR></span></ID></TD><TD>&nbsp;</TD>
+            </TR>
+            </TABLE>
+        </TD>
+    </TR>
+    <TR class="text-primary">
+        <TD VALIGN=TOP nowrap>
+            <ID id="txtActiveSvc6"><B>Step 3:</B></ID>
+        </TD>
+        <TD VALIGN=TOP>
+            <span id="act_spn04"><ID id="txtActiveSvc7">Provide the customer service representative with the following installation ID: </ID></span>
+            <BR>
+            <TABLE BORDER=0>
+            <TR class="text-primary">
+                <TD WIDTH=20>&nbsp;</TD><TD><ID ID="act_txt07"><B><span id="spn_install_id"></span></B></ID></TD>
+            </TR>
+            <TR class="text-primary">
+                <TD WIDTH=20>&nbsp;</TD><TD><ID ID="act_txt07b">(Click <B>Change product key</B> only if requested to do so by the customer service representative)</B></ID></TD>
+            </TR>
+            </TABLE>
+        </TD>
+    </TR>
+    <TR class="text-primary">
+        <TD VALIGN=TOP nowrap>
+            <ID id="txtActiveSvc71"><B>Step 4:</B></ID>
+        </TD>
+        <TD VALIGN=TOP>
+            <span id="act_spn05"><ID id="txtActiveSvc8">Type the confirmation ID that the customer service representative gave you:</ID></span>
+        </TD>
+    </TR>
+    </TABLE>
+
+    <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0>
+    <TR>
+    <TD WIDTH="20%">&nbsp;</TD>
+    <TD><TABLE BORDER=0 DIR=LTR><TR>
+        <TD ALIGN=CENTER><font color="white"><ID id=activsvc_tableA><B>A</B></ID></font><BR><INPUT style="ime-mode:disabled" class=confirm-box TYPE=TEXT SIZE=6 NAME="ActCodeBox1" tabindex=2 maxlength=6 onkeyup="window.parent.activate_OnKeyUp('1');" onfocus="window.parent.OnFocus();"></TD><TD><BR><font color="white"><ID id=activsvc_hyphenA>-</ID></font></TD>
+        <TD ALIGN=CENTER><font color="white"><ID id=activsvc_tableB><B>B</B></ID></font><BR><INPUT style="ime-mode:disabled" class=confirm-box TYPE=TEXT SIZE=6 NAME="ActCodeBox2" tabindex=3 maxlength=6 onkeyup="window.parent.activate_OnKeyUp('2');" onfocus="window.parent.OnFocus();"></TD><TD><BR><font color="white"><ID id=activsvc_hyphenB>-</ID></font></TD>
+        <TD ALIGN=CENTER><font color="white"><ID id=activsvc_tableC><B>C</B></ID></font><BR><INPUT style="ime-mode:disabled" class=confirm-box TYPE=TEXT SIZE=6 NAME="ActCodeBox3" tabindex=4 maxlength=6 onkeyup="window.parent.activate_OnKeyUp('3');" onfocus="window.parent.OnFocus();"></TD><TD><BR><font color="white"><ID id=activsvc_hyphenC>-</ID></font></TD>
+        <TD ALIGN=CENTER><font color="white"><ID id=activsvc_tableD><B>D</B></ID></font><BR><INPUT style="ime-mode:disabled" class=confirm-box TYPE=TEXT SIZE=6 NAME="ActCodeBox4" tabindex=5 maxlength=6 onkeyup="window.parent.activate_OnKeyUp('4');" onfocus="window.parent.OnFocus();"></TD><TD><BR><font color="white"><ID id=activsvc_hyphenD>-</ID></font></TD>
+        <TD ALIGN=CENTER><font color="white"><ID id=activsvc_tableE><B>E</B></ID></font><BR><INPUT style="ime-mode:disabled" class=confirm-box TYPE=TEXT SIZE=6 NAME="ActCodeBox5" tabindex=6 maxlength=6 onkeyup="window.parent.activate_OnKeyUp('5');" onfocus="window.parent.OnFocus();"></TD><TD><BR><font color="white"><ID id=activsvc_hyphenE>-</ID></font></TD>
+        <TD ALIGN=CENTER><font color="white"><ID id=activsvc_tableF><B>F</B></ID></font><BR><INPUT style="ime-mode:disabled" class=confirm-box TYPE=TEXT SIZE=6 NAME="ActCodeBox6" tabindex=7 maxlength=6 onkeyup="window.parent.activate_OnKeyUp('6');" onfocus="window.parent.OnFocus();"></TD><TD><BR><font color="white"><ID id=activsvc_hyphenF>-</ID></font></TD>
+        <TD ALIGN=CENTER><font color="white"><ID id=activsvc_tableG><B>G</B></ID></font><BR><INPUT style="ime-mode:disabled" class=confirm-box TYPE=TEXT SIZE=6 NAME="ActCodeBox7" tabindex=8 maxlength=6 onkeyup="window.parent.activate_OnKeyUp('7');" onfocus="window.parent.OnFocus();"></TD>
+    </TR></TABLE></TD>
+    </TR>
+    </TABLE>
+
+    <br>
+    <table border="0">
+    <tr class="text-primary">
+        <td><span id="act_spn06"><id id="txtNextExpl">To continue, click Next.</id></span></td>
+    </tr>
+    </table>
+
+    </td>
+    <td ID=rightmargincell width=7%>
+    </td>
+</tr>
+<tr>
+    <td colspan=3>
+    <br>
+    <table border=0 class="buttonpositionnew">
+    <tr>
+        <td width=1%>&nbsp;</td>
+        <td>
+        <BUTTON ID="btnBack" class="buttons" TABINDEX=9 ACCESSKEY="B" style="display:none;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></BUTTON>
+        </td>
+        <td width=99%>&nbsp;</td>
+        <td>
+        <BUTTON ID="btnProdkey" class="buttons" TABINDEX=10 ACCESSKEY="P"><label for=btnProdkey><id id="LocalBtnProdkey_Text">Change <u>P</u>roduct key</id></label></BUTTON>
+        </td>
+        <td>
+        <BUTTON ID="btnQuit" class="buttons" TABINDEX=11 ACCESSKEY="R"><label for=btnQuit><id id="LocalBtnQuit_Text"><u>R</u>emind Me Later</id></label></BUTTON>
+        </td>
+        <td>
+        <BUTTON ID="btnNext" class="buttons" TABINDEX=12 ACCESSKEY="N"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></BUTTON>
+        </td>
+    </tr>
+    </table>
+    </td>
+</tr>
+</table>
+
+</body>
+</html>
+

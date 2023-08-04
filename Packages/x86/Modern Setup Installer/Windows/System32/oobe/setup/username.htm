@@ -1,0 +1,123 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>out of box experience</TITLE>
+<LINK rel="stylesheet" type="text/css" href="oobestyl.css">
+</HEAD>
+
+<BODY style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="window.parent.UserName_LoadMe();window.parent.Agent_Activate('UserName')"
+      onunload="window.parent.Agent_Deactivate();">
+
+<TABLE valign="middle" border="0" cellpadding="0" cellspacing="0" width="100%" height="100%">
+<TR>
+    <TD id="leftmargincell" width="7%">
+    </TD>
+
+    <!-- leftmargincell -->
+    <TD id="maincell" valign="middle" class="text-primary">
+        <BR><BR>
+        <SPAN class="title">
+        <ID id="UserName_TitleText">Personalize your copy of Windows</ID>
+        </SPAN>
+
+        <BR><BR>
+        <SPAN id="spnUserName_Primary1" class="text-primary" style="display:none">
+        <ID id="txtUserName01">Type your first and last names below so that Windows will recognize you when you're logged on.</ID>
+        </SPAN>
+
+        <SPAN id="spnUserName_Primary2" class="text-primary" style="display:none">
+        <ID id="txtUserName02">Type your last and first names below so that Windows will recognize you when you're logged on.</ID>
+        </SPAN>
+
+        <SPAN id="spnUserName_Primary3" class="text-primary" style="display:none">
+        <ID id="txtUserName03">Type your full name below so that Windows will recognize you when you're logged on.</ID>
+        </SPAN>
+
+        <BR><BR>
+        <TABLE ID=MainPageCell border=0>
+        <TR>
+            <TD valign=top>
+            <TABLE ID=FieldTable border=0>
+            <TR>
+                <TD vAlign=center width=1></TD>
+                <TD vAlign=center width=100 id=lblUserFirstName nowrap>
+                <SPAN id="EnterUserFirstName_1" class="text-primary">
+                <u>F</u>irst name:
+                </SPAN>
+                </TD>
+                <TD vAlign=center width=220>
+                <INPUT type="text" accesskey="F" class="user-name-box" id="txtUserFirstName" size=27 maxlength="25" TABINDEX="1">
+                </TD>
+                <TD vAlign=center>
+                   <SPAN id=UserName_IspAccountNameF class="text-primary" style="display:none"></SPAN>
+                </TD>
+            </TR>
+            <TR ID=LastNameRow>
+                <TD vAlign=center></TD>
+                <TD valign=center id=lblUserLastName nowrap>
+                <SPAN id="EnterUserLastName_1" class="text-primary">
+                <u>L</u>ast name:
+                </SPAN>
+                </TD>
+                <TD vAlign=center>
+                <INPUT type="text" accesskey="L" class="user-name-box" id="txtUserLastName" size=27 maxlength="24" TABINDEX="2">
+                </TD>
+                <TD vAlign=center>
+                    <SPAN id=UserName_IspAccountNameL class="text-primary" style="display:none"></SPAN>
+                </TD>
+            </TR>
+           </TABLE>
+           <BR><BR>
+            <span id="username_spn_errortx1" style="display:none;" class="text-error">
+            <ID id="txtUsername_err1a">You must enter your first name and last name, and the first name</ID>
+            <ul>
+            <li><ID id="txtUsername_err1c">must not contain the characters " * + , / : ; < = > ? [ \ ] |</ID>
+            <li><ID id="txtUsername_err1d">must not just be all spaces and periods</ID>
+            <li><ID id="txtUsername_err1e">must not be "Administrator" or "Guest"</ID>
+            </ul>
+            </span>
+            <span id="username_spn_errortx2" style="display:none;" class="text-error">
+            <ID id="txtUsername_err2a">You must enter your last name and first name, and the last name</ID>
+            <ul>
+            <li><ID id="txtUsername_err2c">must not contain the characters " * + , / : ; < = > ? [ \ ] |</ID>
+            <li><ID id="txtUsername_err2d">must not just be all spaces and periods</ID>
+            <li><ID id="txtUsername_err2e">must not be "Administrator" or "Guest"</ID>
+            </ul>
+            </span>
+            <span id="username_spn_errortx3" style="display:none;" class="text-error">
+            <ID id="txtUsername_err1a">You must enter your full name, and it</ID>
+            <ul>
+            <li><ID id="txtUsername_err3c">must not contain the characters " * + , / : ; < = > ? [ \ ] |</ID>
+            <li><ID id="txtUsername_err3d">must not just be all spaces and periods</ID>
+            <li><ID id="txtUsername_err3e">must not be "Administrator" or "Guest"</ID>
+            </ul>
+            </span>
+            
+            </TD>
+        </TR>
+        </TABLE>
+
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=3  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:hidden;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=4  ACCESSKEY="S" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=5  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </TD>
+</TR>
+</TABLE>
+</BODY>
+</HTML>

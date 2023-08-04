@@ -23,7 +23,7 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	APPC_VERSION            = "2.10.0.0"	
+	APPC_VERSION            = "3.0.0"	
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
     SECURITY_UPDATE       	= "Security Update"

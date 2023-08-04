@@ -1,0 +1,13 @@
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+# exclude everything
+Output/x86/*
+
+# exception to the rule
+!Output/x86/Readme.txt 
+
+# exclude everything
+Output/x64/*
+
+# exception to the rule
+!Output/x64/Readme.txt 

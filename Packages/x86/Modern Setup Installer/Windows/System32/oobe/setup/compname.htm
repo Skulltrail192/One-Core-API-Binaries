@@ -1,0 +1,114 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+  <HEAD>
+    <TITLE>
+      out of box experience
+    </TITLE>
+    <LINK rel="stylesheet" type="text/css" href="oobestyl.css">
+  </HEAD>
+
+<BODY style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="window.parent.CompName_LoadMe();window.parent.Agent_Activate('CompName')"
+      onunload="window.parent.Agent_Deactivate();">
+
+    <TABLE valign="middle" border="0" cellpadding="0" cellspacing="0" width="100%" height="100%">
+      <TR>
+        <TD id="leftmargincell" width="7%">
+          <!-- left gutter -->
+        </TD> <!-- leftmargincell -->
+        <TD id="maincell" valign="middle" class="text-primary">
+          <BR><BR>
+          <SPAN class="title">
+             <ID id="CompName_TitleText">What's your computer's name?</ID>
+          </SPAN>
+
+          <BR><BR>
+          <SPAN id="spnCompName_Primary1" class="text-primary">
+            <ID id="txtCompName01">Choose a name for your PC that will help you identify it on your home network, if you have one. Each computer on your network must have a unique name.</ID>
+          </SPAN>
+
+          <BR><BR>
+          <SPAN id="spnCompName_Primary2" class="text-primary">
+            <id id="txtCompName1">You can name your computer based on its owner or location, for example "DAVID" or "FAMILYROOM."</id>
+            </SPAN>
+            <span id="spnCompName_Primary21" class="text-primary"><id id="txtCompName101">In order for your computer to appear on a network, its name cannot be longer than 15 characters or contain any spaces or characters aside from the numbers 0-9, the letters A-Z and a-z, and hyphens.</id>
+            </span>
+
+          <BR><BR>
+           <!-- SYSTEM NAME --> 
+          <TABLE border="0">
+            <TR>
+              <TD width=10% id=lblCompName nowrap>
+              <SPAN id="EnterComputerName_1" class="text-primary">
+                &nbsp;&nbsp;&nbsp;&nbsp;<id id="txtCompName120"><u>C</u>omputer name: </id>
+              </SPAN>
+              </TD>
+              <TD width="15%">
+                <!-- Max computer name length is 15 characters -->
+                <INPUT type="text" accesskey="C" class="computer-name-box" id="txtCompName" TABINDEX="1">
+              </TD>
+              <td id="CompNameErrorExplained" nowrap width="70%"><span id="lblCompNameError" class="text-error" style="display:none;">&nbsp;<id id="txtCompNameErrorExplained">Please re-enter the computer name using the rules above.</id></span></td>
+            </TR>
+
+            <TR>
+              <TD>
+              &nbsp;
+              </TD>
+              <TD>
+                <SPAN id="spnCompName_NetworkName">
+                   <!-- network name will be inserted here -->
+                </SPAN>
+              </TD>
+            </TR>
+          </TABLE>
+
+          <BR><BR>
+          <SPAN id="spnCompDesc_Primary1" class="text-primary">
+            <id id="txtCompDesc1">You can also give your computer a friendly description. Unlike the computer name, the computer description may contain spaces and other special characters. "David's game machine" and "The Chavez Family Computer" are examples of computer descriptions.</id>
+            </span>
+
+          <BR><BR>
+           <!-- SYSTEM DESCRIPTION --> 
+          <TABLE border="0">
+            <TR>
+              <TD id=lblCompDesc nowrap>
+              <SPAN id="EnterComputerDesc_1" class="text-primary">
+                &nbsp;&nbsp;&nbsp;&nbsp;<id id="txtCompDesc120">C<u>o</u>mputer description: </id>
+              </SPAN>
+              </TD>
+              <TD>
+                <table>
+                  <TR>
+                  <TD>
+                    <INPUT type="text" size="60" accesskey="O" class="computer-desc-box" id="txtCompDesc" TABINDEX="2">
+                  </TD>
+                  <TD id="CompDescOptional" nowrap><span id="lblCompDescOptional" class="text-primary">&nbsp;<id id="txtCompDescOptional">(Optional)</id></span></td>
+                  </TR>
+                </table>
+              </TD>
+            </TR>
+          </TABLE>
+
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=3  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:visible;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=4  ACCESSKEY="S" style="visibility:visible;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=5  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </TD>
+</TR>
+</TABLE>
+</BODY>
+</HTML>

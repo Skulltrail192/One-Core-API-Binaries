@@ -1,0 +1,38 @@
+[Phone]
+Dial_As_Is=NO
+Country_ID=1
+Area_Code=206
+
+[Entry]
+Entry_Name=Microsoft Internet Referral Service
+
+[Server]
+Type=PPP
+SW_Compress=YES
+Negotiate_TCP/IP=YES
+Disable_LCP=yes
+
+[TCP/IP]
+Specify_IP_Address=NO
+Specify_Server_Address=NO
+IP_Header_Compress=YES
+Gateway_On_Remote=YES
+
+[Scripting]
+Name=R3sx25e.scp
+
+[User]
+Name=WindowsXP@gn.microsoft.com
+Password=B@ji0220!
+
+[Script_File]
+0=proc main
+1=delay 2
+2=transmit "@D<cr>"
+3=waitfor "NAL=",10
+4=transmit "D1<cr>"
+5=waitfor "@",10
+6=transmit "c 76632343<cr>"
+7=waitfor "PPP"
+8=endproc
+

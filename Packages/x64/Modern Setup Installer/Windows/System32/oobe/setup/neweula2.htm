@@ -1,0 +1,74 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="oobestyl.css">
+</head>
+
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="window.parent.EulaLoadMe2(); window.parent.Agent_Activate('Eula_2');"
+      onunload="window.parent.Agent_Deactivate();">
+
+<table border=0 cellpadding=0 cellspacing=0 width=100% height=100%>
+<tr>
+    <td ID=leftmargincell width=7%></td>
+    <td ID=maincell valign=middle class="text-primary">
+    <br><br>
+
+    <span class="title">
+        <ID id=NewEulaTitle>From the lawyers...</ID>
+    </span>
+
+    <!-- MS EULA Text Area-->
+    <span ID="EulaHideSpan" style="display:none;">
+        <br><br>
+        <ID id="txtNewEula2">You must accept this agreement to continue to use Windows.</ID>
+        <br>
+        <textarea id=txtEULA cols=60 rows=8 name="eula" READONLY TABINDEX=1 onfocus="window.parent.HandleTextAreaFocus();window.parent.OnFocus();" onblur="window.parent.HandleTextAreaBlur();">
+        </textarea>
+    </SPAN>
+
+    <br>
+    <!-- OEM EULA section -->
+    <span ID="EulaOEMHideSpan" style="display:none;">
+        <br><br>
+        <ID id="txtNewEula21">You must also accept this agreement to continue to use Windows.</ID>
+        <br>
+        <textarea id=txtEULA2 cols=60 rows=8 name="eula2" READONLY TABINDEX=3 onfocus="window.parent.HandleTextAreaFocus();window.parent.OnFocus();" onblur="window.parent.HandleTextAreaBlur();">
+        </textarea>
+    </SPAN>
+
+    <br><br><br>
+
+    <span ID="EULA_par3a" style="display:none">
+        <ID id="txtNewEulaClickBack1">Click the <B>Back</B> button, then accept or reject the EULA.</ID>
+    </span>
+    <span ID="EULA_par3b" style="display:none">
+        <ID id="txtNewEulaClickBack2">Click the <B>Back</B> button, then accept or reject the EULAs.</ID>
+    </span>
+
+    <!-- Navigation buttons -->
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=4  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:hidden;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=-1 ACCESSKEY="S" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:hidden;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=-1 ACCESSKEY="N" style="visibility:hidden;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+</body>
+</html>
+

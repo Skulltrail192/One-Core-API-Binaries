@@ -1,0 +1,217 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="oobestyl.css">
+
+<script>
+function InitPositions() {
+  if(window.parent.g_bInHighScreenRes) {
+     tabl1.style.top= window.parent.L_NextStrTopPercent_Text;
+  } else {
+     tabl1.style.top=window.parent.L_ClickNextStrTopPercent800_Text;
+  }
+}
+</script>
+
+</head>
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="InitPositions(); window.parent.PID_LoadMe(); window.parent.Agent_Activate('ProductKey');"
+      onunload="window.parent.Agent_Deactivate();"
+      onclick="window.parent.PID_SetCorrectFocus();">
+
+<table border=0 cellpadding=0 cellspacing=0 width=100% height=100%>
+<tr>
+<td ID=leftmargincell width=7%></td>
+<td ID=maincell class="text-primary">
+<br>
+<br>
+
+<span class="title"><ID id=pkey_s0>Is this a genuine copy of Microsoft Windows?</ID>
+</span>
+
+<br><br>
+
+<span id=PID_Retail_span class="text-primary" style="display:none;">
+    <ID id=pkey_s1a>On the back of the CD folder, a product key appears on a sticker that sometimes looks like this:</ID>
+    <br><br>
+    <center><img src="../images/prodkey.gif"></center>
+</span>
+
+<span id=PID_OEM_span class="text-primary" style="display:none;">
+    <ID id=pkey_s1b>The 25-digit product key can be found on the Certificate of Authenticity (COA) label attached to your computer that should look similar to the following example:</ID>
+    <br><br>
+    <center><img src="../images/oemcoa.jpg"></center>
+</span>
+
+<br>
+<span class="text-primary">
+<id id="txtProdKey">The 25 letters and numbers of the product key uniquely identify your genuine Microsoft product. In order for Windows to work, we'll need your product key.</id>
+<br><br>
+<ID id=pkey_s2>Type your product <u>k</u>ey in the boxes below (no need to enter hyphens, and we'll take care of the capitalization for you):</ID>
+</span>
+<br><br>
+
+<table ID=PidBox DIR=ltr style="font-family:Courier New; FONT-SIZE: 16pt;">
+<tr>
+<td>
+<input style="ime-mode:disabled" id=pid1 type="text" size=5 maxlength=5 class=pid-box TABINDEX=1 name="edtProductKey" onkeydown="window.parent.ProductIDKeyDown();" onpropertychange="window.parent.ProductIDPropertyChange();"
+onkeypress="window.parent.ProductIDKeyPress();" ACCESSKEY="K"
+onkeyup="window.parent.ProductIDKeyUp();" onfocus="window.parent.OnFocus();">
+</td><td><font color=white>-</font></td><td>
+<input style="ime-mode:disabled" id=pid2 type="text" size=5 maxlength=5 class=pid-box TABINDEX=2 name="edtProductKey"  onkeydown="window.parent.ProductIDKeyDown();" onpropertychange="window.parent.ProductIDPropertyChange();"
+onkeypress="window.parent.ProductIDKeyPress();"
+onkeyup="window.parent.ProductIDKeyUp();" onfocus="window.parent.OnFocus();">
+</td><td><font color=white>-</font></td><td>
+<input style="ime-mode:disabled" id=pid3 type="text" size=5 maxlength=5 class=pid-box TABINDEX=3  name="edtProductKey" onkeydown="window.parent.ProductIDKeyDown();" onpropertychange="window.parent.ProductIDPropertyChange();"
+onkeypress="window.parent.ProductIDKeyPress();"
+onkeyup="window.parent.ProductIDKeyUp();" onfocus="window.parent.OnFocus();">
+</td><td><font color=white>-</font></td><td>
+<input style="ime-mode:disabled" id=pid4 type="text" size=5 maxlength=5 class=pid-box TABINDEX=4  name="edtProductKey" onkeydown="window.parent.ProductIDKeyDown();" onpropertychange="window.parent.ProductIDPropertyChange();"
+onkeypress="window.parent.ProductIDKeyPress();"
+onkeyup="window.parent.ProductIDKeyUp();" onfocus="window.parent.OnFocus();">
+</td><td><font color=white>-</font></td><td>
+<input style="ime-mode:disabled" id=pid5 type="text" size=5 maxlength=5 class=pid-box TABINDEX=5  name="edtProductKey" onkeydown="window.parent.ProductIDKeyDown();" onpropertychange="window.parent.ProductIDPropertyChange();"
+onkeypress="window.parent.ProductIDKeyPress();"
+onkeyup="window.parent.ProductIDKeyUp();" onfocus="window.parent.OnFocus();">
+</td>
+</tr>
+<table>
+
+<br>
+<comment>
+    <table id="tableKeyboardHelper" DIR=ltr TABINDEX=-7 style="BACKGROUND-COLOR: silver; border:1px solid black; VISIBILITY: visible" cellpadding=2 onclick="window.parent.KeyboardHelperClick();" >
+        <tr><td colspan=9 align=middle>
+           <div ID=kbdhlptitle class="emphasis-lesser">Keyboard Helper</div>
+           </td>
+           <td colspan=3 align=right>
+                <button id=btn name="{BACKSPACE}" TABINDEX=-7 class="fontStyle"
+                  STYLE="WIDTH:85px; HEIGHT:32px;">
+                    <TABLE DIR=ltr border=0 cellpadding=0 cellspacing=0> <tr>
+                       <!-- do not localize Marlett symbol font -->
+                       <td style="position:relative;top:2px;left:-5px;font-family:Marlett;font-size:16pt;">w</td>
+                       <td ID=BackSpcTxt class=BackSpaceButton style="position:relative;top:2px;left:-7px;">BackSpace</td>
+                     </tr></table>
+                 </button>
+            </td>
+
+        </tr>
+        <tr>
+            <td>
+                <button id=btn name="B" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">B</button>
+            </td>
+            <td>
+                <button id=btn name="C" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">C</button>
+            </td>
+            <td>
+                <button id=btn name="D" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">D</button>
+            </td>
+            <td>
+                <button id=btn name="F" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">F</button>
+            </td>
+            <td>
+                <button id=btn name="G" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">G</button>
+            </td>
+            <td>
+                <button id=btn name="H" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">H</button>
+            </td>
+            <td>
+                <button id=btn name="J" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">J</button>
+            </td>
+            <td>
+                <button id=btn name="K" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">K</button>
+            </td>
+            <td>
+                <button id=btn name="M" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">M</button>
+            </td>
+            <td>
+                <button id=btn name="P" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">P</button>
+            </td>
+            <td>
+                <button id=btn name="Q" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">Q</button>
+            </td>
+            <td>
+                <button id=btn name="R" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">R</button>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <button id=btn name="T" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">T</button>
+            </td>
+            <td>
+                <button id=btn name="V" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">V</button>
+            </td>
+            <td>
+                <button id=btn name="W" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">W</button>
+            </td>
+            <td>
+                <button id=btn name="X" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">X</button>
+            </td>
+            <td>
+                <button id=btn name="Y" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">Y</button>
+            </td>
+            <td>
+                <button id=btn name="2" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">2</button>
+            </td>
+            <td>
+                <button id=btn name="3" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">3</button>
+            </td>
+            <td>
+                <button id=btn name="4" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">4</button>
+            </td>
+            <td>
+                <button id=btn name="6" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">6</button>
+            </td>
+            <td>
+                <button id=btn name="7" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">7</button>
+            </td>
+            <td>
+                <button id=btn name="8" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">8</button>
+            </td>
+            <td>
+                <button id=btn name="9" TABINDEX=-7 class="fontStyle" STYLE="WIDTH:32px; HEIGHT:32px; FONT-SIZE:16PT">9</button>
+            </td>
+        </tr>
+    </table>
+
+
+<br><br>
+</comment>
+
+
+<table ID=tabl1 tabindex=-1 border=0 style="display:none;"><tr><td>
+<span class="text-primary" class=ProdKeyMsgText><ID id=pkey_s4>After entering the product key, click </ID></span><span class="emphasis-lesser"><ID id=pkey_s5>Next</ID></span><span class="text-primary"><ID id=xx1>.</ID></span>
+</td></tr>
+</table>
+
+<comment>
+<!-- shown in debug mode only -->
+<BUTTON ID="btnSkip" class="buttons" TABINDEX=-1 style="visibility:hidden;position:absolute;top:90%;left:10%;z-index:999"> Debug Skip </BUTTON>
+</comment>
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=8  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:hidden;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=-1 ACCESSKEY="S" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=9  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+
+</body>
+</html>
+

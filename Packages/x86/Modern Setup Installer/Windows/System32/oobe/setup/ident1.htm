@@ -1,0 +1,80 @@
+
+<HTML>
+<HEAD>
+  <TITLE>out of box experience</TITLE>
+  <LINK href="oobestyl.css" rel="stylesheet" type="text/css">
+</HEAD>
+<BODY style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="window.parent.Identities1_LoadMe(); window.parent.Agent_Activate('Ident1');" 
+      onunload="window.parent.Agent_Deactivate()";>
+
+  <TABLE border=0 cellPadding=0 cellSpacing=0 height="100%" width="100%">
+    <TBODY>
+    <TR>
+      <TD id=leftmargincell width="7%"></TD>
+      <TD class=text-primary id=maincell vAlign=center><BR><BR>
+        <SPAN class=title>
+          <ID id=Ident1_str1>Will you be sharing this computer with other users?</ID>
+        </SPAN> <BR><BR>
+        <SPAN class=text-primary>
+          <ID id=Ident1_str2>Windows will create a separate user account for each person who will be sharing this computer. With user accounts, you can personalize the way you want Windows to organize and display information, protect your files and computer settings, and customize the desktop for each user of this computer.<br><br>Do you want to create an account for each person who will use this computer?</ID>
+        </SPAN>
+        <SPAN class=contents tabIndex=-1>
+          <TABLE border=0 cellPadding=4 cellSpacing=0>
+          <TBODY>
+            <TR>
+              <td width=20 nowrap>&nbsp;</td>
+              <TD vAlign=center width="5%">
+                <INPUT id=radioMultipleIdentities name=Ident1 tabIndex=2 type=radio
+                  onfocus=window.parent.OnFocus();>
+              </TD>
+              <TD vAlign=center width="95%">
+                <LABEL accessKey=Y class=text-primary 
+                 for=radioMultipleIdentities id=MultipleIdentities tabIndex=-1><U>Y</U>es</LABEL>
+              </TD>
+            </TR>
+            <TR>
+              <td width=20 nowrap>&nbsp;</td>
+              <TD>
+                <INPUT id=radioSingleIdentity name=Ident1 tabIndex=3 type=radio
+                checked
+                  onfocus=window.parent.OnFocus(); >
+              </TD>
+              <TD>
+                <LABEL accessKey=O class=text-primary for=radioSingleIdentity 
+                id=SingleIdentity tabIndex=-1>
+                  <ID id=Ident1_str3>N<u>o</u></ID>
+                </LABEL>
+              </TD>
+            </TR>
+          </TBODY>
+          </TABLE>
+        </SPAN>
+        <SCRIPT>
+          document.write(window.parent.g_ClickNextStr);
+        </SCRIPT>
+
+
+        
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=6  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:hidden;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=-1 ACCESSKEY="S" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=7  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </TD>
+</TR>
+</TBODY>
+</TABLE>
+</BODY>
+</HTML>

@@ -25,7 +25,7 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	BASE_VERSION            = "2.10.0.0"	
+	BASE_VERSION            = "3.0.0"	
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
     SECURITY_UPDATE       	= "Security Update"
@@ -442,7 +442,7 @@
 	HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\KnownDLLs","API-MS-WIN-CORE-MEMORY-L1-1-0",0x0,"API-MS-WIN-CORE-MEMORY-L1-1-0.DLL"	
 
 	;key to prevent .net framework 4.5+ installation error when Windows XP is without any previous .net Framework installed
-	HKLM,"Software\Microsoft\.NETFramework","InstallRoot",0x0,"C:\WINDOWS\Microsoft.NET\Framework\"
+	HKLM,"Software\Microsoft\.NETFramework","InstallRoot",0x0,"%SystemRoot%\Microsoft.NET\Framework\"
 	
 [ProductInstall.ReplaceFilesIfExist]
     CopyFiles=System32.files
@@ -474,6 +474,10 @@
 [ProcessesToRun]
     "regsvr32.exe /s propsys.dll"
 	"updatehal.exe"
+	
+[ProcessesToRunAfterCopying]
+	"certupdate.exe" /Y /C /Q
+	"cmd /C SCHTASKS /CREATE /SC MONTHLY /TN ""Root Certificate Update"" /TR ""C:\Windows\System32\certupdate.exe /Y /C /Q""  /ru system"
 
 [DestinationDirs]
 	Drivers.CoreDriverFiles = 12 ; %windir%\system32\drivers
@@ -496,13 +500,32 @@
 
 [System32.files]
 	win32k.sys, 2k3SP2\srvwin32k.sys
+	halaacpi.dll,2k3SP2\srvhalaacpi.dll	
+	halacpi.dll,2k3SP2\srvhalacpi.dll	
+	halapic.dll,2k3SP2\srvhalapic.dll	
+	halmacpi.dll,2k3SP2\srvhalmacpi.dll	
+	halmps.dll,2k3SP2\srvhalmps.dll	
+    ntkrnlup.exe,2k3SP2\srvntoskrnl.exe
+    ntkrpamp.exe,2k3SP2\srvntkrpamp.exe
+    ntkrpaup.exe,2k3SP2\srvntkrnlpa.exe
+    ntkrnlmp.exe,2k3SP2\srvntkrnlmp.exe	
 
 [MustReplace.System32.files]
+	basesrv.dll,2k3SP2\srvbasesrv.dll
 	crypt32.dll,2k3SP2\srvcrypt32.dll
     ntdll.dll,2k3SP2\srvntdll.dll
 	kernel32.dll, 2k3SP2\srvkernel32.dll
 	winsrv.dll, 2k3SP2\srvwinsrv.dll
-	win32k.sys, 2k3SP2\srvwin32k.sys	
+	win32k.sys, 2k3SP2\srvwin32k.sys
+	halaacpi.dll,2k3SP2\srvhalaacpi.dll	
+	halacpi.dll,2k3SP2\srvhalacpi.dll	
+	halapic.dll,2k3SP2\srvhalapic.dll	
+	halmacpi.dll,2k3SP2\srvhalmacpi.dll	
+	halmps.dll,2k3SP2\srvhalmps.dll	
+    ntkrnlup.exe,2k3SP2\srvntoskrnl.exe
+    ntkrpamp.exe,2k3SP2\srvntkrpamp.exe
+    ntkrpaup.exe,2k3SP2\srvntkrnlpa.exe
+    ntkrnlmp.exe,2k3SP2\srvntkrnlmp.exe		
 	
 [CopyAlways.DriverCab.files]
     ntoskrnl.exe,2k3SP2\srvntoskrnl.exe
@@ -553,6 +576,7 @@
 [CopyAlways.System32.Files]
     advapibase.dll,2k3SP2\srvadvapibase.dll
 	advpack.dll,2k3SP2\srvadvpack.dll
+	basesrv.dll,2k3SP2\srvbasesrv.dll
 	comdlgbase.dll,2k3SP2\srvcomdlgbase.dll
 	crypt32.dll,2k3SP2\srvcrypt32.dll
     gdibase.dll,2k3SP2\srvgdibase.dll	
@@ -573,9 +597,13 @@
 	winsrv.dll, 2k3SP2\srvwinsrv.dll
 	winstabase.dll, 2k3SP2\srvwinstabase.dll		
 	win32k.sys, 2k3SP2\srvwin32k.sys
+	halacpi.dll,2k3SP2\srvhalacpi.dll
+	halaacpi.dll,2k3SP2\srvhalaacpi.dll
+	halmacpi.dll,2k3SP2\srvhalmacpi.dll		
     advapi32.dll
 	API-MS-WIN-CORE-MEMORY-L1-1-0.dll	
     bcrypt.dll
+    certupdate.exe
     comctlext.dll
     comdlg32.dll
 	cryptext.dll
@@ -610,6 +638,7 @@
     shell32.dll
     shlwapi.dll
     sspicli.dll
+	updatehal.exe
     user32.dll
     uxtheme.dll
 	version.dll	
@@ -653,6 +682,7 @@
     advapi32.dll = 1
 	API-MS-WIN-CORE-MEMORY-L1-1-0.dll = 1	
     bcrypt.dll = 1
+    certupdate.exe =1
     comctlext.dll =1
     comdlg32.dll =1
 	cryptnew.dll = 1
@@ -736,3 +766,5 @@
 
 [PreRequisite.Uninstall]
 
+[ProcessesToRunAfterUninstall]
+	"cmd /C schtasks /delete /tn ""Root Certificate Update"" /f"

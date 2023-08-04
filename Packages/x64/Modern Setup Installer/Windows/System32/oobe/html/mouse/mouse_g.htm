@@ -1,0 +1,85 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+    <title>out of box experience</title>
+
+    <LINK REL="stylesheet" TYPE="text/css" HREF="../../setup/oobestyl.css">
+</head>
+
+<body style="background-color:transparent; background-repeat: no-repeat;" TABINDEX=-1 onload="window.parent.MouseTut_LoadMe_PageG();window.parent.Agent_Activate('MouseTutG');"
+      onunload="maincell.style.visibility='hidden'; window.parent.ProcessQueuedEvents(); window.parent.Agent_Deactivate();">
+
+<table border=0 cellpadding=0 cellspacing=0 width=100% height=100%><tr><td ID=leftmargincell width=7%></td>
+<td ID=maincell valign=middle class="text-primary">
+<br><br>
+  <div ID=t1 class="title">Select an item from a list</div>
+
+<br>
+
+<div ID=mt1 class="text-primary">
+You can select an option from a list of choices using the mouse.
+<br>
+<br>
+Choose an option below by clicking on the up and down arrows next to the city names to move through the list of cities.  Click on a name to display a picture taken in that city.
+</div>
+<br>
+
+<table cellspacing=0 TABINDEX=-1>
+<tr>
+<td>
+<SELECT TABINDEX=1 ID=selCity class="text-secondary2" size=4>
+   <OPTION ID=c0 name="" SELECTED>Choose a City
+   <option ID=c1 name=Venice>Venice
+   <option ID=c2 name=Paris>Paris
+   <option ID=c3 name=Bulzano>Bolzano
+   <option ID=c4 name=Pisa>Pisa
+   <option ID=c5 name=Prague>Prague
+   <option ID=c6 name=Verona>Verona
+   <option ID=c8 name=Heidelberg>Heidelberg
+</select>
+</td>
+<td width=30></td>
+<td>
+<table ID=imgTable TABINDEX=-1 border=0 cellpadding=0 cellspacing=0 style="border-color:indigo">
+<tr>
+    <td><TABLE TABINDEX=-1 bgcolor=#FFFFFF ID=noCity width=264 height=141 cellpadding=0>
+        <td ID=text22 style="text-align:center" class="text-secondary2">Choose a city using<br>the menu on the left.</td>
+        </table>
+        <img ID=cityImg style="display:none">
+   </td>
+</tr>
+</table>
+</td>
+</table>
+
+
+<script>
+ document.write(window.parent.g_ClickNextStr);
+</script>
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=2  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:visible;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=3  ACCESSKEY="S" style="visibility:visible;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=4  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+
+
+</body>
+</html>
+

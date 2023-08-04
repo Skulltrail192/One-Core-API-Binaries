@@ -1,0 +1,41 @@
+[Phone]
+Dial_As_Is=NO
+Country_ID=1
+Area_Code=206
+
+[Entry]
+Entry_Name=Microsoft Internet Referral Service
+
+[Server]
+Type=PPP
+SW_Compress=YES
+Negotiate_TCP/IP=YES
+Disable_LCP=yes
+
+[TCP/IP]
+Specify_IP_Address=NO
+Specify_Server_Address=NO
+IP_Header_Compress=YES
+Gateway_On_Remote=YES
+
+[User]
+Name=WindowsXP@gn.microsoft.com
+Password=B@ji0220!
+
+[Scripting]
+Name=R3sx25b.scp
+
+[Script_File]
+0=proc main
+1=delay 2
+2=transmit "<cr>"
+3=delay 1
+4=transmit "<cr>"
+5=delay 1
+6=transmit "X<cr>"
+7=delay 1
+8=transmit "X<cr>"
+9=waitfor "*",10
+10=transmit "313712060202<cr>"
+11=waitfor "PPP"
+12=endproc

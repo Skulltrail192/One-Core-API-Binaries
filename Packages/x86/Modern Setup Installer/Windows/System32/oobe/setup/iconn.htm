@@ -1,0 +1,83 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>out of box experience</title>
+<LINK REL="stylesheet" TYPE="text/css" HREF="oobestyl.css">
+</head>
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="window.parent.IconnLoadMe();window.parent.Agent_Activate('Iconn');"
+      onunload="window.parent.Agent_Deactivate();">
+
+<table border=0 cellpadding=0 cellspacing=0 width=100% height=100%>
+<tr>
+    <td ID=leftmargincell width=7%></td>
+    <td ID=maincell valign=middle class="text-primary">
+
+    <br><br>
+    <span class="title">
+    <ID id= "Iconn_str1">Do you want to set up Internet access now?</ID>
+    </span>
+
+    <br><br>
+    <span class="text-primary">
+    <ID id="Iconn_str2"><B>You've finished setting up Windows and your computer is now ready to use.</B></ID>
+    <br>
+    <ID id="iconn_txt1aa">Do you want to set up your computer to connect to the Internet now?</ID>
+    </span>
+
+    <br><br>
+    <SPAN TABINDEX=-1 CLASS="contents">
+    <table border=0 cellpadding=4 cellspacing=0>
+    <tr>
+        <td valign="top">
+        <input TABINDEX=1 ID="radioYesIconn" name="Iconn" type="radio" onClick="window.parent.OnClick(); window.parent.IconnRadioClicked();" onfocus="this.select(); window.parent.OnFocus();">
+        </td>
+
+        <td valign="top">
+        <LABEL TABINDEX=-1 ACCESSKEY="Y" id=Iconn_Yes for=radioYesIconn class="text-primary">
+        <ID id="Iconn_str4"><u>Y</u>es, help me connect to the Internet</ID>
+        </LABEL>
+        </td>
+    </tr>
+    <tr>
+        <td valign="top">
+        <input TABINDEX=3 ID="radioNoIconn" name="Iconn" type="radio" onClick="window.parent.OnClick(); window.parent.IconnRadioClicked();" onfocus="this.select(); window.parent.OnFocus();">
+        </td>
+
+        <td valign="top">
+        <LABEL TABINDEX=-1 ACCESSKEY="O" id=skipIconn for=radioNoIconn class="text-primary">
+        <ID id="Iconn_str5">N<u>o</u>, not at this time</ID>
+        </LABEL>
+        </td>
+    </tr>
+    </table>
+    </SPAN>
+
+    <script>
+    document.write(window.parent.g_ClickNextStr);
+    </script>
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=-1 ACCESSKEY="B" style="visibility:hidden;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:hidden;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:hidden;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=-1 ACCESSKEY="S" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=7  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+
+</body>
+</html>

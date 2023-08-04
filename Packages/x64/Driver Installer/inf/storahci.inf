@@ -10,12 +10,13 @@ signature="$Windows NT$"
 Class=hdc
 ClassGuid={4D36E96A-E325-11CE-BFC1-08002BE10318}
 Provider=%ROS%
+LayoutFile=layout.inf
 
-[SourceDisksNames]
-1 = %DeviceDesc%,,,
+; [SourceDisksNames]
+; 1 = %DeviceDesc%,,,
 
-[SourceDisksFiles]
-storahci.sys = 1
+; [SourceDisksFiles]
+; storahci.sys = 1
 
 [DestinationDirs]
 DefaultDestDir = 12 ; DIRID_DRIVERS
@@ -32,7 +33,7 @@ DefaultDestDir = 12 ; DIRID_DRIVERS
 ExcludeFromSelect = *
 
 [storahci_Inst]
-CopyFiles = storahci_CopyFiles
+CopyFiles = @storahci.sys
 
 [storahci_Inst.HW]
 ; Enables Storport IPM for this adapter

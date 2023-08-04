@@ -1,0 +1,94 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="oobestyl.css">
+
+</head>
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+    onload="window.parent.TimeZone_LoadMe(); window.parent.Agent_Activate('TimeZone');"
+    onunload="maincell.style.visibility='hidden';window.parent.ProcessQueuedEvents();window.parent.Agent_Deactivate();">
+
+<table border=0 cellpadding=0 cellspacing=0 width=100% height=100%>
+<tr>
+<td ID=leftmargincell width=7%></td>
+<td ID=maincell valign=middle class="text-primary">
+<br>
+<br>
+<div id=t1 class="title">
+What time zone are you in?
+</div>
+
+<br>
+
+
+<div id=xx1 class="text-primary">
+We'll use your time zone to set your computer's clock.
+</div>
+
+
+<br>
+
+<table border=0 cellpadding=0 cellspacing=0>
+<tr>
+<td valign=top >
+&nbsp;
+ </td>
+</tr>
+
+
+<tr>
+  <td>
+     <LABEL id=xx3 class="text-primary" for=selTimeZone ACCESSKEY="u">I <u>u</u>se my computer in this time zone:</LABEL>
+</td>
+</tr><tr>
+<td valign=top ><br>
+<select ID=selTimeZone style="visibility:visible" size=10 TABINDEX=1 onfocus="window.parent.OnFocus();" onclick="window.parent.OnClick();" onkeyup="window.parent.OnClick();">
+<script language="javascript">
+document.write(window.parent.external.SystemClock.get_AllTimeZones);
+</script>
+</select>
+
+</td>
+</tr>
+<tr name=buffer style="height:50px"><td>&nbsp;</td></tr>
+<tr>
+ <td valign=top  colspan=3><br>
+ <input ID=daylight type="checkbox" onfocus="window.parent.OnFocus();" ACCESSKEY="A" TABINDEX=2 checked>&nbsp;
+ <LABEL for=daylight class="text-primary" id=x45><u>A</u>utomatically adjust clock for daylight saving time</LABEL>
+ </td>
+</tr>
+
+</table>
+
+<script>
+ document.write(window.parent.g_ClickNextStr);
+</script>
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=3  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:hidden;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=-1 ACCESSKEY="S" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=4  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+
+
+</body>
+</html>
+

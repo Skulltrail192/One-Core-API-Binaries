@@ -1,0 +1,88 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="aregstyl.css" id=deskstyle1>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="aregsty2.css" id=deskstyle2 disabled>
+    <META HTTP-EQUIV="MSThemeCompatible" CONTENT="Yes">
+</head>
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" topMargin=0 rightmargin=0 leftmargin=0 tabindex=-1
+      onload="window.parent.ActConn_LoadMe();">
+
+<table border=0 cellpadding=0 cellspacing=0 width=100% height=100%>
+<tr>
+    <td ID=leftmargincell width=5% height=99%></td>
+    <td ID=maincell valign=top class="text-primary">
+
+    <span ID=Title_Text class="title" style="display:none;"><ID id="txtActivConn">Select online activation method</ID></span>
+
+    <br>
+    <span id="act_spn01" class="text-primary">
+        <ID id="txtActivConn1">Windows was unable to determine how this computer should connect to the online activation server.</ID>
+
+        <br><br>
+        <ID id="txtActivConn2">Please select one of the following methods to use for online activation:</ID>
+
+        <br><br>
+        <SPAN TABINDEX=-1>
+        <table>
+        <tr>
+            <td>&nbsp;&nbsp;
+            <input TABINDEX=1 ACCESSKEY="C" type="radio" ID="rb_conn_lan" value="" name="actconn_check" onClick="window.parent.OnClick();" onfocus="window.parent.OnFocus();">
+            </td>
+            <td>
+            <LABEL id="rb_txt1" for="rb_conn_lan">
+            <span id="act_spn1" class="text-primary"><ID id=actconn_choice_lan><u>C</u>onnect using my direct Internet connection (local area network, DSL, cable modem)</id></span>
+            </LABEL>
+            </td>
+        </tr>
+        <tr>
+            <td>&nbsp;&nbsp;
+            <input TABINDEX=2 ACCESSKEY="D" type="radio" ID="rb_conn_modem" value="" name="actconn_check" onClick="window.parent.OnClick();" onfocus="window.parent.OnFocus();">
+            </td>
+            <td>
+            <LABEL id="rb_txt2" for="rb_conn_modem">
+            <span id="act_spn2" class="text-primary"><ID id=actconn_choice_modem><u>D</u>ial using my modem</ID></span>
+            </LABEL>
+            </td>
+        </tr>
+        </table>
+        </SPAN>
+        
+        <br><br>
+        <ID id=activation_paragraph2>To continue, click Next.</id>
+    </span>
+    
+    </td>
+    <td ID=rightmargincell width=7%>
+    </td>
+</tr>
+<tr>
+    <td colspan=3>
+    <br>
+    <table border=0 class="buttonpositionnew">
+    <tr>
+        <td width="99%">&nbsp;</td>
+        <td>
+        <table border=0 width="100">
+        <tr>
+            <td>
+            <BUTTON ID="btnBack" class="buttons" TABINDEX=3 ACCESSKEY="B"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></BUTTON>
+            </td>
+            <td>
+            <BUTTON ID="btnNext" class="buttons" TABINDEX=4 ACCESSKEY="N"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></BUTTON>
+            </td>
+        </tr>
+        </table>
+        </td>
+    </tr>
+    </table>
+    </td>
+</tr>
+</table>
+
+</body>
+</html>
+

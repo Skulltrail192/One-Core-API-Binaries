@@ -1,0 +1,213 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+  <TITLE>out of box experience</TITLE>
+  <LINK REL="stylesheet" TYPE="text/css" HREF="../../setup/oobestyl.css">
+</HEAD>
+
+<BODY style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      ONLOAD="window.parent.dsl_pppoe_LoadMe();window.parent.Agent_Activate('DSL_A');"
+      ONUNLOAD="window.parent.Agent_Deactivate();">
+
+<TABLE ALIGN=center BORDER=0 CELLPADDING=0 CELLSPACING=0 WIDTH="100%" HEIGHT="100%">
+<TR> 
+    <TD ID=leftmargincell WIDTH=7%></TD>
+    <TD ID=maincell CLASS="text-primary">
+
+    <BR><BR>
+    <SPAN CLASS="title">
+    <ID ID=dslmain_TitleText>Let's set up your Internet account</ID>
+    </SPAN>
+
+    <BR><BR>
+    <DIV CLASS="text-primary">
+        <ID ID=txtDslmain_Text1>First, we'll need three pieces of required information that you can get from your Internet service provider (ISP) if you don't already have them.</ID>&nbsp;
+        <span id=DSLmainErrorText01 style="visibility:hidden;"><ID id="dsl_a_pleaseenter_validip">Please enter a valid username.</id></span>
+
+        <BR><BR>
+        <CENTER>
+        <TABLE border=0 cellpadding=5>
+        <TR>
+            <TD>
+            <LABEL id="dsl_lbl_username" for="dsl_username" class="text-primary">
+            <span id="dslusernamelocaltext"><ID id="dsl_intl_username">Your <u>u</u>sername :</ID></span>
+            </LABEL>
+            </TD>
+
+            <TD>
+            <INPUT type="text" value="" name="dsl_username" size=30 accesskey="U">
+            </TD>
+
+            <TD>
+            <SPAN class="text-primary">
+            <ID id="dsl_intl_example_username">&nbsp;</ID>
+            </SPAN>
+            </TD>
+
+        </TR>
+        <TR>
+            <TD>
+            <LABEL id="dsl_lbl_password" for="dsl_password" class="text-primary">
+            <ID id="dsl_intl_password">Your <U>p</U>assword :</ID>
+            </LABEL>
+            </TD>
+
+            <TD>
+            <INPUT type="password" value="" name="dsl_password" size=30 onFocus="this.select();" accesskey="P">
+            </TD>
+
+            <TD>
+            <SPAN class="text-primary">
+            <ID id="dsl_intl_example_password">&nbsp;</ID>
+            </SPAN>
+            </TD>
+        </TR>
+        <TR>
+            <TD>
+            <LABEL id="dsl_lbl_servicename" for="dsl_servicename" class="text-primary">
+            <ID id="dsl_intl_servicename">Your ISP's s<U>e</U>rvice name:</ID>
+            </TD>
+
+            <TD>
+            <INPUT type="text" value="" name="dsl_servicename" size=30 accesskey="E">
+            </TD>
+
+            <TD>
+            <SPAN class="text-primary">
+            <id id="txtISPServiceName">(This is typically the name of your ISP.)</id>
+            </SPAN>
+            </TD>
+        </TR>
+        </TABLE>
+
+
+        <span id=ipdata style="display:none">
+        <TABLE border=0 cellspacing=5>
+        <TR>
+            <TD>
+            <LABEL id="dsl_lbl_autoip" for="dsl_autoip" accesskey="I" class="text-primary">
+            <ID id="dsl_intl_autoip">Obtain <U>I</U>P  automatically :</ID>
+            </LABEL>
+            </TD>
+
+            <TD width=50>
+            <INPUT tabindex="1" type="checkbox" value=""
+            name="dsl_autoip" size=30
+            onClick="window.parent.dsl_autoipClickHandler();" checked>
+            </TD>
+
+            <TD>
+            <LABEL id="dsl_lbl_autodns" for="dsl_autodns" accesskey="D" class="text-primary">
+            <ID id="dsl_intl_autodns">Obtain <U>D</U>NS automatically :</ID>
+            </LABEL>
+            </TD>
+
+            <TD>
+            <INPUT tabindex="2" type="checkbox" value=""
+            name="dsl_autodns" size=30
+            onClick="window.parent.dsl_autodnsClickHandler();" checked>
+            </TD>
+
+        </TR>
+        </TABLE>
+            
+        <BR>
+        <TABLE border=0 cellspacing=5>
+        <TR>
+            <TD>
+            <LABEL id="dsl_lbl_staticip" for="dsl_staticip" accesskey="T" class="text-primary">
+            <ID id="dsl_intl_staticip">S<U>t</U>atic IP address:</ID>
+            </LABEL>
+            </TD>
+
+            <TD width=175>
+            <INPUT tabindex="3" type="text" value="" name="dsl_staticip" size=20 onFocus="if (dsl_autoip.checked)this.blur();" style="background-Color:'#dddddd'">
+            </TD>
+
+            <TD>
+            <LABEL id="dsl_lbl_prefdns" for="dsl_prefdns" accesskey="R" class="text-primary">
+            <ID id="dsl_intl_prefdns">Prefe<u>r</u>red DNS:</ID>
+            </LABEL>
+            </TD>
+
+            <TD>
+            <INPUT tabindex="6" type="text" value="" name="dsl_prefdns" size=20 onFocus="if (dsl_autodns.checked)this.blur();" style="background-Color:'#dddddd'">
+            </TD>
+        </TR>
+        <TR>
+            <TD>
+            <LABEL id="dsl_lbl_subnetmask" for="dsl_subnetmask" accesskey="M" class="text-primary">
+            <ID id="dsl_intl_subnetmask">Subnet <u>m</u>ask:</ID>
+            </LABEL>
+            </TD>
+
+            <TD>
+            <INPUT tabindex="4" type="text" value="" name="dsl_subnetmask" size=20 onFocus="if (dsl_autoip.checked)this.blur();" style="background-Color:'#dddddd'">
+            </TD>
+
+            <TD>
+            <LABEL id="dsl_lbl_altdns" for="dsl_altdns" accesskey="A" class="text-primary">
+            <ID id="dsl_intl_altdns"><U>A</U>lternate DNS:</ID>
+            </LABEL>
+            </TD>
+
+            <TD>
+            <INPUT tabindex="7" type="text" value="" name="dsl_altdns" size=20 onFocus="if (dsl_autodns.checked)this.blur();" style="background-Color:'#dddddd'">
+            </TD>
+        </TR>
+        <TR>
+            <TD>
+            <LABEL id="dsl_lbl_defgateway" for="dsl_defgateway" accesskey="G" class="text-primary">
+            <ID id="dsl_intl_defgateway">Default <u>g</u>ateway:</ID>
+            </LABEL>
+            </TD>
+
+            <TD>
+            <INPUT tabindex="5" type="text" value="" name="dsl_defgateway" size=20 onFocus="if (dsl_autoip.checked)this.blur();" style="background-Color:'#dddddd'">
+            </TD>
+
+            <TD colspan=2>&nbsp;
+            </TD>
+        </TR>
+        </TABLE>
+        </span>
+        </CENTER>
+
+        <br>
+    </DIV>
+
+    <DIV CLASS="text-primary">
+    <ID ID=dslmain_Text22>
+    </ID>
+    </DIV>
+
+    <SCRIPT>
+    document.write(window.parent.g_ClickNextStr);
+    </SCRIPT>
+
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=4  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:visible;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=5  ACCESSKEY="S" style="visibility:visible;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=6  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+
+    </TD>
+</TR>
+</TABLE>
+
+</BODY>
+</HTML>
+

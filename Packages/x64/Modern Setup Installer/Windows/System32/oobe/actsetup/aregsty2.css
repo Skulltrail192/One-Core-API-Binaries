@@ -1,0 +1,175 @@
+
+
+.emphasis-lesser  {
+
+        font-size : 7pt;
+        font-family : Trebuchet MS;
+        font-weight : bold;
+        font-style : normal;
+        color : white;
+        line-height : 12pt;
+}
+
+.emphasis-greater  {
+
+        font-size : 8pt;
+        font-family : Trebuchet MS;
+        font-weight : bold;
+        color : white;
+        line-height : 14pt;
+}
+
+.title  {
+
+        font-size : 11pt;
+        font-family : Arial;
+        font-weight : normal;
+        color : white;
+        line-height : 100%;
+}
+.text-primary  {
+
+        font-size : 7pt;
+        font-family : Arial;
+        font-weight : normal;
+        color : white;
+        line-height : 12pt;
+
+}
+
+.text-small  {
+        font-size : 7pt;
+        font-family : Arial;
+        font-weight : normal;
+        color : white;
+}
+
+.editbox-text-primary  {
+        font-size : 9pt;
+        font-family : Arial;
+        font-weight : normal;
+        color : black;
+        line-height : 12pt;
+
+}
+
+.text-secondary  {
+
+        font-size : 7pt;
+        font-family : Arial;
+        font-weight : normal;
+        color : white;
+        line-height : 10pt;
+}
+
+.text-error  {
+
+        font-size : 7pt;
+        font-family : Arial;
+        color : #ffff00;
+        line-height : 12pt;
+
+        font-weight : bold;
+}
+
+
+A:Active  {
+        text-decoration : underline;
+}
+
+A:Hover  {
+        text-decoration : underline;
+        color:red;}
+}
+
+
+.buttonposition4  {
+        
+        position : absolute;
+        top : 85%;
+        left : 30%;
+        width:  400;
+}
+
+.buttonpositionnew  {
+        width: 98%;
+}
+
+.buttons  {
+        
+
+
+
+
+
+
+
+
+
+
+}
+
+.buttons-hover  {
+        
+
+
+
+
+
+
+
+
+
+
+}
+
+.buttons-disabled  {
+        
+
+
+
+
+
+
+
+
+
+
+}
+
+A  {
+        text-decoration : none;
+        color: white;
+        
+}
+
+
+A:Active  {
+        text-decoration : none;
+}
+
+A:Hover  {
+        text-decoration : underline;
+}
+
+.font9pt  {
+        font-size : 9pt;
+}
+
+.font8pt  {
+        font-size : 8pt;
+}
+
+.confirm-box {
+    
+    font-weight:bold;
+    font-family: Courier New;
+    FONT-SIZE: 7pt;
+}
+
+.pid-box {
+    
+    font-weight:bold;
+    font-family: Courier New;
+    FONT-SIZE: 7pt;
+}

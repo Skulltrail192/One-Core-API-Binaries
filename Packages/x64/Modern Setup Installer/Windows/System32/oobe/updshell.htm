@@ -1,0 +1,1466 @@
+
+
+<HTML>
+<HEAD>
+    <TITLE>Microsoft Out-of-Box Experience</TITLE>
+    <META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <LINK REL="stylesheet" TYPE="text/css" HREF="setup\oobestyl.css">
+
+    <!-- Begin Agent Specific Code -->
+
+        <!-- The majority of the Agent code is in AgtCore.js -->
+        <!-- The AgtXXXX.js files contain all of the script  -->
+        <!-- code that needs to be localized.                -->
+        <!-- NOTE: Agent is not initialized until the first  -->
+        <!-- time someone clicks on the Assistant image.     -->
+
+        <script language=jscript src="AgtCore.js"></script>
+        <script language=jscript src="AgtScrpt.js"></script>
+        <script language=jscript src="AgtScrp2.js"></script>
+
+        <!-- Agent Event Handler Declarations -->
+
+        <script language=jscript for=Agent event="Command(userInput)")>
+            Agent_OnCommand(userInput);
+        </script>
+
+        <script language=jscript for=Agent event="Hide(characterID)">
+            Agent_OnHide(characterID);
+        </script>
+
+        <script language=jscript for=Agent event="IdleStart(characterID)">
+            Agent_OnIdleStart(characterID);
+        </script>
+
+        <script language=jscript for=Agent event="IdleComplete(characterID)">
+            Agent_OnIdleComplete(characterID);
+        </script>
+
+        <script language=jscript for=Agent event="Bookmark(id)">
+            Agent_OnBookmark(id);
+        </script>
+
+        <script language=jscript for=Agent event="Click(characterID, button, shift, x, y)">
+            Agent_OnClick(characterID, button, shift, x, y);
+        </script>
+
+        <script language=jscript for=Agent event="DragComplete(characterID, button, shift, x, y)">
+            Agent_OnDragComplete(characterID, button, shift, x, y);
+        </script>
+
+        <script language=jscript for=Agent event="RequestComplete(request)">
+            Agent_OnRequestComplete(request);
+        </script>
+
+
+    <!-- End Agent Specific Code -->
+
+    <script language=jscript src="oobeutil.js"></script>
+    <script language=jscript src="dialmgr.js"></script>
+    <script language=jscript src="error.js"></script>
+    <script language=jscript src="icsmgr.js"></script>
+    <script language=jscript>
+
+
+
+
+
+
+
+
+
+
+var STATUS_MSN = 0;
+var STATUS_OEM = 1;
+var STATUS_NONE = 2;
+var STATUS_OFF = 3;
+var STATUS_MAX = 4;
+var SNDX_WELCOME = 0;
+var SNDX_MSN_ISP = 1;
+var SNDX_MSN_REG = 2;
+var SNDX_MSN_FINISH = 3;
+var SNDX_OEM_REG = 1;
+var SNDX_OEM_ISP = 2;
+var SNDX_OEM_FINISH = 3;
+var SNDX_NONE_REG = 1;
+var SNDX_NONE_FINISH = 2;
+var SNDX_OFF_EULA = 1;
+var SNDX_OFF_PID = 2;
+var SNDX_OFF_FINISH = 3;
+
+function CheckPoint(strURL, i1, i2, i3, i4)
+{
+  this.strURL = strURL;
+  this.rgindex = new Array(STATUS_MAX);
+  this.rgindex[STATUS_MSN] = i1;
+  this.rgindex[STATUS_OEM] = i2;
+  this.rgindex[STATUS_NONE] = i3;
+  this.rgindex[STATUS_OFF] = i4;
+}
+
+
+var CONNECTED_REFFERAL       = 1;
+var CONNECTED_ISP_SIGNUP     = 2;
+var CONNECTED_ISP_MIGRATE    = 3;
+var CONNECTED_REGISTRATION   = 4;
+
+
+var curCKPT                 = 1;
+var CKPT_WELCOME            = curCKPT++;
+var CKPT_AUTO_UPDATE        = curCKPT++;
+var CKPT_DONE               = curCKPT++;
+var CKPT_MAX                = curCKPT;  
+
+var CKPT_REGISTER1          = CKPT_MAX;
+var CKPT_REGISTER3          = CKPT_MAX;
+
+var dnCKPT = new Array(CKPT_MAX);
+
+
+var g_CurrentCKPT = null;
+var g_DialCKPT = null;
+var HKEY_LOCAL_MACHINE = 0x80000002;
+var OOBE_MAIN_REG_KEY = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Setup\\OOBE";
+var CKPT_REG_KEY = "\\CKPT";
+var TOS_REG_VALUE = "TOS";
+
+
+var ERR_COMM_NO_ERROR            = 0;
+var ERR_COMM_OOBE_COMP_MISSING   = 1;
+var ERR_COMM_UNKNOWN             = 2;        
+var ERR_COMM_NOMODEM             = 3;        
+var ERR_COMM_RAS_TCP_NOTINSTALL  = 4;
+
+
+var DERR_DIALTONE           = 680;
+var DERR_BUSY               = 676;
+var DERR_VOICEANSWER        = 677;
+var DERR_NOANSWER           = 678;
+var DERR_NO_CARRIER         = 679;
+var DERR_HARDWARE_FAILURE   = 630;   
+var DERR_PORT_ALREADY_OPEN  = 602;   
+var DERR_PORT_OR_DEVICE     = 692;   
+var DERR_PPP_TIMEOUT        = 718;
+var DERR_REMOTE_DISCONNECT  = 629;   
+
+
+var FINISH_OK           = 0x00000000;
+var FINISH_REBOOT       = 0x00000001;
+var FINISH_BAD_PID      = 0x00000002;
+var FINISH_BAD_EULA     = 0x00000004;
+var FINISH_BAD_STAMP    = 0x00000008;
+
+
+var LANGUAGE_REBOOT_NEVER   = 0;
+var LANGUAGE_REBOOT_NOW     = 1;
+var LANGUAGE_REBOOT_END     = 2;
+
+
+var HIDE_BACK = 0x0001;
+var HIDE_NEXT = 0x0002;
+var HIDE_CANCEL = 0x0004;
+var HIDE_RESTORE = 0x0008;
+
+
+
+var NOLAUNCHISPSIGNUP = "{C37D92A5-CA34-11d2-B71C-00C04F794977}";
+var MSNCOMPLETED = "{1C0A22F2-CB6B-11d2-B544-00A0C949DA70}";
+
+
+var TapiObj = null;
+var InfoObj = null;
+var EulaObj = null;
+var LangObj = null;
+var PidObj  = null;
+var AutoUpdateObj = null;
+var StatusObj = null;
+var DirObj = null;
+var ApiObj = null;
+var RegisterObj = null;
+
+
+var g_strISPFile = "";
+var g_bStartup;
+var g_LastButtonText = null;
+var g_FirstFocusElement = null;
+var g = null;
+var g_SpecialChars = ".'-` ";
+var g_OOBEDir = "file://" + window.external.API.get_SystemDirectory() + "\\oobe\\";
+var g_bRedial = false;
+var g_LineProblem = 0;
+var g_bFirstServerError = true;
+var g_status = STATUS_OFF;
+var g_ServerErrorCount = 0;
+var g_IMEExists = false;
+var g_OEMAddBackURL = "";
+var g_DialingAvailableInCountry = true;
+var g_ModalDialogUp = false;
+var g_RemoveRemind = false;
+var MS_REGISTRATION  = "{1C956940-8617-11D3-8B99-00A0C91E7F3C}";
+var OEM_REGISTRATION = "{ECD24360-B210-11D3-8B99-00A0C91E7F3C}";
+var g_bTapiDone = false;
+var g_OEMNameStr=window.external.Signup.get_OEMName();
+var L_MS_Text="Microsoft";
+var g_InitAutodial = false;
+
+var L_CheckConnectivity_Text = "Checking for connectivity...";
+var L_BlankTitle_Text = "";
+
+var g_IsMSRegistrationSuccessful  = false;
+var g_IsOEMRegistrationSuccessful = false;
+
+
+if (null == ApiObj)
+{
+    ApiObj = new Object;
+    ApiObj = window.external.API;
+}
+if (null == StatusObj)
+{
+    StatusObj = new Object;
+    StatusObj = window.external.Status;
+}
+if (null == DirObj)
+{
+    DirObj = new Object;
+    DirObj = window.external.Directions;
+}
+if (null == InfoObj)
+{
+    InfoObj = new Object;
+    InfoObj = window.external.UserInfo;
+}
+if (null == RegisterObj)
+{
+    RegisterObj = new Object;
+    RegisterObj = window.external.Register;
+}
+if (null == TapiObj)
+{
+    TapiObj = new Object;
+    TapiObj = window.external.Tapi;
+}
+
+
+
+
+
+
+
+
+
+
+function logError(funcName, errObj)
+{
+    trace(   "Exception in " + funcName
+            +  " (" + errObj.number.toString(16) + ") "
+            + errObj.description + "\n"
+         );
+    if (true == DebugObj.get_MsDebugMode())
+    {
+        alert("OOBE ERROR\n"
+                + "\n   Function: " + funcName
+                + "\n      Error: " + errObj.number.toString(16)
+                + "\nDescription: " + errObj.description
+             );
+    }
+}
+
+
+function OnSelectClick() {}
+
+
+function OnClick() {}
+
+
+function OnFocus() {}
+
+
+function SimpleNavBack()
+{
+    g.window.history.back();
+}
+
+function HandleTextAreaFocus() {
+  g.event.srcElement.style.borderStyle="ridge";
+}
+
+function HandleTextAreaBlur() {
+  g.event.srcElement.style.borderStyle="";
+}
+
+
+function Start_OnKeyPress()
+{
+    try
+    {
+        if (g.event == null)
+            return;
+    }
+    catch(e)
+    {
+        return;
+    }
+
+
+
+    if ((g.event.keyCode == 13) &&
+                (g.btnNext.disabled == false))
+    {
+        GoNext();
+    }
+    else
+    {
+        KeyPressIsValid();
+    }
+}
+
+function CheckUserLocale()
+{
+    
+    
+    
+    var language = ApiObj.get_UserDefaultLCID;
+
+    if (language == MAKELCID(MAKELANGID(LANG_KOREAN, SUBLANG_KOREAN), SORT_DEFAULT) ||
+        language == MAKELCID(MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL), SORT_DEFAULT) ||
+        language == MAKELCID(MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED), SORT_DEFAULT))
+        return false;
+    else
+        return true;
+}
+
+
+
+
+
+
+
+
+
+function Start_CheckEnableNextButton()
+{
+    try
+    {
+        if (g.event == null)
+            return;
+    }
+    catch(e)
+    {
+        return;
+    }
+
+    if (Start_CheckLengthRequirement() &&
+        Start_CheckLengthNotEqualSpaces())
+    {
+        g.btnNext.disabled = false;
+    }
+    else
+    {
+        g.btnNext.disabled = true;
+    }
+    InitButtons();
+}
+
+function Start_CheckLengthRequirement()
+{
+    if ((g.edt_FirstName.value.length != 0) ||
+         (g.edt_LastName.value.length != 0))
+        return true;
+    else
+        return false;
+}
+
+function Start_CheckLengthNotEqualSpaces()
+{
+    if ((g.edt_FirstName.value.length != NumberOfSpaces(g.edt_FirstName.value)) ||
+         (g.edt_LastName.value.length != NumberOfSpaces(g.edt_LastName.value)))
+        return true;
+    else
+        return false;
+}
+
+
+function DoFocus()
+{
+    
+    
+    
+    
+    try
+    {
+        if (g_FirstFocusElement != null)
+        {
+            g_FirstFocusElement.focus();
+        }
+    }
+    catch(e)
+    {
+        window.setTimeout("DoFocus();",1000);
+    }
+}
+
+
+
+
+function _Default_LoadMe(SimpleBack, SimpleNext)
+{
+    InitFrameRef();
+
+    InitButtons(SimpleBack, SimpleNext);
+
+    if (g.btnNext.style.visibility == "visible")
+        g_FirstFocusElement = g.btnNext;
+    else if (g.btnSkip.style.visibility == "visible")
+        g_FirstFocusElement = g.btnSkip;
+    else if (g.btnBack.style.visibility == "visible")
+        g_FirstFocusElement = g.btnBack;
+
+    if (g_FirstFocusElement != null)
+        g_FirstFocusElement.focus();
+    else
+        g.document.body.focus();
+}
+
+function New_Default_LoadMe(SimpleBack, SimpleNext)
+{
+    InitFrameRef();
+    InitNewButtons(SimpleBack, SimpleNext);
+
+    if (g.btnNext.style.visibility == "visible")
+        g_FirstFocusElement = g.btnNext;
+    else if (g.btnSkip.style.visibility == "visible")
+        g_FirstFocusElement = g.btnSkip;
+    else if (g.btnBack.style.visibility == "visible")
+        g_FirstFocusElement = g.btnBack;
+
+    if (g_FirstFocusElement != null)
+        window.setTimeout("DoFocus();",1000);
+    else
+        g.document.body.focus();
+}
+
+
+
+function InitCKPT()
+{
+    dnCKPT[CKPT_WELCOME] = new CheckPoint("setup\\updwelcome.htm",          0,     0,     0,     0);
+    dnCKPT[CKPT_AUTO_UPDATE] = new CheckPoint("setup\\autoupdt.htm",        0,     0,     0,     0);
+    dnCKPT[CKPT_DONE] = new CheckPoint("setup\\fini.htm",                   0,     0,     0,     0);
+
+    PopCKPT();
+
+    
+
+    g_SimpleNavMap= new ActiveXObject("Scripting.Dictionary");
+    g_SimpleNavMap.CompareMode = COMPAREMODE_TEXT;
+
+
+
+
+}
+
+function PushCKPT(ckpt)
+{
+  if (ckpt > 0 && ckpt < CKPT_MAX)
+  {
+    var tos = 0;
+    try
+    {
+      tos = ApiObj.get_RegValue(HKEY_LOCAL_MACHINE, OOBE_MAIN_REG_KEY + CKPT_REG_KEY, TOS_REG_VALUE);
+    }
+    catch (e) {}
+    ApiObj.set_RegValue(HKEY_LOCAL_MACHINE, OOBE_MAIN_REG_KEY + CKPT_REG_KEY, tos.toString(), ckpt);
+    ApiObj.set_RegValue(HKEY_LOCAL_MACHINE, OOBE_MAIN_REG_KEY + CKPT_REG_KEY, TOS_REG_VALUE, ++tos);
+    g_CurrentCKPT = ckpt;
+  }
+}
+
+function PopCKPT(ckptCheck)
+{
+  var ckpt = 0;
+  try
+  {
+    var tos = ApiObj.get_RegValue(HKEY_LOCAL_MACHINE, OOBE_MAIN_REG_KEY + CKPT_REG_KEY, TOS_REG_VALUE);
+    if (tos > 0)
+    {
+      ckpt = ApiObj.get_RegValue(HKEY_LOCAL_MACHINE, OOBE_MAIN_REG_KEY + CKPT_REG_KEY, (tos - 1).toString());
+
+      if (null == ckptCheck || ckpt == ckptCheck)
+      {
+        ApiObj.set_RegValue(HKEY_LOCAL_MACHINE, OOBE_MAIN_REG_KEY + CKPT_REG_KEY, TOS_REG_VALUE, --tos);
+        ApiObj.DeleteRegValue(HKEY_LOCAL_MACHINE, OOBE_MAIN_REG_KEY + CKPT_REG_KEY, tos.toString());
+      }
+    }
+  }
+  catch (e) {}
+
+  if (ckpt > 0 && ckpt < CKPT_MAX)
+  {
+    g_CurrentCKPT = ckpt;
+  }
+  else
+    g_CurrentCKPT = null;
+}
+
+function EmptyCKPTStack()
+{
+    while (null != g_CurrentCKPT)
+    {
+        PopCKPT();
+    }
+}
+
+function URLFromCKPT(ckpt)
+{
+  var str = "";
+  if (ckpt > 0 && ckpt < CKPT_MAX)
+  {
+    str = dnCKPT[ckpt].strURL;
+  }
+  return str;
+}
+
+function IndexFromCKPT(ckpt, status)
+{
+  var index = 0;
+  if (ckpt > 0 && ckpt < CKPT_MAX)
+  {
+    var checkpoint = dnCKPT[ckpt];
+    index = checkpoint.rgindex[status];
+  }
+  return index;
+}
+
+
+function IsLocalFile()
+{
+    try
+    {
+        return (-1 != g.location.protocol.indexOf("file"));
+    }
+    catch (e)
+    {
+        return false;
+    }
+}
+
+
+
+
+
+
+
+function SetBack(strURL)
+{
+    g_OEMAddBackURL = strURL;
+}
+
+
+function GoCancel(ckpt)
+{
+    try
+    {
+        if (IsLocalFile() && g.event == null)
+            return;
+    }
+    catch(e)
+    {
+        return;
+    }
+
+    DisableAllButtons();
+
+    switch (g_CurrentCKPT)
+    {
+    default:
+        PushCKPT(CKPT_DONE);
+        GoNext();
+        break;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function GoBack(ckpt)
+{
+    try
+    {
+        if (IsLocalFile() && g.event == null && (g_CurrentCKPT != g_DialCKPT))
+            return;
+    }
+    catch(e)
+    {
+        return;
+    }
+
+    DisableAllButtons();
+
+    {
+        var ckptPrevious = g_CurrentCKPT;
+        PopCKPT();
+
+        if (ckptPrevious == g_CurrentCKPT)
+        {
+            
+            PopCKPT();
+        }
+
+        if (g_CurrentCKPT > 0 && g_CurrentCKPT < CKPT_MAX)
+        {
+            GoNavigate(g_CurrentCKPT);
+        }
+    }
+}
+
+function StatusNavigate()
+{
+    window.external.set_StatusIndex(IndexFromCKPT(g_CurrentCKPT, g_status));
+}
+
+
+function GoNavigate(ckptGoHere)
+{
+    try
+    {
+        if (g_bStartup == false)
+        {
+            if (IsLocalFile())
+            {
+                if (g.event != null)
+                {
+                    g.event.returnValue = false;
+                    g.event.cancelBubble = true;
+                }
+            }
+        }
+        else
+            g_bStartup = false;
+
+    }
+    catch(e)
+    {
+        return;
+    }
+
+    switch (ckptGoHere)
+    {
+    case CKPT_AUTO_UPDATE:
+        trace("GoNavigate: CKPT_AUTO_UPDATE");
+        if (null == AutoUpdateObj)
+        {
+            AutoUpdateObj = new Object;
+            AutoUpdateObj = window.external.AutoUpdate;
+        }
+
+        
+        if ( AutoUpdateObj.get_ShowUI() && 0 == DirObj.get_DoSkipAutoUpdate() )
+        {
+            PushCKPT(CKPT_AUTO_UPDATE);
+            Navigate(URLFromCKPT(CKPT_AUTO_UPDATE));
+            break;
+        }
+
+        
+            
+    case CKPT_DONE:
+        trace("GoNavigate: CKPT_DONE");
+        PushCKPT(CKPT_DONE);
+        GoNext();
+        break;
+                
+    default:
+        PushCKPT(ckptGoHere);  
+        g.navigate(g_OOBEDir + URLFromCKPT(ckptGoHere));
+        break;
+    }
+
+    StatusNavigate();
+
+    
+
+    Agent_OnNavigate();
+}
+
+
+
+
+
+
+
+function DisableAllButtons()
+{
+    try
+    {
+        g.btnNext.disabled=true;
+    }
+    catch(e) {}
+    try
+    {
+        g.btnBack.disabled=true;
+    }
+    catch(e) {}
+    try
+    {
+        g.btnSkip.disabled=true;
+    }
+    catch(e) {}
+    try
+    {
+        InitButtons();
+    }
+    catch(e) {}
+}
+
+function GoQuit()
+{
+    window.external.Finish();
+}
+
+function GoNext()
+{
+    try
+    {
+        if (IsLocalFile() && g.event == null)
+            return;
+    }
+    catch(e)
+    {
+        return;
+    }
+
+    DisableAllButtons();
+
+    switch (g_CurrentCKPT)
+    {
+        case CKPT_WELCOME:
+            GoNavigate(CKPT_AUTO_UPDATE);
+            break;
+
+        case CKPT_AUTO_UPDATE:
+            if (null == AutoUpdateObj)
+            {
+                AutoUpdateObj = new Object;
+                AutoUpdateObj = window.external.AutoUpdate;
+            }
+
+            if (0 == AutoUpdateObj.get_ShowUI())
+            {
+                PopCKPT();        
+            }
+            GoNavigate(CKPT_DONE);
+            break;
+
+        case CKPT_DONE:
+            window.external.Finish();
+            break;
+            
+        default:
+            break;
+    }
+}
+
+
+
+function GoOffline()
+{
+    GoNext();
+}
+
+
+
+function SetLastButtonText()
+{
+    if (g.btnNext != null)
+        g_LastButtonText = g.btnNextText;
+    else if (g.btnBack != null)
+        g_LastButtonText = g.btnBackText;
+    else if (g.btnRestore != null)
+        g_LastButtonText = g.btnRestoreText;
+    else if (g.btnCancel != null)
+        g_LastButtonText = g.btnCancelText;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function InitFrameRef(ExternalModule)
+{
+    trace("GoNext: InitFrameRef");
+    try
+    {
+        document.frames("connDelay").frameElement.style.display="none";
+        document.frames("connDelay").frameElement.style.zIndex=-1;
+        
+        
+        
+        OOBEDocBody.style.backgroundColor="#000000";
+    }
+    catch (e)
+    {
+    }
+
+    g_LastButtonText = null;
+    g_FirstFocusElement = null;
+    g_LastKeyDown = null;
+
+    g = document.frames("msoobeMain");
+    try
+    {
+        g.document.body.style.backgroundColor = "transparent";
+    }
+    catch(e){}
+
+    try
+    {
+        if (g != null)
+        {
+            if(g.btnNext!=null)
+                g.btnNext.disabled=false;
+
+            if(g.btnBack!=null)
+                g.btnBack.disabled=false;
+
+            if(g.btnSkip!=null)
+                g.btnSkip.disabled=false;
+        }
+
+        g.document.body.onkeydown = OnKeyDown;
+        g.document.body.style.cursor = 'auto';
+    }
+    catch(e){}
+
+}
+
+function HideButtons(buttons)
+{
+    if (null != g.btnBack && (buttons & HIDE_BACK))
+    {
+        g.btnBack.Hide = true;
+    }
+
+    if (null != g.btnNext && (buttons & HIDE_NEXT))
+    {
+        g.btnNext.Hide = true;
+    }
+
+
+    if (null != g.spanCancel && (buttons & HIDE_CANCEL))
+    {
+        g.btnSkip.Hide = true;
+    }
+
+    if (null != g.spanRestore && (buttons & HIDE_RESTORE))
+    {
+        g.btnRestore.Hide = true;
+    }
+
+}
+
+function HandleButtonMouseOver()
+{
+    if((!this.disabled)&&(this.tagName=="BUTTON"))
+        this.className="buttons-hover";
+}
+
+function HandleButtonMouseOut()
+{
+    if((!this.disabled)&&(this.tagName=="BUTTON"))
+        this.className="buttons";
+}
+
+function InitButtons(SimpleBack, SimpleNext)
+{
+    
+    
+    
+    if (!InReminderMode())
+    {
+        InitNewButtons(SimpleBack, SimpleNext);
+    }
+    else
+    {
+        if(g.btnSkip!=null) {
+            g.btnSkip.onmouseover = HandleButtonMouseOver;
+            g.btnSkip.onmouseout  = HandleButtonMouseOut;
+
+            if(!g.btnSkip.disabled) {
+                g.btnSkip.onclick = GoCancel;
+
+                
+                
+                
+
+                g.btnSkip.className="buttons";
+            } else {
+                g.btnSkip.className="buttons-disabled";
+            }
+        }
+
+        if (g.btnNext != null)
+        {
+            g.btnNext.onmouseover = HandleButtonMouseOver;
+            g.btnNext.onmouseout  = HandleButtonMouseOut;
+
+            if (!g.btnNext.disabled)
+            {
+                if (SimpleNext == null)
+                {
+                    g.btnNext.onclick = GoNext;
+                }
+                else
+                {
+                    g.btnNext.onclick = SimpleNavNext;
+                }
+
+                g.btnNext.className="buttons";
+            }
+            else
+            {
+                g.btnNext.className="buttons-disabled";
+            }
+        }
+
+        if (g.btnBack != null)
+        {
+            g.btnBack.onmouseover = HandleButtonMouseOver;
+            g.btnBack.onmouseout  = HandleButtonMouseOut;
+
+            if (!g.btnBack.disabled)
+            {
+                if (SimpleBack == null)
+                {
+                    g.btnBack.onclick = GoBack;
+                }
+                else
+                {
+                    g.btnBack.onclick = SimpleNavBack;
+                }
+
+                g.btnBack.className="buttons";
+            }
+            else
+            {
+                g.btnBack.className="buttons-disabled";
+            }
+        }
+    }
+
+    try
+    {
+        if(g.btnQuit != null) {
+          g.btnQuit.onmouseover = HandleButtonMouseOver;
+          g.btnQuit.onmouseout  = HandleButtonMouseOut;
+
+
+          if(g.btnQuit.disabled == false) {
+              g.btnQuit.onclick = GoQuit;
+              g.btnQuit.className="buttons";
+          } else {
+            g.btnQuit.className="buttons-disabled";
+          }
+        }
+    } catch(e) {}
+}
+
+
+
+
+function HandleBackButtonMouseOver()
+{
+    if((!this.disabled)&&(this.tagName=="BUTTON"))
+        this.className="newbuttonsBack-hover";
+}
+
+function HandleBackButtonMouseOut()
+{
+    if((!this.disabled)&&(this.tagName=="BUTTON"))
+        this.className="newbuttonsBack";
+}
+
+function HandleBackButtonMouseDown()
+{
+    if((!this.disabled)&&(this.tagName=="BUTTON"))
+        this.className="newbuttonsBack-down";
+}
+
+function HandleSkipButtonMouseOver()
+{
+    if((!this.disabled)&&(this.tagName=="BUTTON"))
+        this.className="newbuttonsSkip-hover";
+}
+
+function HandleSkipButtonMouseOut()
+{
+    if((!this.disabled)&&(this.tagName=="BUTTON"))
+        this.className="newbuttonsSkip";
+}
+
+function HandleSkipButtonMouseDown()
+{
+    if((!this.disabled)&&(this.tagName=="BUTTON"))
+        this.className="newbuttonsSkip-down";
+}
+
+function HandleNextButtonMouseOver()
+{
+    if((!this.disabled)&&(this.tagName=="BUTTON"))
+        this.className="newbuttonsNext-hover";
+}
+
+function HandleNextButtonMouseOut()
+{
+    if((!this.disabled)&&(this.tagName=="BUTTON"))
+        this.className="newbuttonsNext";
+}
+
+function HandleNextButtonMouseDown()
+{
+    if((!this.disabled)&&(this.tagName=="BUTTON"))
+        this.className="newbuttonsNext-down";
+}
+
+
+function InitNewButtons(NewSimpleBack, NewSimpleNext)
+{
+
+    if(g.btnSkip!=null)
+    {
+        g.btnSkip.onmouseover = HandleSkipButtonMouseOver;
+        g.btnSkip.onmouseout  = HandleSkipButtonMouseOut;
+        g.btnSkip.onmousedown = HandleSkipButtonMouseDown;
+
+        if(!g.btnSkip.disabled)
+        {
+            g.btnSkip.onclick = GoCancel;
+            g.btnSkip.className="newbuttonsSkip";
+        }
+        else
+        {
+            g.btnSkip.className="newbuttonsSkip-disabled";
+        }
+    }
+
+    if (g.btnNext != null)
+    {
+        g.btnNext.onmouseover = HandleNextButtonMouseOver;
+        g.btnNext.onmouseout  = HandleNextButtonMouseOut;
+        g.btnNext.onmousedown = HandleNextButtonMouseDown;
+
+        if (!g.btnNext.disabled)
+        {
+            if (NewSimpleNext == null)
+                g.btnNext.onclick = GoNext;
+            else
+                g.btnNext.onclick = SimpleNavNext;
+
+            g.btnNext.className="newbuttonsNext";
+        }
+        else
+        {
+            g.btnNext.className="newbuttonsNext-disabled";
+        }
+    }
+
+    if (g.btnBack != null)
+    {
+        g.btnBack.onmouseover = HandleBackButtonMouseOver;
+        g.btnBack.onmouseout  = HandleBackButtonMouseOut;
+        g.btnBack.onmousedown = HandleBackButtonMouseDown;
+
+        if (!g.btnBack.disabled)
+        {
+            if (NewSimpleBack == null)
+                g.btnBack.onclick = GoBack;
+            else
+                g.btnBack.onclick = SimpleNavBack;
+
+            g.btnBack.className="newbuttonsBack";
+        }
+        else
+        {
+            g.btnBack.className="newbuttonsBack-disabled";
+        }
+    }
+}
+
+
+var g_LastKeyDown = null;
+function OnKeyDown()
+{
+    try
+    {
+        if (IsLocalFile() && g.event == null)
+            return;
+    }
+    catch(e)
+    {
+        return;
+    }
+
+    if (g.event.altKey)
+    {
+        g_LastKeyDown = String.fromCharCode(g.event.keyCode);
+        if (g_LastKeyDown != null)
+            g_LastKeyDown = g_LastKeyDown.toUpperCase();
+    }
+    else
+        g_LastKeyDown = null;
+
+    
+    Agent_OnKeyDown(g.event.srcElement);
+}
+
+
+
+
+function OnSelectClick()
+{
+    Agent_OnSelectClick(g.event.srcElement);
+}
+
+
+
+function OnClick()
+{
+    Agent_OnElementClick(g.event.srcElement);
+}
+
+
+
+function OnFocus()
+{
+    
+
+    Agent_OnFocus(g.event.srcElement);
+}
+
+
+function KeyPressIsNumeric()
+{
+    try
+    {
+        if (IsLocalFile() && g.event == null)
+            return;
+    }
+    catch(e)
+    {
+        return;
+    }
+
+    if (!IsNumeric(g.event.keyCode))
+    {
+        g.event.keyCode = 0;
+        g.event.returnValue = false;
+    }
+}
+
+function IsNumeric(keyCode)
+{
+    if ((keyCode >= 48)  && (keyCode <= 57))
+        return true;
+    else
+        return false;
+}
+
+function IsSpecial(keyCode)
+{
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+return false;
+}
+
+function KeyPressIsValid()
+{
+    try
+    {
+        if (IsLocalFile() && g.event == null)
+            return;
+    }
+    catch(e)
+    {
+        return;
+    }
+
+    if (!IsAlpha(g.event.keyCode) &&
+        !IsSpecial(g.event.keyCode) &&
+        !IsNumeric(g.event.keyCode))
+    {
+        g.event.keyCode = 0;
+        g.event.returnValue = false;
+    }
+}
+
+function KeyPressIsAlpha()
+{
+    try
+    {
+        if (IsLocalFile() && g.event == null)
+            return;
+    }
+    catch(e)
+    {
+        return;
+    }
+
+    if (!IsAlpha(g.event.keyCode))
+    {
+        g.event.keyCode = 0;
+        g.event.returnValue = false;
+    }
+}
+
+function IsAlpha(keyCode)
+{
+
+
+
+
+
+
+
+
+
+
+
+
+        return true;
+
+
+}
+
+function NumberOfSpaces(strValue)
+{
+
+
+
+
+
+    var iSpaceCount = 0;
+    for (iPosition = 0; iPosition < strValue.length; iPosition ++)
+    {
+        if (strValue.charAt(iPosition) == ' ')
+        {
+            iSpaceCount++;
+        }
+    }
+    return iSpaceCount;
+}
+function KeyCodeToUpper()
+{
+    var strKeyCode = String.fromCharCode(g.event.keyCode);
+    strKeyCode = strKeyCode.toUpperCase();
+    g.event.keyCode = strKeyCode.charCodeAt(0);
+}
+
+
+
+var vCurItem = 0;
+
+function InitApplication()
+{
+    OOBEDocBody.style.cursor = "wait";  
+    OOBEDocBody.style.backgroundColor="black";
+
+    g_bStartup = true;
+    InitFrameRef();
+
+    NewMicrosoftLogo.src = 'images/mslogo.jpg';
+
+    g_bInHighScreenRes =
+        (window.top.screen.width >= 1024) &&
+        (window.top.screen.height >= 768);
+
+    
+    if (g_bInHighScreenRes)
+    {
+
+        NewWatermarkBackground.src = 'images/newmark1.jpg';
+        NewWatermarkTop.src = 'images/newtop1.jpg';
+        NewWatermarkBottom.src = 'images/newbtm1.jpg';
+        NewWatermarkBottom.style.top = 712;
+
+        ScreenFrame.style.width = 1024;
+        ScreenFrame.style.height = 768;
+
+        MainFrameTable.style.top = 28;
+        MainFrameTable.style.height = "99%";
+
+        document.frames("ifrmConnDelay").frameElement.style.left=0;
+
+        spnOEMLogo.style.left = 749;
+        spnAssist.style.top = 590;
+        spnAssist.style.left = 815;
+        spnAssist.style.width = 240;
+
+    }
+    else
+    {
+
+        NewWatermarkBackground.src = 'images/newmark8.jpg';
+        NewWatermarkTop.src = 'images/newtop8.jpg';
+        NewWatermarkBottom.src = 'images/newbtm8.jpg';
+        NewWatermarkBottom.style.top = 542;
+
+        
+        
+        ScreenFrame.style.width = 800;
+        ScreenFrame.style.height = 600;
+
+    }
+
+    
+    if (window.parent.document.dir == "rtl")
+        spnAssist.style.left  = 10;
+
+    var ScreenDiff = window.top.screen.width - parseInt(ScreenFrame.style.width);
+    ScreenFrame.style.left = (ScreenDiff > 0) ? ScreenDiff / 2 : 0;
+
+    ScreenDiff = window.top.screen.height - parseInt(ScreenFrame.style.height);
+    ScreenFrame.style.top = (ScreenDiff > 0) ? ScreenDiff / 2 : 0;
+
+
+    
+    var L_AgentAlt_Text = "Click me to get help";
+    AssistImg.alt = L_AgentAlt_Text;
+
+    
+    
+    
+    
+    
+    
+    g_status = STATUS_OFF;
+    window.external.LoadStatusItems("No Modem");
+
+    InitCKPT();
+    Agent_Init();
+    EmptyCKPTStack();
+
+    spnPage.style.visibility = "visible";
+
+    OOBEDocBody.style.cursor = "default";
+    ScreenFrame.style.display = "inline";
+
+    GoNavigate(CKPT_AUTO_UPDATE);
+
+    
+    window.external.ShowOOBEWindow();
+
+}
+
+
+
+
+
+function OnHelp()
+{
+    
+    Agent_OnUserRequestAssistant();
+}
+
+
+
+
+function PlayBackgroundMusic()
+{
+
+}
+
+</script>
+
+</HEAD>
+
+<BODY ID=OOBEDocBody leftMargin=0 DIR=LTR onload="InitApplication();" scroll=auto tabIndex=-1 topMargin=0 language=javascript onhelp="Agent_OnUserRequestAssistant();">
+
+<SPAN ID=junkspan style="height:2px; width:2px; background-color:black; z-index:99; display:none">
+</SPAN>
+
+<SPAN ID=ScreenFrame style="height:100%; width:100%; position:absolute; display:none">
+
+    <IMG ID=NewWatermarkBackground style="LEFT:  0px; TOP:  0px; POSITION: absolute; z-index:-99;" alt="">
+    <IMG ID=NewWatermarkTop        style="display: inline; LEFT:  0px; TOP:  0px; POSITION: absolute; z-index:-98;" alt="">
+    <IMG ID=NewWatermarkBottom     style="display: inline; LEFT:  0px; TOP:  0px; POSITION: absolute; z-index:-97;" alt="">
+    <IMG ID=NewMicrosoftLogo       style="display: inline; LEFT: 20px; TOP:  5px; POSITION: absolute; z-index:-96;" alt="">
+
+    <SPAN id=spnOEMLogo style="visibility:hidden; position:absolute; TOP:7px; LEFT:525px; width:255px; HEIGHT:40px; z-index:10; background-repeat:no-repeat;">
+    </SPAN>
+
+
+
+    <TABLE border=0 ID=MainFrameTable cellpadding=0 cellspacing=0 style="z-index:6; position:absolute; left:0px; top:25px; width:100%; height:97%">
+    <TR>
+        <TD style="height:100%">
+        <SPAN id=spnPage style="VISIBILITY: hidden; z-index:4;" tabIndex=-1>
+            <SPAN id=spnMainFrame style="width: 100%; height:100%" tabIndex=-1>
+            <IFRAME ALLOWTRANSPARENCY="true" id=ifrmMainFrame frameBorder=no scrolling=no width="100%" height="97%" name=msoobeMain tabIndex=0></IFRAME>
+            <IFRAME ALLOWTRANSPARENCY="true" id=ifrmConnDelay frameBorder=no style="display:none; position:absolute; z-index:-1; left: 0px; top: 0px;" scrolling=no width="100%" height="100%" name=connDelay tabIndex=-1 src="setup/ISPWait.htm"></IFRAME>
+            </SPAN>
+        </SPAN>
+        </TD>
+        <TD WIDTH=20></TD>
+    </TR>
+    </TABLE>
+
+    <comment>Make sure the spnAssist area (coverage) does not cover the Next button</comment>
+    <SPAN id=spnAssist class="emphasis-lesser" style="visibility:hidden; POSITION: absolute; LEFT: 593px; TOP: 440px; WIDTH: 180px; z-index:9">
+        <TABLE width="95%" cellspacing=0 cellpadding=0 align=center class="emphasis-lesser" style="text-align:center;color:white;">
+        <TR>
+            <TD align=center>
+            <IMG align=middle id=AssistImg border=0 src="images/qmark.gif"
+            style="visibility:hidden;z-index:9" language=javascript
+            onclick="Agent_OnUserRequestAssistant()"><BR>
+            </TD>
+        </TR>
+        <TR>
+            <TD ID=MerlinStr1 class="text-primary"><span id="agentStr1" onclick="Agent_OnUserRequestAssistant()"><id id="L_AgentHelp1_Text">For help,</id></span></TD>
+        </TR>
+        <TR>
+            <TD ID=MerlinStr2 class="text-primary"><span id="agentStr2" onclick="Agent_OnUserRequestAssistant()"><id id="L_AgentHelp2_Text">click here or press F1.</id></span></TD>
+        </TR>
+        <TR>
+            <TD ID=MerlinStr3_Extra_line_for_localization class="text-primary"><span id="agentStr3"><id id="L_AgentHelp3OptionalLine_Text"></id></span></TD>
+        </TR>
+        </TABLE>
+    </SPAN>
+
+</SPAN>
+</BODY>
+</HTML>

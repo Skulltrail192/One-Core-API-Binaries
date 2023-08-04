@@ -1,0 +1,85 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+    <TITLE>out of box experience</TITLE>
+
+    <!-- LINK TO EXTERNAL STYLE SHEET: DO NOT MODIFY -->
+    <LINK REL="stylesheet" TYPE="text/css" HREF="../../setup/oobestyl.css">
+    <SCRIPT>
+    function ScreenResolutionInit() {
+    
+    
+    if(window.parent.g_bInHighScreenRes) {
+        spanScreenResolution.style.visibility='hidden';
+        }
+    }
+    </SCRIPT>
+</HEAD>
+
+<BODY style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+    ONLOAD="ScreenResolutionInit(); window.parent.sconnectFirstPage_LoadMe();window.parent.Agent_Activate('SCONNECT');"
+    ONUNLOAD="window.parent.Agent_Deactivate();">
+
+
+<TABLE ALIGN=center BORDER=0 CELLPADDING=0 CELLSPACING=0 WIDTH="100%" HEIGHT="100%">
+<TR> 
+    <TD ID=leftmargincell WIDTH=7%>
+    <!-- This cell is empty by design -->
+    </TD>
+    
+    <TD ID=maincell CLASS="text-primary">
+    <BR><BR>
+    <!-- TITLE TEXT -->
+    <SPAN CLASS="title">
+    <ID ID=sconnect_TitleText>No shared Internet connection was found</ID>
+    </SPAN>
+
+    <BR><BR>
+    <!-- EXPLANATORY TEXT -->
+    <DIV CLASS="text-primary">
+    <ID ID=sconnect_Text1>Please make sure that the computer or device that provides the shared connection is turned on and connected to this computer.</ID>
+    <br><br>
+    <ID ID=sconnect_Text11>It is possible you are connected but Windows cannot verify this. If the computers on your network are already turned on, or if you cannot connect to the Internet once at the Desktop, please run the Network Setup Wizard by clicking Start...</ID>
+    <br><br>
+    <ID ID=sconnect_Text12>To continue setting up your computer, click the <b>Next</b> button below.</ID>
+    </DIV>
+
+    <br><br>
+    <SPAN ID=spanScreenResolution>
+    <!-- 
+    This span is used to create the correct amount of vertical space in
+    800x600 screen resolution.  
+    -->
+    <BR><BR>
+    </SPAN>
+
+    <!-- 
+    <script>
+    document.write(window.parent.g_ClickNextStr);
+    </script>
+    -->
+
+    <!-- NAVIGATION BUTTONS -->
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=5  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:hidden;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=-1 ACCESSKEY="S" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=6  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </TD>
+</TR>
+</TABLE>
+
+</BODY>
+</HTML>

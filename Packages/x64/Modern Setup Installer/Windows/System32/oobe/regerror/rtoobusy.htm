@@ -1,0 +1,109 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+    <title>out of box experience</title>
+    <link rel="stylesheet" type="text/css" href="../actsetup/aregstyl.css">
+    <META HTTP-EQUIV="MSThemeCompatible" CONTENT="Yes">
+</head>
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" topmargin=0 leftmargin=0 TABINDEX=-1
+      onload="window.parent.Toobusy_LoadMe();">
+
+<table border=0 cellpadding=0 cellspacing=0 width="100%" height="100%">
+<tr>
+    <td ID=leftmargincell width=5% height=99%></td>
+    <td ID=maincell valign=top class="text-primary">
+
+    <span ID=Title_Text class="title" style="display:none;"><id id="tb1">Phone busy or did not answer</id></span>
+    <br>
+    <p><span class="text-primary"><id id="tb2">The number being dialed was busy, or you may need to modify the number being dialed.</id></span>
+        <ul>
+        <li><span class="text-primary"><id id="tb22">If you are away from home, you may need to dial a number to reach an outside line.</id></span></li><br>
+        <li><span class="text-primary"><id id="tb21">If dialing outside of your local area, you may need to modify the phone number.</id></span></li><br><br>
+        </ul>
+
+
+         <table border=0 cellspacing=0 cellpadding=0>
+           <tr>
+            <td valign="top">
+              <span class="text-primary"><id id="na3">The phone number being dialed was </id></span>
+            </td>
+            <td valign="top">
+             <SPAN ID="spanDisplayNumber" class="text-primary" DIR="LTR"></SPAN>
+            </td>
+           </tr>
+           <tr>
+            <td style="padding-left: 1em;"><input type="radio" ACCESSKEY="D" id="DialRuleYes" name="DialRuleChoice" CHECKED TABINDEX=1 onclick="window.parent.SelectDialRule();">
+                <span id="spn_staticDialRuleYes" class="text-primary" onclick="document.all.DialRuleYes.click();"><u>D</u>ial an alternative number</span>
+            </td>
+            <td style="padding-left: 2em;">
+                &nbsp;
+            </td>
+           </tr>
+           <tr>
+            <td style="padding-left: 1em;"><input type="radio" ACCESSKEY="A" id="DialRuleNo" name="DialRuleChoice" TABINDEX=3 onclick="window.parent.SelectDialRule();">
+                <span id="spn_staticDialRuleNo" class="text-primary" onclick="document.all.DialRuleNo.click();">Dial an <u>a</u>lternative number with these rules: </span>
+            </td>
+            <td style="padding-left: 2em;">
+                <span id="spn_staticDialRuleNoa" class="text-secondary"><id id="Disable_call_waiting_text">Disable <u>c</u>all waiting </id></span><input DIR=LTR ACCESSKEY="C" class="dial-number-box" type="text" id="edtCallWaiting" onfocus="this.select();" name="textfield" size="7" maxlength="10" TABINDEX=4>
+            </td>
+           </tr>
+           <tr>
+            <td>&nbsp;</td>
+            <td style="padding-left: 2em;">
+                <span id="spn_staticDialRuleNob" class="text-secondary"><id id="Set_Outside_line_text"><u>O</u>utside line </id></span><input DIR=LTR ACCESSKEY="O" class="dial-number-box" type="text" id="edtOutsideLine" onfocus="this.select();" name="textfield" size="4" maxlength="4" TABINDEX=5></td>
+            </td>
+           </tr>
+           <tr>
+            <td colspan=2>
+                <span style="padding-left: 1.8em;" id="spn_staticDialRuleNoc" class="text-primary"><id id="Set_Dial_Signal_text">Dialing using:</id></span>
+                <span style="padding-left: 1em;"><input name="DialSignalChoice" type="radio" tabindex="6" id="DialTone" CHECKED><LABEL TABINDEX=-1 ACCESSKEY="T" id="spn_staticDialTone" for="DialTone" class="text-secondary"><id id="Set_Tone_text"><u>T</u>one</id></LABEL></span>
+                <span style="padding-left: 2em;"><input name="DialSignalChoice" type="radio" tabindex="7" id="DialPulse"><LABEL TABINDEX=-1 ACCESSKEY="P" id="spn_staticDialPulse" for="DialPulse" class="text-secondary"><id id="Set_Pulse_text"><u>P</u>ulse</id></LABEL></span>
+            </td>
+           </tr>
+         </table>
+         <br>
+
+         
+         <ul>
+         <li><span class="text-primary"><id id="tb31">If the previous number is correct, wait a few minutes and click <b>Redial</b>. </id></span></li><br>
+         <li><span class="text-primary"><id id="tb32">If the number is not correct, modify either setting above and click <b>Redial</b>. </id></span></li><br>
+         <li><span class="text-primary"><id id="tb33">To restore the original phone number that was dialed, click <b>Restore</b>.</id></span></li>
+         </ul>
+         <p><span class="text-primary" id="RemindMeLaterText"><id id="tb4">To continue without performing this task, click <b>Skip</b>.</id></span></p>
+       </span></p>
+    <DIV class="text-error" ID=error_mesg style="display:none; padding-top:20px"></div>
+    </span>
+    </td>
+
+    <td ID=rightmargincell width=7%>
+    </td>
+</tr>
+<tr>
+    <td colspan=3>
+    <br>
+    <table border=0 class="buttonpositionnew">
+    <tr>
+        <td width=99%>&nbsp;</td>
+        <td>
+        <BUTTON ID="btnTelephone" class="buttons" TABINDEX=8 ACCESSKEY="L" style="display:none;"><label for=btnTelephone><id id="LocalBtnTel_Text">Te<u>l</u>ephone</id></label></BUTTON>
+        </td>
+        <td>
+        <BUTTON ID="btnRestore" class="buttons" TABINDEX=9 ACCESSKEY="E" onclick="window.parent.RestoreDialRule();"><label for=btnRestore><id id="LocalBtnRestore_Text">R<u>e</u>store</id></label></BUTTON>
+        </td>
+        <td>
+        <BUTTON ID="btnSkip" class="buttons" TABINDEX=10 ACCESSKEY="S"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></BUTTON>
+        </td>
+        <td>
+        <BUTTON ID="btnNext" class="buttons" TABINDEX=11 ACCESSKEY="R"><label for=btnNext><id id="LocalBtnNext_Text"><u>R</u>edial</id></label></BUTTON>
+        </td>
+    </tr>
+    </table>
+    </td>
+</tr>
+</table>
+
+
+    </body>
+</html>

@@ -1,0 +1,12 @@
+[ISP INFO]
+PhoneBookFile = MIGRATE.OBE
+URLReferral =http://ispreferral.microsoft.com/refer/referral.dll?
+Sign_Up_EXE = icwconn1.exe
+DUNFile = migip.dun
+
+[URL]
+Signup=about:blank
+Reconnect=about:blank
+
+[Connection]
+StayConnected = 1

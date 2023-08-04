@@ -1,0 +1,72 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="../setup/oobestyl.css">
+
+</head>
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="window.parent.IcsDcError_LoadMe(); window.parent.Agent_Activate('ICSDC');">
+
+      <table valign=middle border=0 cellpadding=0 cellspacing=0 width="100%" height="100%">
+      
+      <tr>
+      <td ID=leftmargincell width="7%"></td>
+      <td ID=maincell valign=middle class="text-primary">
+      
+
+             <span class="title">
+                <br><ID id= "ICS_ERR_STR1">Unable to connect to the Internet</ID><br><br></span>
+      <SPAN class=text-primary ID=ErrorPara1><ID id="ErrorPara1_ID">Your internet connection was <b>unexpectedly disconnected</b>.</ID></SPAN>
+
+      <SPAN class=text-primary ID=ErrorPara2 style="display:none">
+      <br><br>
+        <table>
+        <tr>
+            <td>&nbsp;&nbsp;
+            <input TABINDEX=1 ACCESSKEY="I" type="radio" ID="rb_conn_lan" value="" name="landc_check" onClick="window.parent.OnClick();" onfocus="window.parent.OnFocus();" checked>
+            </td>
+            <td>
+            <LABEL id="rb_txt1" for="rb_conn_lan">
+            <span id="act_spn1" class="text-primary"><ID id=landc_choice_lan>Connect using my direct <u>I</u>nternet connection (local area network, DSL, cable modem)</id></span>
+            </LABEL>
+            </td>
+        </tr>
+        <tr>
+            <td>&nbsp;&nbsp;
+            <input TABINDEX=2 ACCESSKEY="M" type="radio" ID="rb_conn_modem" value="" name="landc_check" onClick="window.parent.OnClick();" onfocus="window.parent.OnFocus();">
+            </td>
+            <td>
+            <LABEL id="rb_txt2" for="rb_conn_modem">
+            <span id="act_spn2" class="text-primary"><ID id=landc_choice_modem>Dial using my <u>m</u>odem</ID></span>
+            </LABEL>
+            </td>
+        </tr>
+        </table>
+      </SPAN>
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=-1 ACCESSKEY="B" style="visibility:hidden;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:hidden;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:visible;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=5  ACCESSKEY="S" style="visibility:visible;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnRetry_Text"><u>R</u>etry</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=7  ACCESSKEY="R" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+</body>
+</html>
+

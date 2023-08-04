@@ -1,0 +1,132 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="oobestyl.css">
+</head>
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="window.parent.drdyref_LoadMe();window.parent.Agent_Activate('RefDial');"
+      onunload="maincell.style.visibility='hidden'; window.parent.ProcessQueuedEvents(); window.parent.Agent_Deactivate();">
+
+<table border=0 cellpadding=0 cellspacing=0 width=100% height=100%>
+<tr>
+    <td ID=leftmargincell width=7%></td>
+    <td ID=maincell valign=middle class="text-primary">
+
+        <br><br>
+        <span class="title">
+        <table width="100%" height="40px">
+        <tr><td class="title" valign=top>
+            <ID id="drdyref_1">Do you want help finding an Internet service provider?</id>
+        </td></tr>
+        </table>
+        </span>
+
+        <br><br>
+        <span class="text-primary" ID="drdyref_2_spanID">
+        <ID id="drdyref_2">If you need help finding information about your Internet service provider (ISP) in order to copy your Internet account to this computer, we can make a telephone call to the Microsoft Referral Service to find your ISP.</id>
+        </span>
+        
+        <br><br>
+        <span class="text-primary" ID="drdyisp_4_spanID">
+        <ID id="drdyref_4">Do you need help setting up your Internet account?</id>
+        </span>
+        
+        <br>
+        <table border=0 cellpadding=0 cellpadding=0>
+        <tr>
+            <td valign=top width="5%">&nbsp;&nbsp;
+            <input TABINDEX=2 type="radio" name="ISPSetupMethodType" ID="radioYesISPAuto" onClick="window.parent.checkISPSetupType();" onfocus="window.parent.OnFocus();">
+            </td>
+            <td valign=top width="95%">
+                <LABEL TABINDEX=-1 ACCESSKEY="Y" id=text_yesISPAuto for="radioYesISPAuto" class="text-primary">
+                <u>Y</u>es, I need help finding information about my account
+                </LABEL>
+            </td>
+        </tr>
+        <tr>
+            <td valign=top width="5%">&nbsp;&nbsp;
+            <input TABINDEX=4 type="radio" name="ISPSetupMethodType" ID="radioNoISPAuto" onClick="window.parent.checkISPSetupType();" onfocus="window.parent.OnFocus();">
+            </td>
+            <td valign=top width="95%">
+                <LABEL TABINDEX=-1 ACCESSKEY="O" id=text_noISPAuto for="radioNoISPAuto" class="text-primary">
+                N<u>o</u>, I have my user name, password, and my ISP's name and phone number handy
+                </LABEL>
+            </td>
+        </tr>
+        </table>
+
+        <span id="drdyref_ctrl1" style="visibility:hidden">
+            <span class="text-primary" ID="drdyref_4_spanID"><ID id="drdyref_5">To proceed, provide the information below and click <b>Next</b>. To continue without dialing on your telephone line, click <b>Skip</b>.</id>
+            <br><br>
+            </span>
+            <span class="text-primary"><ID id="drdyref_8">Select the <u>c</u>ountry/region where you are now. Click the down arrow, or press the ALT + &quot;DOWN ARROW&quot; keys to view the list of regions.</id>
+            </span><br><br>
+            <select TABINDEX=2 id=selCountry ACCESSKEY="C" onfocus="window.parent.OnFocus();" onclick="window.parent.OnClick();">
+                <script language="javascript">
+                document.write(window.parent.external.Tapi.get_AllCountryName);
+                </script>
+            </select>
+
+            <!-- AREA CODE -->
+            <br><br>
+            <span class="text-primary"><ID id="drdyref_11">Enter your telephone <u>a</u>rea code. (e.g., 425 in 425-555-1212).<id>
+            </span>
+            <input style="ime-mode:disabled" ACCESSKEY="A" TABINDEX=3 id=edtAreaCode type="text" name="textfield" size="7" maxlength="7" onkeypress="window.parent.KeyPressIsNumeric();" onfocus="window.parent.OnFocus();">
+
+            <!-- PULSE/TONE DIALING -->
+            <br>
+            <span id="PulseToneDialing" style="visibility:hidden">
+                <LABEL TABINDEX=-1 ACCESSKEY="T" id=Tapi_TOUCHTONE for="radioTouchToneYes">Do you have <U>t</U>ouch tone service?</label>
+                <input TABINDEX=4 type="radio" name=TouchTone checked id=radioTouchToneYes onfocus="window.parent.OnFocus();">
+                <LABEL TABINDEX=-1 id="Tapi_TOUCHTONE_YES" for="radioTouchToneYes">Yes</LABEL>
+                <input TABINDEX=4 type="radio" name=TouchTone  id=radioTouchToneNo onfocus="window.parent.OnFocus();">
+                <LABEL TABINDEX=-1 id="Tapi_TOUCHTONE_NO" for="radioTouchToneNo">No</LABEL>
+            </span>
+        </span>
+
+        <!-- OUTSIDE LINE -->
+        <br>
+        <span id="spnOutsideLine" style="visibility:hidden">
+            <LABEL TABINDEX=-1 ACCESSKEY="O" id="drdyref_OUTSIDELINE1" for="radioOutSideLineYes">Do you dial a number to access an <U>o</U>utside line?</label>
+            <input TABINDEX=4 type="radio" checked name=OutsideLine id=radioOutsideLineYes onclick="window.parent.drdyref_OutsideLineClicked();">
+            <LABEL TABINDEX=-1 id="drdyref_OUTSIDELINE_YES" for="radioOutsideLineYes">Yes</LABEL>
+            <input TABINDEX=4 type="radio" name=OutsideLine id=radioOutsideLineNo onclick="window.parent.drdyref_OutsideLineClicked();">
+            <LABEL TABINDEX=-1 id="drdyref_OUTSIDELINE_NO" for="radioOutSideLineNo">No</LABEL>
+        </span>
+        <br>
+        <SPAN TABINDEX=-1 id="spnOutsideLineNumber" style="visibility:hidden; position:relative;">                  
+            <LABEL TABINDEX=-1 ACCESSKEY="W" ID="drdyref_OUTSIDELINE2" for=edtOutsideLineNumber><U>W</U>hat is that number?</LABEL>
+            <input TABINDEX=5 style="ime-mode:disabled;" type="text" id=edtOutsideLineNumber maxlength=10 size="4" onkeypress="window.parent.KeyPressIsNumeric();">
+        </SPAN>
+
+        <br><br>
+        <span class="text-primary" ID="drdyisp_9_spanID">
+        <ID id="drdyref_9"></id>
+        </span>
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=6  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:visible;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=7  ACCESSKEY="S" style="visibility:visible;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=8  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+
+</body>
+</html>

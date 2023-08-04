@@ -1,0 +1,91 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="oobestyl.css">
+</head>
+
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="window.parent.jndomainLoadMe(); window.parent.Agent_Activate('JOINDOMAIN');"
+      onunload="window.parent.Agent_Deactivate();">
+
+<TABLE ALIGN=center BORDER=0 CELLPADDING=0 CELLSPACING=0 WIDTH="100%" HEIGHT="100%">
+<tr>
+    <TD ID=leftmargincell WIDTH=7%></TD>
+
+    <TD ID=maincell CLASS="text-primary">
+    <BR><BR>
+    <span class="title">
+        <ID id=JoinDomainTitle>Is this computer in a domain?</ID>
+    </span>
+
+    <br><br>
+    <span class="text-primary">
+        <ID id="txtJoinDomain">A domain is a group of computers that are part of a network, and are administered as a unit. Domains are identified by unique names.</ID>
+        <br><br>
+        <id id="txtJoinDomainChoice">Do you want to make this computer part of a domain? (If this computer is not on a network, or if you're not sure which option to choose, click No.)</id>
+    </span>
+
+    <br>
+    <table border=0 cellpadding=5>
+    <tr>
+        <td valign=top width="5%">
+        <input TABINDEX=4 type="radio" name="jndomainType" ID="radioNoDomain" onClick="window.parent.checkJoinDomain();" onfocus="window.parent.OnFocus();">
+        </td>
+        <td valign=top width="95%">
+        <LABEL TABINDEX=-1 ACCESSKEY="O" id=text_noDomain for="radioNoDomain" class="text-primary">
+        N<u>o</u>, don't make this computer part of a domain.</LABEL>
+        </td>
+    </tr>
+    <tr>
+        <td valign=top width="5%">
+        <input TABINDEX=2 type="radio" name="jndomainType" ID="radioYesDomain" onClick="window.parent.checkJoinDomain();" onfocus="window.parent.OnFocus();">
+        </td>
+        <td valign=top width="95%">
+        <LABEL TABINDEX=-1 ACCESSKEY="Y" id=text_yesDomain for="radioYesDomain" class="text-primary">
+        <u>Y</u>es, make this computer a member of the following domain:
+        </LABEL><br>
+        <LABEL TABINDEX=-1 ACCESSKEY="M" id=text_tboxWorkgroup for="textboxDomain" class="text-primary">
+        (You will need to obtain this information from your network administrator.)
+        </LABEL>
+        </td>
+    </tr>
+    <tr>
+        <td valign=top width="5%">
+        &nbsp;
+        </td>
+        <td valign=top width="95%">
+        <input TABINDEX=3 type="text" name="jndomainType" ID="textboxDomain" size=25 value="DOMAIN" onkeypress="window.parent.jndomain_OnKeyPress();" onClick="window.parent.OnClick();" onfocus="window.parent.OnFocus();">
+        </td>
+    </tr>
+    </table>
+
+    <script>
+    document.write(window.parent.g_ClickNextStr);
+    </script>
+
+    <!-- Navigation buttons -->
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=6 ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:hidden;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=-1 ACCESSKEY="S" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=7  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+</body>
+</html>
+

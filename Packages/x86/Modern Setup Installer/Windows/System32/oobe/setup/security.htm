@@ -1,0 +1,85 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+  <TITLE>out of box experience</TITLE>
+  <LINK REL="stylesheet" TYPE="text/css" HREF="oobestyl.css">
+</HEAD>
+
+
+<BODY style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      ONLOAD="window.parent.SecurityPasswordLoadMe(); window.parent.Agent_Activate('SECURITYPASS');"
+      ONUNLOAD="window.parent.Agent_Deactivate();">
+
+<TABLE ALIGN=center BORDER=0 CELLPADDING=0 CELLSPACING=0 WIDTH="100%" HEIGHT="100%">
+<TR> 
+    <TD ID=leftmargincell WIDTH=7%></TD>
+
+    <TD ID=maincell CLASS="text-primary">
+    <BR><BR>
+    <SPAN CLASS="title">
+        <ID id=NewEulaTitle>What's your Administrator password?</ID>
+    </SPAN>
+
+    <BR><BR>
+    <span class="text-primary">
+        <id id="txtAdminPassExpl">You should set a password to protect this computer from unauthorized access. If you leave this password blank, then any user can log on as the Administrator using a blank password. <b>When you type your password, make sure that the CAPS LOCK key is not turned on.</b></id>
+    </span>
+
+        <table border=0 cellpadding=2>
+        <tr>
+            <td nowrap>
+            <span id="securitypass_spn_label" class="text-primary">
+            <ID id="txtSecurityPassword"><u>A</u>dministrator password:</ID>
+            </span>
+            </td>
+            <td nowrap id="txtAccessKey_A"><input type="password" TABINDEX="1" ACCESSKEY="A" value="" id="SecurityPass" size=13 onfocus="this.select();"></td>
+            <td width="60%">&nbsp;</td>
+        </tr>
+        <tr>
+            <td nowrap>
+            <span id="confirmPass_spn_label" class="text-primary">
+            <ID id="txtConfirmPassword"><u>C</u>onfirm password:</ID>
+            </span>
+            </td>
+            <td nowrap id="txtAccessKey_C">
+            <input type="password" TABINDEX="2" ACCESSKEY="C" value="" id="ConfirmPass" size=13 onfocus="this.select();"></td>
+            <td width="60%">&nbsp;</td>
+        </tr>
+        <tr>
+            <td nowrap colspan="3">
+            <span id="SecurityExplHidden" class="text-error" style="display:none;">
+            <b><ID id="txtSecurityExpl">Your passwords do not match. Please re-enter the password.</ID></b>
+            </span>
+            </td>
+        </tr>
+        </table>
+
+    <script>
+        document.write(window.parent.g_ClickNextStr);
+    </script>
+
+    <!-- NAVIGATION BUTTONS -->
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=4  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:visible;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=5  ACCESSKEY="S" style="visibility:visible;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=6  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </TD>
+</TR>
+</TABLE>
+
+</BODY>
+</HTML>
+

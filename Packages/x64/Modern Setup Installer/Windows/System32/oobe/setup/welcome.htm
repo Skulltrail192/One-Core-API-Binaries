@@ -1,0 +1,555 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+
+<title>out of box experience</title>
+<LINK REL="stylesheet" TYPE="text/css" HREF="oobestyl.css">
+
+<style>
+    .mousePos {position:absolute}
+    .pointerMove {font-size : 9pt;
+                font-family : Arial;
+                font-weight : normal;
+                color : navy;}
+    .agentPosit {position:absolute;
+                font-size : 9pt;
+                font-family : Arial;
+                font-weight : normal;
+                color : white;
+                line-height : 12pt;}
+</style>
+
+
+<script>
+
+var ArrowSw;
+var mouse_action;
+var g_sw1;
+g_sw1='0';
+
+function StartGlide1()
+{
+ArrowSw = false;
+    if (!Is_Mouse_Hide_executed)
+    {
+        MouseImage.style.pixelLeft = 160;
+        MouseImage.style.visibility = "visible";
+        mouse_action = window.setInterval("Glide1()", 20);
+    }
+}
+
+function Glide1()
+{
+    if (!Is_Mouse_Hide_executed)
+    {
+        document.all.MouseImage.style.pixelTop  += 1;
+        document.all.MouseImage.style.pixelLeft -= 1;
+        document.all.ArrowImage.style.pixelTop  += 1;
+
+        if (!ArrowSw)
+        {
+            document.all.ArrowImage.style.pixelLeft -= 1;
+            ArrowSw = true;
+        }
+        else
+        {
+            ArrowSw = false;        
+        }
+
+        if (ArrowImage.style.pixelLeft<=82)
+        {
+            Btn1Image.style.display="none";
+            Btn2Image.style.display="inline";
+        }
+        if (MouseImage.style.pixelLeft<=125)
+        {
+            if (g_sw1=='0')
+            {
+                ClickhereImage.style.display="inline";
+                Spn_ClickHereLarge.style.display="inline";
+                MouseImage.style.pixelLeft=125;
+                window.clearInterval(mouse_action);
+                g_sw1='1';
+            }
+            else
+            {
+                Magnify.style.display="inline";
+                Spn_ClickHere.style.display="inline";
+                MouseImage.style.pixelLeft=125;
+                window.clearInterval(mouse_action);
+                g_sw1='1';
+            }
+        }
+    }
+}
+
+function StartGlide2()
+{
+ArrowSw = false;
+    if (!Is_Mouse_Hide_executed)
+    {
+        MouseImage.style.pixelLeft = 125;
+        MouseImage.style.visibility = "visible";
+        Spn_ClickHereLarge.style.display="none";
+        ClickhereImage.style.display="none";
+        GreenBtn.style.display="none";
+        Magnify.style.display="none";
+        mouse_action = window.setInterval("Glide2()", 20);
+    }
+}
+
+function Glide2()
+{
+    if (!Is_Mouse_Hide_executed)
+    {
+        document.all.MouseImage.style.pixelTop  -= 1;
+        document.all.MouseImage.style.pixelLeft += 1;
+        document.all.ArrowImage.style.pixelTop  -= 1;
+
+        if (!ArrowSw)
+        {
+            document.all.ArrowImage.style.pixelLeft += 1;
+            ArrowSw = true;
+        }
+        else
+        {
+            ArrowSw = false;        
+        }
+
+        if (ArrowImage.style.pixelLeft>=82)
+        {
+            Btn2Image.style.display="none";
+            Btn1Image.style.display="inline";
+        }
+        if (MouseImage.style.pixelLeft>=160)
+        {
+            MouseImage.style.pixelLeft=160;
+            window.clearInterval(mouse_action);
+        }
+    }
+}
+
+var BlinkerCtr;
+var BlinkerSW1;
+BlinkerCtr=0;
+BlinkerSW1='0';
+function BtnBlinker()
+{
+    if (!Is_Mouse_Hide_executed)
+        btn_action = window.setInterval("ActualBlinker()", 500);
+}
+
+function ActualBlinker()
+{
+    if (!Is_Mouse_Hide_executed)
+    {
+        if (BlinkerSW1=='0')
+        {
+            GreenBtn.style.display = "inline";
+            BlinkerSW1='1';
+        }
+        else
+        {
+            GreenBtn.style.display = "none";
+            BlinkerSW1='0';
+            BlinkerCtr += 1;
+        }
+
+        if (BlinkerCtr >=4)
+        {
+            window.clearInterval(btn_action);
+        }
+    }
+}
+
+function FingerPusher()
+{
+    if (!Is_Mouse_Hide_executed)
+        fgr_action = window.setInterval("ActualPusher()", 1000);
+}
+
+var PusherCtr;
+PusherCtr=0;
+function ActualPusher()
+{
+    if (!Is_Mouse_Hide_executed)
+    {
+        if (BlinkerSW1=='0')
+        {
+            Hand2.style.display = "none";
+            Hand1.style.display = "inline";
+            Btn3Image.style.display="none";
+            Btn2Image.style.display="inline";
+            BlinkerSW1='1';
+            PusherCtr += 1;
+            
+            if (PusherCtr > 1)
+            {
+                PlayClicker();
+            }
+    
+        }
+        else
+        {
+            Hand1.style.display = "none";
+            Hand2.style.display = "inline";
+            Btn2Image.style.display="none";
+            Btn3Image.style.display="inline";
+            PlayClicker();
+            BlinkerSW1='0';
+            PusherCtr += 1;
+        }
+    
+        if (PusherCtr >=7)
+        {
+            window.clearInterval(fgr_action);
+        }
+    }
+    else
+    {
+        window.clearInterval(fgr_action);
+    }
+}
+
+function ChangeText1()
+{
+    var L_Whenthearrow_Text = "When the arrow is on top of the Next button, press and release (or &quot;click&quot;) the left mouse button. That's all there is to it!";
+    MouseTextDescription.innerHTML = L_Whenthearrow_Text;
+}
+
+function ChangeText2()
+{
+    var L_Ifyoureach_Text = "If you reach the edge of the mousepad, pick up the mouse and place it anywhere on the mousepad to continue.";
+    MouseTextDescription.innerHTML = L_Ifyoureach_Text;
+}
+
+var bTranState = 0;
+var M_event1, M_event2, M_event3, M_event4, M_event5, M_event6, fgr_action
+function ToggleMouse_msg()
+{
+    oTransContainer.filters[0].Apply();
+    if (bTranState=='0')
+    {
+        oTransContainer.style.display="inline";
+        bTranState = 1;
+        oDIV2.style.visibility="visible";
+        oDIV1.style.visibility="hidden";
+
+        if (window.parent.document.dir == "rtl")
+            MonitorImage2.style.display = "inline";
+        else
+            MonitorImage.style.display = "inline";
+
+        oTransContainer.filters[0].Play();
+        M_event1 = window.setTimeout(StartGlide1,    3000);
+        M_event2 = window.setTimeout(StartGlide2,    7000);
+        M_event3 = window.setTimeout(StartGlide1,   10000);
+        T_event1 = window.setTimeout(ChangeText1,   13000);
+        
+        M_event5 = window.setTimeout(FingerPusher,  17000);
+        T_event2 = window.setTimeout(ChangeText2,   22000);
+        M_event6 = window.setTimeout(ToggleMouse_msg, 29000);
+    }
+    else
+    {
+        bTranState = 0;
+        oDIV2.style.visibility="hidden"; 
+        oDIV1.style.visibility="visible";
+        MouseImage.style.visibility="hidden";
+        Btn1Image.style.visibility="hidden";
+        Btn2Image.style.visibility="hidden";
+        Btn3Image.style.visibility="hidden";
+        ArrowImage.style.visibility="hidden";
+        Spn_ClickHereLarge.style.visibility="hidden";
+        ClickhereImage.style.visibility="hidden";
+        Hand1.style.visibility="hidden";
+        Hand2.style.visibility="hidden";
+        Magnify.style.visibility="hidden";
+        Spn_ClickHere.style.display="none";
+        oTransContainer.filters[0].Play();
+        window.setTimeout(StartMouseAgain, 13000);
+    }
+}
+
+function PlayClicker()
+{
+}
+
+function mouseload()
+{
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+function StartMouseAgain()
+{
+    
+    document.all.MouseImage.style.pixelTop  = 240;
+    document.all.MouseImage.style.pixelLeft = 160;
+    document.all.ArrowImage.style.pixelTop  = 150;
+    document.all.ArrowImage.style.pixelLeft = 100;
+
+    var L_slideyourmouse_Text = "Slide your mouse over the mousepad to move the arrow (or &quot;pointer&quot;) on the screen.";
+    MouseTextDescription.innerHTML = L_slideyourmouse_Text;
+
+    
+    MouseImage.style.visibility="visible";
+    Btn1Image.style.visibility="visible";
+    Btn1Image.style.visibility="visible";
+    ArrowImage.style.visibility="visible";
+    Btn2Image.style.visibility="visible";
+    Btn3Image.style.visibility="visible";
+    ClickhereImage.style.visibility="visible";
+    Spn_ClickHereLarge.style.visibility="visible";
+    Spn_ClickHere.style.visibility="visible";
+    Hand1.style.visibility="visible";
+    Hand2.style.visibility="visible";
+    Magnify.style.visibility="visible";
+
+    Spn_ClickHere.style.display="none";
+    MouseImage.style.display="inline";
+    Btn1Image.style.display="inline";
+    Btn1Image.style.display="inline";
+    ArrowImage.style.display="inline";
+    Btn2Image.style.display="none";
+    Btn3Image.style.display="none";
+    Spn_ClickHereLarge.style.display="none";
+    ClickhereImage.style.display="none";
+    Hand1.style.display="none";
+    Hand2.style.display="none";
+    Magnify.style.display="none";
+
+    GreenBtn.style.display = "none";
+    Is_Mouse_Hide_executed = false;
+    g_sw1='0';
+    BlinkerCtr=0;
+    BlinkerSW1='0';
+    PusherCtr=0;
+    ToggleMouse_msg();
+}
+
+var Is_Mouse_Hide_executed = false;
+function Mouse_Hide_Handler()
+{
+    Is_Mouse_Hide_executed = true;
+
+    
+    try
+    {
+        window.clearTimeout(M_event1);
+        window.clearTimeout(M_event2);
+        window.clearTimeout(M_event3);
+        
+        window.clearTimeout(M_event5);
+        window.clearTimeout(M_event6);
+        window.clearInterval(mouse_action);
+        window.clearInterval(btn_action);
+        window.clearInterval(fgr_action);
+    }
+    catch(e){}
+
+    ToggleMouse_msg();
+}
+
+</script>
+</head>
+
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" onload="window.parent.Start_LoadMe(); mouseload();"
+      tabindex=-1
+      onkeypress="window.parent.Start_OnKeyPress();"
+      onunload="window.parent.Agent_Deactivate();" >
+
+<table valign=middle border=0 cellpadding=0 cellspacing=0 width="100%" height="100%">
+<tr>
+    <td ID=leftmargincell width=7%></td>
+    <td ID=maincell valign=middle class="text-primary">
+
+    <br><br>
+    <span class="title">
+        <ID id=welc_s1>Welcome to Microsoft Windows</ID>
+    </span>
+
+    <span ID=WelcomePageText style="display:none">
+        <br><br>
+        <!-- sentence may be changed at runtime -->
+        <span ID=welcome_namestr class="text-primary">
+            <ID id=w21>Thank you for purchasing Microsoft Windows XP.</ID>
+        </span>
+
+        <span ID=StarterWelcome1 style="display:none">
+            <br><br>
+            <ID id=SW1>Welcome to Microsoft® Windows® XP Starter Edition, the most economical version of Windows XP, which is designed specifically to introduce you to personal computing! Windows XP Starter Edition contains many of the same great features in other versions of Windows — the standard Windows user interface, enhanced security settings to help protect your computer, and meaningful support materials that help solve problems and answer questions.</ID>
+            <br><br>
+            <ID id=SW2>With Windows XP Starter Edition, you and your family can:</ID>
+            <br>
+            <ul>
+            <li><ID id=SW3>Connect with your friends and family by browsing the Internet and exchanging e-mail and instant messages.</ID></li>
+            <li><ID id=SW4>Have fun watching movies, organizing and sharing your photos, and listening to your favorite music.</ID></li>
+            <li><ID id=SW5>Get organized and be more productive by taking advantage of all of the great programs and devices you can use with Windows XP.</ID></li>
+            </ul>
+        </span>
+    
+        <br><br>
+        <span class="text-primary" id=AgentPos2><ID id=welc_s3>Let's spend a few minutes setting up your computer.</ID>
+        </span>
+    </span>
+
+    
+    <span ID=AgentPos class="agentPosit" style="left:65%; top: 80%;">
+    </span>
+
+    <!-- Start of Mouse Tutorial -->
+
+    <!-- Filter -->
+    <DIV ID="oTransContainer" class="mousePos" STYLE="top: 0; left: 0; width: 450; 
+    height:360; filter:progid:DXImageTransform.Microsoft.Fade(duration=0.5,overlap=2.0); display:none; ">
+    
+        <!-- First Content (empty) -->
+        <DIV ID="oDIV1" STYLE="top:0; left:0; width:450px; height:360; background-Color: transparent;" class="mousePos">&nbsp;</DIV>
+    
+        <!-- Actual Content -->
+        <DIV ID="oDIV2" onclick="Mouse_Hide_Handler();" class="mousePos" STYLE="top:0; left:0; width:450px; height:360px;
+        background-image:url('../images/mousewn1.gif'); visibility:hidden;">
+
+
+            <span ID="MouseMsg1" STYLE="top:25px; left:15px; right:5px; font: 18pt Arial;" class="mousePos">
+            <TABLE BORDER=0 WIDTH="100%">
+            <TR>
+                <TD VALIGN=TOP>
+                <br><br>
+                <span class="pointerMove" id=MouseTextDescription>
+                <ID id="txtWelcome">Slide your mouse over the mousepad to move the arrow (or "pointer") on the screen.</ID>
+                </span>
+                </TD>
+            </TR>
+            </TABLE>
+            </span>
+
+            <span id="MonitorImage"  STYLE="top:115px; left:20px; display:none;" class="mousePos">
+            <img src="../images/monitor.gif" border=0>
+            </span>
+
+            <span id="MonitorImage2" STYLE="top:115px; left:20px; display:none;" class="mousePos">
+            <img src="../images/monitor2.gif" border=0>
+            </span>
+
+            <span id="MouseImage" STYLE="top:240px; left:160px;" class="mousePos">
+            <img src="../images/mouse.gif" border=0>
+            </span>
+
+            <span id="ClickhereImage" STYLE="top:189px; left:188px; display:none;" class="mousePos">
+            <img src="../images/clickhr.gif" border=0>
+            </span>
+
+            <span id="Magnify" STYLE="top:117px; left:178px; display:none;" class="mousePos">
+            <img src="../images/magnify.gif" border=0>
+            </span>
+
+            <span id="Spn_UsingTheMouse" STYLE="position:absolute; top:13px; left:10px; color:white; font: 26pt Arial; z-index=100">
+            <id id="TxtUsingTheMouse">Using the mouse</id>
+            </span>
+
+            <span id="Spn_ClickHere" STYLE="position:absolute; top:145px; left:237px; display:none; color:navy; font: 10pt Arial; z-index=99">
+            <id id="TxtClickHere">Click here</id>
+            </span>
+
+            <span id="Spn_ClickHereLarge" STYLE="position:absolute; top:191px; left:223px; display:none; color:navy; font: 16pt Arial; z-index=99">
+            <id id="TxtClickHereLarge">Click here</id>
+            </span>
+
+            <span id="GreenBtn" STYLE="top:139px; left:319px; display:none;" class="mousePos">
+            <img src="../images/grn_btn.gif" border=0>
+            </span>
+
+            <span id="Hand1" STYLE="top:119px; left:301px; display:none;" class="mousePos">
+            <img src="../images/hand1.gif" border=0>
+            </span>
+
+            <span id="Hand2" STYLE="top:119px; left:301px; display:none;" class="mousePos">
+            <img src="../images/hand2.gif" border=0>
+            </span>
+
+            <span id="Btn1Image" STYLE="top:184px; left:77px;" class="mousePos">
+            <img src="../images/btn1.gif" border=0>
+            </span>
+
+            <span id="Btn2Image" STYLE="top:184px; left:77px; display:none;" class="mousePos">
+            <img src="../images/btn2.gif" border=0>
+            </span>
+
+            <span id="Btn3Image" STYLE="top:184px; left:76px; display:none;" class="mousePos">
+            <img src="../images/btn3.gif" border=0>
+            </span>
+
+            <span id="ArrowImage" STYLE="top:150px; left:100px;" class="mousePos">
+            <img src="../images/arrow.gif" border=0>
+            </span>
+
+        </DIV> 
+    </DIV>
+    <!-- End of Mouse Tutorial -->
+    
+    <script>
+    document.write(window.parent.g_ClickNextStrWelcome);
+    </script>
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=-1 ACCESSKEY="B" style="visibility:hidden;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:hidden;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:hidden;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=-1 ACCESSKEY="S" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=4  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+
+</body>
+</html>

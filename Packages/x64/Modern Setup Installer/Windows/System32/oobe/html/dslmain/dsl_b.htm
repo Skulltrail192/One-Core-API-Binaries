@@ -1,0 +1,154 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+  <TITLE>out of box experience</TITLE>
+
+  <!-- LINK TO EXTERNAL STYLE SHEET: DO NOT MODIFY -->
+  <LINK REL="stylesheet" TYPE="text/css" HREF="../../setup/oobestyl.css">
+</HEAD>
+
+<BODY style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      ONLOAD="window.parent.dsl_broadband_LoadMe(); window.parent.Agent_Activate('DSL_B');"
+      ONUNLOAD="window.parent.Agent_Deactivate();">
+
+<TABLE ALIGN=center BORDER=0 CELLPADDING=0 CELLSPACING=0 WIDTH="100%" HEIGHT="100%">
+<TR> 
+    <TD ID=leftmargincell WIDTH=7%>
+    </TD>
+
+    <TD ID=maincell CLASS="text-primary">
+
+    <BR><BR>
+    <SPAN CLASS="title">
+    <ID ID=dslmain_TitleText>Setting up a high speed connection</ID>
+    </SPAN>
+
+    <BR><BR>
+    <DIV CLASS="text-primary">
+
+        <span id=text_description_dsl_b1 class="text-primary" style="display:none">
+        <ID ID=dslmain_Text1a>Enter the following settings to set up your DSL or cable modem Internet account. You can get these settings from your Internet services provider:</ID>&nbsp;
+        </span>
+
+        <span id=text_description_dsl_b2 class="text-primary" style="display:none">
+        <ID ID=dslmain_Text1b>Enter the following settings to set up your LAN connection. You can get these settings from your network administrator:</ID><br>
+        </span>
+
+        <span id=dslinvalidtexterror class="text-error" style="display:none;"><id id="invaliddslentrytext">Please enter a valid setting.</id></span>
+
+        <br><br>
+        <TABLE border=0 cellspacing=5>
+        <TR>
+            <TD>
+            <LABEL id="dsl_lbl_autoip" for="dsl_autoip" class="text-primary">
+            <ID id="dsl_intl_autoip">Obtain <U>I</U>P  automatically :</ID>
+            </LABEL>
+            </TD>
+
+            <TD width=50>
+            <INPUT tabindex="1" type="checkbox" ACCESSKEY="I" value=""
+            id="dsl_autoip" size=30
+            onClick="window.parent.dsl_autoipClickHandler();" id="txtAccessKey_I">
+            </TD>
+
+            <TD>
+            <LABEL id="dsl_lbl_autodns" for="dsl_autodns" class="text-primary">
+            <ID id="dsl_intl_autodns">Obtain <U>D</U>NS automatically :</ID>
+            </LABEL>
+            </TD>
+
+            <TD>
+            <INPUT tabindex="2" type="checkbox" ACCESSKEY="D" value=""
+            id="dsl_autodns" size=30
+            onClick="window.parent.dsl_autodnsClickHandler();" id="txtAccessKey_D">
+            </TD>
+        </TR>
+        <TR>
+            <TD>
+            <LABEL id="dsl_lbl_staticip" for="dsl_staticip" class="text-primary">
+            <ID id="dsl_intl_staticip">S<U>t</U>atic IP address:</ID>
+            </LABEL>
+            </TD>
+
+            <TD width=175>
+            <INPUT tabindex="3" type="text" ACCESSKEY="T" value="" name="dsl_staticip" size=20 onFocus="if (dsl_autoip.checked)this.blur();" style="ime-mode:disabled; background-Color:'#ffffff'" id="txtAccessKey_T">
+            </TD>
+
+            <TD>
+            <LABEL id="dsl_lbl_prefdns" for="dsl_prefdns" class="text-primary">
+            <ID id="dsl_intl_prefdns"><U>P</U>referred DNS:</ID>
+            </LABEL>
+            </TD>
+
+            <TD>
+            <INPUT tabindex="6" type="text" ACCESSKEY="P" value="" name="dsl_prefdns" size=20 onFocus="if (dsl_autodns.checked)this.blur();" style="ime-mode:disabled; background-Color:'#ffffff'" id="txtAccessKey_P">
+            </TD>
+        </TR>
+        <TR>
+            <TD>
+            <LABEL id="dsl_lbl_subnetmask" for="dsl_subnetmask" class="text-primary">
+            <ID id="dsl_intl_subnetmask">S<U>u</U>bnet mask:</ID>
+            </LABEL>
+            </TD>
+
+            <TD>
+            <INPUT tabindex="4" type="text" value="" ACCESSKEY="U" name="dsl_subnetmask" size=20 onFocus="if (dsl_autoip.checked)this.blur();" style="ime-mode:disabled; background-Color:'#ffffff'" id="txtAccessKey_U">
+            </TD>
+
+            <TD>
+            <LABEL id="dsl_lbl_altdns" for="dsl_altdns" class="text-primary">
+            <ID id="dsl_intl_altdns"><U>A</U>lternate DNS:</ID>
+            </LABEL>
+            </TD>
+
+            <TD>
+            <INPUT tabindex="7" type="text" ACCESSKEY="A" value="" name="dsl_altdns" size=20 onFocus="if (dsl_autodns.checked)this.blur();" style="ime-mode:disabled; background-Color:'#ffffff'" id="txtAccessKey_A">
+            &nbsp;<span id="dsl_optional_text" class="text-primary">(Optional)</span>
+            </TD>
+        </TR>
+        <TR>
+            <TD>
+            <LABEL id="dsl_lbl_defgateway" for="dsl_defgateway" class="text-primary">
+            <ID id="dsl_intl_defgateway">D<U>e</U>fault gateway:</ID>
+            </LABEL>
+            </TD>
+
+            <TD>
+            <INPUT tabindex="5" type="text" ACCESSKEY="E" value="" name="dsl_defgateway" size=20 onFocus="if (dsl_autoip.checked)this.blur();" style="ime-mode:disabled; background-Color:'#ffffff'" id="txtAccessKey_E">
+            </TD>
+
+            <TD colspan=2>&nbsp;
+            </TD>
+        </TR>
+        </TABLE>
+
+        <BR>
+    </DIV>
+
+
+    <!-- NAVIGATION BUTTONS -->
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=8  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:visible;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=9  ACCESSKEY="S" style="visibility:visible;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=10 ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+
+    </TD>
+</TR>
+</TABLE>
+
+</BODY>
+</HTML>
+

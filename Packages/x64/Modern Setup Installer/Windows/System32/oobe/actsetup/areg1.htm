@@ -1,0 +1,96 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="aregstyl.css" id=deskstyle1>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="aregsty2.css" id=deskstyle2 disabled>
+    <META HTTP-EQUIV="MSThemeCompatible" CONTENT="Yes">
+</head>
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" topMargin=0 rightmargin=0 leftmargin=0 tabindex=-1
+      onload="window.parent.areg1_LoadMe();">
+
+<table border=0 cellpadding=0 cellspacing=0 width="100%" height="100%">
+<tr>
+    <td ID=leftmargincell width=5% height=99%></td>
+    <td ID=maincell valign=top class="text-primary">
+
+    <span ID=Title_Text class="title" style="display:none;">
+    <ID id=Activation_Title_Text1>Register with Microsoft?</ID>
+    </span>
+
+    <br>
+    <div>
+    <span id="act_spn01" class="text-primary">
+        <ID id=activation_paragraph1>While you are activating Windows online, you can also provide some personal information to register your copy of Windows.<br><br> <B>Registration is optional and is not required to activate Windows.</B></id>
+        <br><br>
+        <ID id=activation_paragraph2>After you register, Microsoft can, with your consent, notify you of product updates, new products, events and special offers.</id>
+        <br><br>
+        <ID id=activation_paragraph3>Do you want to register while you are activating Windows?</id>
+
+        <!-- aReg1 radio buttons -->
+        <br><br>
+        <SPAN TABINDEX=-1>
+            <table cellspacing=0 cellpadding=0>
+            <tr>
+                <td>&nbsp;&nbsp;
+                <input TABINDEX=1 ACCESSKEY="Y" type="radio" ID="rb_reg_1" value="" name="areg_radio" onClick="window.parent.WPA_Reg1RadioClicked(); window.parent.OnClick();" onfocus="window.parent.OnFocus();">
+                </td>
+                <td>
+                <LABEL id="rb_txt1" for="rb_reg_1">
+                <span id="reg_spn1" class="text-primary"><ID id=reg_choice1><u>Y</u>es, I want to register and activate Windows at the same time</id></span>
+                </LABEL>
+                </td>
+            </tr>
+            <tr>
+                <td>&nbsp;&nbsp;
+                <input TABINDEX=2 ACCESSKEY="O" type="radio" ID="rb_reg_2" value="" name="areg_radio" onClick="window.parent.WPA_Reg1RadioClicked(); window.parent.OnClick();" onfocus="window.parent.OnFocus();">
+                </td>
+                <td>
+                <LABEL id="rb_txt2" for="rb_reg_2">
+                <span id="reg_spn2" class="text-primary"><ID id=reg_choice2>N<u>o</u>, I don't want to register now; let's just activate Windows</id></span>
+                </LABEL>
+                </td>
+            </tr>
+            </table>
+        </SPAN>
+
+        <br>
+        <ID id=activation_paragraph5>Microsoft is committed to your privacy. For more information, &nbsp;</id><a TABINDEX=3 id=ahref1 href="javascript:window.parent.navigatetoPrivacy('MS');"><ID id=areg1_readprivacy><u>read the Windows Registration Privacy Statement</u></ID></a>
+        <br><br>
+        <ID id=activation_paragraph6>To continue, click Next.</id>
+    </span>
+
+    </td>
+
+    <td ID=rightmargincell width=7%>
+    </td>
+</tr>
+<tr>
+    <td colspan=3>
+    <br>
+    <table border=0 class="buttonpositionnew">
+    <tr>
+        <td width="99%">&nbsp;</td>
+        <td>
+        <table border=0 width="100">
+        <tr>
+            <td>
+            <BUTTON ID="btnBack" class="buttons" TABINDEX=4 ACCESSKEY="B"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></BUTTON>
+            </td>
+            <td>
+            <BUTTON ID="btnNext" class="buttons" TABINDEX=5 ACCESSKEY="N"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></BUTTON>
+            </td>
+        </tr>
+        </table>
+        </td>
+    </tr>
+    </table>
+    </td>
+</tr>
+</table>
+
+</body>
+</html>
+

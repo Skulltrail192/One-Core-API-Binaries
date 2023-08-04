@@ -1,0 +1,286 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+  <TITLE>out of box experience</TITLE>
+
+  <!-- LINK TO EXTERNAL STYLE SHEET: DO NOT MODIFY -->
+  <LINK REL="stylesheet" TYPE="text/css" HREF="../../setup/oobestyl.css">
+  <SCRIPT>
+  function ScreenResolutionInit() {
+     
+     
+     if(window.parent.g_bInHighScreenRes) {
+       spanScreenResolution.style.visibility='hidden';
+     }
+  }
+  </SCRIPT>
+</HEAD>
+
+
+<BODY style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      ONLOAD="window.parent.iconnectFirstPage_LoadMe(); ScreenResolutionInit(); window.parent.Agent_Activate('ICONNECT');"
+      ONUNLOAD="window.parent.Agent_Deactivate();">
+
+<TABLE ALIGN=center BORDER=0 CELLPADDING=0 CELLSPACING=0 WIDTH="100%" HEIGHT="100%">
+<TR> 
+    <TD ID=leftmargincell WIDTH=7%>
+    <!-- This cell is empty by design -->
+    </TD>
+    <TD ID=maincell CLASS="text-primary">
+    <BR><BR>
+
+    <SPAN CLASS="title">
+        <ID ID=iconnect_TitleText>Set up your Internet account</ID>
+    </SPAN>
+    <BR><BR>
+
+    <DIV CLASS="text-primary">
+        <ID ID=iconnect_Text1>You'll need to get the following information from your Internet service provider (ISP) in order to fill out this page.</ID>
+        <br><br>
+
+        <form name=enableform>
+        
+        <!--  New Table 1  -->
+        
+        <table border="0" cellpadding="0" cellspacing="3">
+        
+            <tr>
+            
+                <td>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <span id="iconnect_spn_username" class="text-primary">
+                        <ID ID=iconnect_Text2>Your <u>u</u>ser name:</ID>
+                    </span>
+                </td>
+                
+                <td width="140">
+                    <span class="text-primary">
+                        <input ACCESSKEY="U" type="text" value="" name="iconnect_user" id="txtAccessKey_U" style="width:130px;">
+                    </span>
+                </td>
+                
+                <td>
+                    <span class="text-primary"><i><ID ID=iconnect_Text3>(Example: johndoe)</ID></i></span>
+                </td>
+                
+            </tr>
+        
+            <tr>
+            
+                <td>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <span id="iconnect_spn_password" class="text-primary">
+                        <ID ID=iconnect_Text4>Your user pass<u>w</u>ord:</ID>
+                    </span>
+                </td>
+                
+                <td width="140">
+                    <span class="text-primary">
+                        <input ACCESSKEY="W" type="password" value="" name="iconnect_pass" onFocus="this.select();" id="txtAccessKey_W" style="width:130px;">
+                    </span>
+                </td>
+                
+                <td>
+                    <span class="text-primary"><i><ID ID=iconnect_Text5>(Example: 123xyz)</ID></i></span>
+                </td>
+                
+            </tr>
+        
+            <tr>
+            
+                <td>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <span id="iconnect_spn_phoneno" class="text-primary">
+                    <ID ID=iconnect_Text6>Your ISP's <u>p</u>hone number:</ID>
+                    </span>
+                    &nbsp;&nbsp;
+                </td>
+                
+                <td width="140">
+                    <input ACCESSKEY="E" type="text" value="" name="iconnect_ispareacode" size="3" id="txtAccessKey_E" style="ime-mode:disabled"><input ACCESSKEY="P" type="text" value="" name="iconnect_ispphone" size="11" id="txtAccessKey_P" style="ime-mode:disabled">
+                </td>
+                
+                <td>
+                    <span class="text-primary"><i><ID ID=iconnect_Text7>(Example: 800 | 555-1234)</ID></i></span>
+                </td>
+                
+            </tr>
+            
+        </table>
+                
+        <!--  End New Table 1  -->
+    
+        <br><br>
+            <ID ID=SecondTextDescription>If the following information was provided to you, please enter it below. <b>This information is optional, so if you don't have it, just ignore this section.</b></ID>
+        <br>
+    
+        <!--  New Table 2  -->
+        
+        <table border="0" cellpadding="0" cellspacing="3">
+            
+            <tr>
+            
+                <td rowspan="2" valign="top">
+                    <br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <input ACCESSKEY="I" type="checkbox" value="" name="iconnect_obtainip" onClick="window.parent.checkme2();" checked id="txtAccessKey_I">
+                </td>
+                
+                <td>
+                    <br>
+                    <span class="text-primary"><ID ID=iconnect_Text8>Obtain <u>I</u>P  automatically (DHCP):</ID></span>
+                </td>
+                
+                <td colspan="2" nowrap>
+                    <br>
+                    &nbsp;
+                    <span id="iconnect_spn_obtainIP_tx1" style="display:none;" class="text-error-small">
+                        <ID ID=iconnect_Text9>&nbsp;* Please enter a valid IP address</ID>
+                    </span>
+                </td>
+                
+            </tr>
+            
+            <tr>
+                
+                <td nowrap>
+                    <br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <span id="iconnect_spn_staticIP" class="text-primary">
+                        <ID ID=iconnect_Text10>Stati<u>c</u> Internet Protocol (IP) address:</ID>
+                    </span>
+                </td>
+                
+                <td>
+                    <br>
+                    <input ACCESSKEY="C" type="text" value="" name="iconnect_staticip" size=13 onFocus="if (enableform.iconnect_obtainip.checked)this.blur();else this.select();" style="ime-mode:disabled; background-Color:'#dddddd'" id="txtAccessKey_C">
+                </td>
+                
+                <td nowrap>
+                    <br>
+                    &nbsp;
+                    <span id="iconnect_spn_staticIP_exp" style="display:none;" class="text-error-small">
+                        <ID ID=iconnect_Text11>Range: 1-223.0-255.0-255.0-255</ID>
+                    </span>
+                </td>
+                
+            </tr>
+            
+            <tr>
+            
+                <td rowspan="3" valign="top">
+                    <br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <input ACCESSKEY="D" type="checkbox" value="" name="iconnect_obtaindns" onClick="window.parent.checkme3();" checked id="txtAccessKey_D">
+                </td>
+                
+                <td>
+                    <br>
+                    <span class="text-primary"><ID ID=iconnect_Text12>Obtain <u>D</u>NS automatically (DHCP):</ID></span>
+                </td>
+                
+                <td colspan="2" nowrap>
+                    <br>
+                    &nbsp;
+                    <span id="iconnect_spn_obtainDNS_tx1" style="display:none;" class="text-error-small">
+                        <ID ID=iconnect_Text13>&nbsp;* Please enter a valid DNS address</ID>
+                    </span>                    
+                </td>
+                
+            </tr>
+            
+            <tr>
+                
+                <td>
+                    <br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <span id="iconnect_spn_prefrDNS" class="text-primary">
+                        <ID ID=iconnect_Text14>P<u>r</u>eferred Domain Name Server (DNS):</ID>
+                    </span>
+                    &nbsp;&nbsp;
+                </td>
+                
+                <td>
+                    <br>
+                    <input ACCESSKEY="R" type="text" value="" name="iconnect_prefdns" size=13 onFocus="if (enableform.iconnect_obtaindns.checked)this.blur();else this.select();" style="ime-mode:disabled; background-Color:'#dddddd'" id="txtAccessKey_R">
+                </td>
+                
+                <td nowrap>
+                    <br>
+                    &nbsp;
+                    <span id="iconnect_spn_prefrdns_exp" style="display:none;" class="text-error-small">
+                        <ID ID=iconnect_Text15>Range: 1-223.0-255.0-255.0-255</ID>
+                    </span>
+                </td>
+                
+            </tr>
+            
+            <tr>
+                
+                <td>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <span id="iconnect_spn_alterDNS" class="text-primary">
+                        <ID ID=iconnect_Text16><u>A</u>lternate Domain Name Server (DNS):</ID>
+                    </span>
+                </td>
+                
+                <td>
+                    <input ACCESSKEY="A" type="text" value="" name="iconnect_altdns" size=13 onFocus="if (enableform.iconnect_obtaindns.checked)this.blur();" style="ime-mode:disabled; background-Color:'#dddddd'" id="txtAccessKey_A">
+                </td>
+                
+                <td nowrap>
+                    &nbsp;
+                    <span id="iconnect_spn_alterdns_exp">
+                        <ID ID=iconnect_Text17>(Optional)</ID>
+                    </span>
+                </td>
+                
+            </tr>
+        
+        </table>
+            
+        <!--  End New Table 2  -->
+    
+    </form>
+    </DIV>
+    
+
+    <SPAN ID=spanScreenResolution>
+    <BR><BR>
+    </SPAN>
+
+    <DIV CLASS="text-primary">
+        <ID ID=iconnect_Text2>
+        <!-- TODO: Modify explanatory text or remove if not required -->
+        </ID>
+    </DIV>
+
+    <script>
+        document.write(window.parent.g_ClickNextStr);
+    </script>
+
+    <!-- NAVIGATION BUTTONS -->
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=4  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:visible;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=5  ACCESSKEY="S" style="visibility:visible;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=6  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </TD>
+</TR>
+</TABLE>
+
+</BODY>
+</HTML>
+

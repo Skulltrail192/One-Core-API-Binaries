@@ -1,0 +1,147 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+    <TITLE>out of box experience</TITLE>
+
+    <!-- LINK TO EXTERNAL STYLE SHEET: DO NOT MODIFY -->
+    <LINK REL="stylesheet" TYPE="text/css" HREF="../../setup/oobestyl.css">
+    <SCRIPT>
+    function ScreenResolutionInit() {
+    
+    
+    if(window.parent.g_bInHighScreenRes) {
+        spanScreenResolution.style.visibility='hidden';
+        }
+    }
+    </SCRIPT>
+</HEAD>
+
+
+<BODY style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+    ONLOAD="ScreenResolutionInit(); window.parent.isptypeFirstPage_LoadMe();window.parent.Agent_Activate('ISPTYPE');"
+    ONUNLOAD="window.parent.Agent_Deactivate();">
+
+
+<TABLE ALIGN=center BORDER=0 CELLPADDING=0 CELLSPACING=0 WIDTH="100%" HEIGHT="100%">
+<TR> 
+    <TD ID=leftmargincell WIDTH=7%>
+    <!-- This cell is empty by design -->
+    </TD>
+    <TD ID=maincell CLASS="text-primary">
+    <BR><BR>
+    <!-- TITLE TEXT -->
+    <SPAN CLASS="title">
+    <ID ID=isptype_TitleText>
+    How will this computer connect to the Internet?
+    </ID>
+    </SPAN>
+    <BR><BR>
+    <!-- EXPLANATORY TEXT -->
+    <DIV CLASS="text-primary">
+    <ID ID=isptype_Text1>
+    </ID>
+    </DIV>
+
+    <form name=isptypeform>
+    <table border=0 cellpadding=5>
+    <tr>
+        <td valign=center width="5%">
+        <span ID="isptypeTelModemSpn1" style="display:none">
+        <input TABINDEX=2 type="radio" name="connecttype" ID="radioTelModem" onClick="window.parent.OnClick();" onfocus="window.parent.OnFocus();" checked>
+        </span>
+        </td> 
+        <td valign=center width="95%">
+        <span ID="isptypeTelModemSpn2" style="display:none">
+        <LABEL TABINDEX=-1 ACCESSKEY="T" id=text_TelModem for="radioTelModem" class="text-primary">
+        <u>T</u>elephone Modem
+        </LABEL>
+        </span>
+        </td>
+    </tr>
+    <tr>
+        <td valign=center width="5%">
+        <span ID="isptypeHighSpeedSpn1" style="display:none">
+        <input TABINDEX=3 type="radio" name="connecttype" ID="radioHighSpeed" onClick="window.parent.OnClick();" onfocus="window.parent.OnFocus();">
+        </span>
+        </td>
+        <td valign=center width="95%">
+        <span ID="isptypeHighSpeedSpn2" style="display:none">
+        <LABEL TABINDEX=-1 ACCESSKEY="H" id=text_HighSpeed for="radioHighSpeed" class="text-primary">
+        <u>H</u>igh speed connection (DSL, Cable Modem, etc.)
+        </LABEL>
+        </span>
+        </td>
+    </tr>
+    <tr>
+        <td valign=center width="5%">
+        <span ID="isptypeSharedConnectionSpn1" style="display:none">
+        <input TABINDEX=4 type="radio" name="connecttype" ID="radioSharedConnection" onClick="window.parent.OnClick();" onfocus="window.parent.OnFocus();">
+        </span>
+        </td>
+        <td valign=center width="95%">
+        <span ID="isptypeSharedConnectionSpn2" style="display:none">
+        <LABEL TABINDEX=-1 ACCESSKEY="C" id=text_SharedConnection for="radioSharedConnection" class="text-primary">
+        Through a shared <u>c</u>onnection on my network
+        </span>
+        </LABEL>
+        </td>
+    </tr>
+    </table>
+    </form>
+
+    <br><br>
+    <SPAN ID=spanScreenResolution>
+    <!-- 
+    This span is used to create the correct amount of vertical space in
+    800x600 screen resolution.  
+    -->
+    <BR><BR>
+    </SPAN>
+
+    <DIV CLASS="text-primary">
+    <ID ID=isptype_Text2>
+    <!-- TODO: Modify explanatory text or remove if not required -->
+    </ID>
+    </DIV>
+
+    <!-- 
+    Insert the string instructing the user to click the next button to continue
+    -->
+    <script>
+    document.write(window.parent.g_ClickNextStr);
+    </script>
+
+    <!-- NAVIGATION BUTTONS -->
+    <!-- 
+    TODO: 
+        * Modify TABINDEX as necessary
+        * Modify ACCESSKEY as necessary
+        * Modify button text as necessary
+    -->
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=5  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:hidden;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=-1 ACCESSKEY="S" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=6  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </TD>
+</TR>
+</TABLE>
+
+</BODY>
+</HTML>
+
+
+

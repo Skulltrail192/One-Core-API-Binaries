@@ -7,6 +7,10 @@ Signature="$Windows NT$"
 [DefaultBranchesServicePacks.WinNt52]
 0=Srv2k3
 
+[DefaultBranchesServicePacks.WinNt60]
+0=LH
+
 [SourceInfsBranches]
 WinXP=update\update_WinXP.inf
 Srv2k3=update\update_srv2k3.inf
+LH=update\update_lh.inf

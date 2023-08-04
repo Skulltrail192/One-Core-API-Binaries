@@ -1,0 +1,123 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="oobestyl.css">
+</head>
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="window.parent.RegKBLoadMe(); window.parent.Agent_Activate('Keybd');"
+      onunload="maincell.visibility='hidden';
+      window.parent.ProcessQueuedEvents();
+      window.parent.Agent_Deactivate();">
+
+<table border=0 cellpadding=0 cellspacing=0 width=100% height=100%>
+<tr>
+    <td ID=leftmargincell width=7%></td>
+    <td ID=maincell valign=middle class="text-primary">
+
+    <br><br>
+    <SPAN ID=LargeResSpc1>
+    </SPAN>
+
+    <SPAN  class="title" ID=KeyBdTitle><ID id=xxtit1>How should dates and currency appear?</ID></SPAN>
+    <br>
+    <span class="text-primary"><id id="txtKeyboardExpl">We'll use the following information to display dates and currency correctly. <b>Changing these settings is optional.</b></id></span>
+
+    <br><br>
+    <SPAN ID=RegionStr>
+    </SPAN>
+    <SPAN ID=LargeResSpc3>
+    </SPAN>
+
+    <br>
+    <!-- Note:  script will make these elements visible later when the select menu contents
+                have been loaded.  This prevents momentarily visibly empty menus -->
+
+    <table ID=RegionTable>
+    <tr>
+        <td>
+        <INPUT type="text" ACCESSKEY="v" ID=RegionName READONLY value="" style="visibility:hidden;width:100%" TABINDEX=-1>
+        </td>
+    </tr>
+    <tr>
+        <td>
+        <select id="selRegion" size=3  TABINDEX=2 style="visibility:hidden" onfocus="window.parent.OnFocus();" onclick="window.parent.OnClick();" onkeyup="window.parent.OnClick();">
+        </select>
+        </td>
+    </tr>
+    </table>
+    <br>
+
+    <SPAN ID=LangStr>
+    </SPAN>
+    <SPAN ID=LargeResSpc4>
+    </SPAN>
+
+    <br>
+    <table ID=LanguageTable>
+    <tr>
+        <td>
+        <INPUT type="text" ACCESSKEY="t" ID=LangName READONLY value="" style="visibility:hidden;width:100%" TABINDEX=-1>
+        </td>
+    </tr>
+    <tr>
+        <td>
+        <select id="selLang" size=3  TABINDEX=2 style="visibility:hidden" onfocus="window.parent.OnFocus();" onclick="window.parent.OnClick();" onkeyup="window.parent.OnClick();">
+        </select>
+        </td>
+    </tr>
+    </table>
+    <br>
+
+    <SPAN ID=KeybdStr>
+    </SPAN>    
+    <SPAN ID=LargeResSpc5>
+    </SPAN>
+
+    <br>
+    <table ID=KeybdTable>
+    <tr>
+        <td>
+        <INPUT type="text" ACCESSKEY="u" ID=KeyboardName READONLY value="" style="visibility:hidden;width:100%" TABINDEX=-1>
+        </td>
+    </tr>
+    <tr>
+        <td>
+        <select id="selKeyboard" size=3  TABINDEX=2 style="visibility:hidden" onfocus="window.parent.OnFocus();" onclick="window.parent.OnClick();" onkeyup="window.parent.OnClick();">
+        </select>
+        </td>
+    </tr>
+    </table>
+
+    <SPAN ID=KeybdStrHint>
+    </SPAN>    
+
+    <script>
+    document.write(window.parent.g_ClickNextStr);
+    </script>
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=3  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:hidden;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=-1 ACCESSKEY="S" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=4  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+
+</body>
+</html>

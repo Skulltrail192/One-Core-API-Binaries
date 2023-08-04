@@ -1,0 +1,94 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="oobestyl.css">
+<script>
+function InitPositions() {
+  if(window.parent.g_bInHighScreenRes)
+    {
+        tabl1.style.top= window.parent.L_NextStrTopPercent_Text;
+    }
+    else
+    {
+        tabl1.style.top=window.parent.L_ClickNextStrTopPercent800_Text;
+    }
+}
+</script>
+</head>
+
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="InitPositions(); window.parent.EULAWarn_LoadMe(); window.parent.Agent_Activate('BadEula');"
+      onunload="window.parent.Agent_Deactivate();">
+
+<table border=0 cellpadding=0 cellspacing=0 width=100% height=100%>
+<tr>
+    <td ID=leftmargincell width=7%></td>
+    <td ID=maincell valign=middle class="text-primary">
+
+    <br><br>
+    <SPAN TABINDEX=-1 >
+        <span class="title">
+        <ID id="EULAWarn_TITLE">Before we can continue...</ID>
+        <br><br>
+        </span>
+    </SPAN>
+
+
+    <SPAN TABINDEX=-1>
+        <!-- may be dynamically changed -->
+        <span class="text-primary">
+        <DIV TABINDEX=-1 id="EULAWarn_INFO1" style="line-height:13pt">
+            <ID id="txtBadEula">You need to accept the End User License Agreement before you can use Windows. This legal agreement between you and Microsoft states the terms of use of Windows.</ID>
+        </DIV>
+        <br>
+        <DIV TABINDEX=-1 id="EULAWarn_ASKDIRECTION" style="line-height:13pt">
+            <ID id=vb>If you don't want to accept the agreement, click the <span class="emphasis-lesser">Shutdown</span> button to turn off your computer.</ID>
+        <br><br>
+        <id id="txtShutdownScreenReturn">When you restart your computer, you'll return to this screen.</id>
+        <br><br><br><br><br>
+        <id id="txtBadeulaAgreement">To read the license agreement, click Back.</id>
+            </span>       
+            
+        </DIV>
+        <br>
+
+    </SPAN>
+
+
+    <table ID=tabl1 tabindex=-1 border=0 style="display:none;">
+    <tr>
+        <td class=BadEulaMsgWidth></td>
+        <td class="text-primary" ID=NextText>
+            <ID id="txtBadEula1">To read the License Agreement, click <span class="emphasis-lesser">Back</span>.</ID>
+        </td>
+    </tr>
+    </table>
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=3  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:hidden;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=-1 ACCESSKEY="x" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnShutdown_Text"><u>S</u>hutdown</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=4  ACCESSKEY="S" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+    
+</tr>
+</table>
+
+
+</body>
+</html>

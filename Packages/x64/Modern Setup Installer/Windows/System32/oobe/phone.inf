@@ -1,0 +1,713 @@
+[Version]
+Signature = $Chicago$
+
+[IsoCodes]
+ALB,,,%Albania%,%not_available%,+389 2 30 90 890
+DZA,,,%Algeria%,%not_available%,213 2 92 33 66 %or% 213 2 37 66 12
+ASM,,,%American_Samoa%,%not_available%,+ 61 2 9870 2131
+AND,,,%Andorra%,900 150 889,+34 91 377 8170
+AGO,,,%Angola%,%not_available%,+27 11 257 0000
+AIA,,,%Anguilla%,%not_available%,%Collect_call_to_activate%
+ATA,,,%Antarctica%,%not_available%,+ 61 2 9870 2131
+ATG,,,%Antigua_and_Barbuda%,%not_available%,%Collect_call_to_activate%
+ARG,,,%Argentina%,0-800-888-8800,54-11-4317-2626
+ARM,,,%Armenia%,%not_available%,7 495 745 54 45
+ABW,,,%Aruba%,%not_available%,%Collect_call_to_activate%
+AUS,,,%Australia%,1800 642 008,+ 61 2 9870 2131
+AUT,,,%Austria%,0800 000 000,+ 43 1795 673 56
+AZE,,,%Azerbaijan%,%not_available%,7 495 745 54 45
+BHS,,,%Bahamas%,%not_available%,%Collect_call_to_activate%
+BHR,,,%Bahrain%,800 943,971 4 397 5443
+BGD,,,%Bangladesh%,%not_available%,+ 65-324-8098
+BRB,,,%Barbados%,%not_available%,%Collect_call_to_activate%
+BLR,,,%Belarus%,%not_available%,7 495 745 54 45
+BEL,,,%Belgium%,0800 40758,+32 2 713 1424
+BLZ,,,%Belize%,%not_available%,%Collect_call_to_activate%
+BEN,,,%Benin%,%not_available%,225 20 32 14 16
+BMU,,,%Bermuda%,%not_available%,%Collect_call_to_activate%
+BTN,,,%Bhutan%,%not_available%,+ 65-324-8098
+BOL,,,%Bolivia%,0-800-0155,%Collect_call_to_activate%
+BIH,,,%Bosnia_and_Herzegovina%,%not_available%,+387 33 277 097
+BWA,,,%Botswana%,%not_available%,+27 11 257 0000
+BVT,,,%Bouvet_Island%,%not_available%,+ 61 2 9870 2131
+BRA,,,%Brazil%,0-800-701-1774,(11) 3328-3396
+IOT,,,%British_Indian_Ocean_Territories%,%not_available%,+27 11 257 0000
+BRN,,,%Brunei_Darussalam%,%not_available%,+ 65-324-8098
+BGR,,,%Bulgaria%,0800-1-5555,+359 2 9657 100
+BFA,,,%Burkina_Faso%,%not_available%,225 20 32 14 16
+BDI,,,%Burundi%,%not_available%,225 20 32 14 16
+KHM,,,%Cambodia%,%not_available%,+ 65-324-8098
+CMR,,,%Cameroon%,%not_available%,225 20 32 14 16
+CAN,,,%Canada%,888-571-2048,716-871-2929
+CPV,,,%Cape_Verde%,%not_available%,225 20 32 14 16
+CYM,,,%Cayman_Islands%,%not_available%,%Collect_call_to_activate%
+CAF,,,%Central_African_Republic%,%not_available%,225 20 32 14 16
+TCD,,,%Chad%,%not_available%,225 20 32 14 16
+CHL,,,%Chile%,800-36-2626,%Collect_call_to_activate%
+CHN,,,%China%,800 830-1832,+ 86 755 8340 9237
+CXR,,,%Christmas_Island%,%not_available%,+ 61 2 9870 2131
+CCK,,,%Cocos_Islands%,%not_available%,+ 61 2 9870 2131
+COL,,,%Colombia%,01 8009-54-5701,%Collect_call_to_activate%
+COM,,,%Comoros%,%not_available%,+27 11 257 0000
+COG,,,%Congo_(DRC)%,%not_available%,225 20 32 14 16
+COK,,,%Cook_Islands%,%not_available%,+ 61 2 9870 2131
+CRI,,,%Costa_Rica%,0800-054-1001,%Collect_call_to_activate%
+CIV,,,%Cote_D'Ivoire%,%not_available%,225 20 32 14 16
+HRV,,,%Croatia%,0800 300 300,+385 1 36 50 762
+CYP,,,%Cyprus%,080 90 900,961 1983 348
+CZE,,,%Czech_Republic%,800 100 074 ,+420 221 777 222
+DNK,,,%Denmark%,807 01315,+ 45 38 487 131
+DJI,,,%Djibouti%,%not_available%,971 4 397 5443
+DMA,,,%Dominica%,%not_available%,%Collect_call_to_activate%
+DOM,,,%Dominican_Republic%,%not_available%,%Collect_call_to_activate%
+TMP,,,%East_Timor%,%not_available%,+ 65-324-8098
+ECU,,,%Ecuador%,%not_available%,%Collect_call_to_activate%
+EGY,,,%Egypt%,%not_available%,+20 2 7911618 %or% +20 2 7911619
+SLV,,,%El_Salvador%,(503) 211 7474,%not_available%
+GNQ,,,%Equatorial_Guinea%,%not_available%,225 20 32 14 16
+ERI,,,%Eritrea%,%not_available%,+27 11 257 0000
+EST,,,%Estonia%,%not_available%,+372 650 4984
+ETH,,,%Ethiopia%,%not_available%,+27 11 257 0000
+FLK,,,%Falkland_Islands_(Islas_Malvinas)%,%not_available%,%Collect_call_to_activate%
+FRO,,,%Faroe_Islands%,%not_available%,+ 45 38 487 131
+FJI,,,%Fiji%,%not_available%,+ 61 2 9870 2131
+FIN,,,%Finland%,0800 770215,+358 800 118 062
+FRA,,,%France%,0 805 11 02 35,+33 1 55 17 40 75
+FXX,,,%France_Metropolitan%,0805 11 02 35, +33 1 55 174 075
+GUF,,,%French_Guiana%,%not_available%,%Collect_call_to_activate%
+PYF,,,%French_Polynesia%,%not_available%,+ 61 2 9870 2131
+ATF,,,%French_Southern_Territories%,%not_available%,+ 61 2 9870 2131
+GAB,,,%Gabon%,%not_available%,225 20 32 14 16
+GMB,,,%Gambia%,%not_available%,225 20 32 14 16
+GEO,,,%Georgia%,%not_available%,7 495 745 54 45
+DEU,,,%Germany%,0800 2848283,+49 69 5007 0025
+GHA,,,%Ghana%,%not_available%,+233 21 232 041 %or% +233 21 23 45 62
+GIB,,,%Gibraltar%,%not_available%,+ 44 870 2411963
+GRC,,,%Greece%,800 11 43100,+ 44 870 2411963
+GRL,,,%Greenland%,%not_available%,+ 45 38 487 131
+GRD,,,%Grenada%,%not_available%,%Collect_call_to_activate%
+GLP,,,%Guadeloupe%,%not_available%,%Collect_call_to_activate%
+GUM,,,%Guam%,%not_available%,+ 61 2 9870 2131
+GTM,,,%Guatemala%,(502) 470-0877,%not_available%
+GIN,,,%Guinea%,%not_available%,225 20 32 14 16
+GNB,,,%Guinea-Bissau%,%not_available%,225 20 32 14 16
+GUY,,,%Guyana%,%not_available%,%Collect_call_to_activate%
+HTI,,,%Haiti%,%not_available%,%Collect_call_to_activate%
+HMD,,,%Heard_Island_and_Mcdonald_Islands%,%not_available%,+ 44 870 2411963
+HND,,,%Honduras%,%not_available%,(506) 298-2000
+HKG,,,%Hong_Kong%,%not_available%,+ 852 2904-2198
+HUN,,,%Hungary%,06 (80) 017-365,%Hungarian_toll_activation_numbers%
+ISL,,,%Iceland%,%not_available%,+ 47 23 162 126
+IND,,,%India%,1600 1111 00 %or% 000800 650 1122,+91 11 629 2640 %or% +65-324-8098
+IDN,,,%Indonesia%,001-803-65-7668,+ 65-324-8098
+IRL,,,%Ireland%,1800 930031,+353 1 407 3094
+ISR,,,%Israel%,1-800-350-444 %or% 00-800-228-482-83,+ 44 870 2411963
+ITA,,,%Italy%,800 531042,+39 02 696 334 37
+JAM,,,%Jamaica%,%not_available%,%Collect_call_to_activate%
+JPN,,,%Japan%,0120-801-734,+81-48-226-5731
+JOR,,,%Jordan%,0800 22 101,961 1 983 348
+KAZ,,,%Kazakhstan%,8 800 080-1001 %(free_for_Kazakhstan)%, +7 (3272) 98-01-27 %(free_for_Almaty)%
+KEN,,,%Kenya%,%not_available%,+27 11 257 0000
+KIR,,,%Kiribati%,%not_available%,+ 61 2 9870 2131
+KOR,,,%Korea%,080-985-2000,1577-9700
+KWT,,,%Kuwait%,%not_available%,965 243 1071
+KGZ,,,%Kyrgyzstan%,%not_available%,7 495 745 54 45
+LAO,,,%Lao_Peoples_Democratic_Republic%,%not_available%,+ 65-324-8098
+LVA,,,%Latvia%,%not_available%,371 760 5004
+LBN,,,%Lebanon%,%not_available%,961 1 983 348
+LSO,,,%Lesotho%,%not_available%,+27 11 257 0000
+LBR,,,%Liberia%,%not_available%,225 20 32 14 16
+LIE,,,%Liechtenstein%,%not_available%,+41 1 800 9201
+LTU,,,%Lithuania%,%not_available%,+370 5 2740363
+LUX,,,%Luxembourg%,8002 99 77,+33 1 55 174 075
+MAC,,,%Macao_SAR%,%not_available%,+ 852 2904-2198
+MKD,,,%Macedonia_(FYROM)%,%not_available%,+389 2 30 90 890
+MDG,,,%Madagascar%,%not_available%,+27 11 257 0000
+MWI,,,%Malawi%,%not_available%,+27 11 257 0000
+MYS,,,%Malaysia%,%not_available%, (03) 7712-4389 %or% (02) 6324-8098
+MDV,,,%Maldives%,%not_available%,+ 65-324-8098
+MLI,,,%Mali%,%not_available%,225 20 32 14 16
+MLT,,,%Malta%,0800 765432,961 1983 348
+MHL,,,%Marshall_Islands%,%not_available%,+ 61 2 9870 2131
+MTQ,,,%Martinique%,%not_available%,%Collect_call_to_activate%
+MRT,,,%Mauritania%,%not_available%,212 22 40 88 33
+MUS,,,%Mauritius%,%not_available%,+27 11 257 0000
+MYT,,,%Mayotte%,%not_available%,+ 61 2 9870 2131
+MEX,,,%Mexico%,01-800-123-0143,%Collect_call_to_activate%
+FSM,,,%Micronesia%,%not_available%,+ 61 2 9870 2131
+MDA,,,%Moldova%,%not_available%,380 44 230 5102 (Kyiv)
+MCO,,,%Monaco%,0 805 11 02 35,+33 1 55 17 40 75
+MNG,,,%Mongolia%,%not_available%,7 495 745 54 45
+MSR,,,%Montserrat%,%not_available%,%Collect_call_to_activate%
+MAR,,,%Morocco%,%not_available%,212 22 95 88 88
+MOZ,,,%Mozambique%,%not_available%,+27 11 257 0000
+MMR,,,%Myanmar%,%not_available%,+ 65-324-8098
+NAM,,,%Namibia%,%not_available%,+27 11 257 0000
+NRU,,,%Nauru%,%not_available%,+ 61 2 9870 2131
+NPL,,,%Nepal%,%not_available%,+ 65-324-8098
+NLD,,,%Netherlands%,0800 023 3487,+31 20 346 9363
+ANT,,,%Netherlands_Antilles%,%not_available%,%Collect_call_to_activate%
+NCL,,,%New_Caledonia%,%not_available%,+ 61 2 9870 2131
+NZL,,,%New_Zealand%,0800 676 334,+64 9 356 3093
+NIC,,,%Nicaragua%,(001) (800) 506-0007,%not_available%
+NER,,,%Niger%,%not_available%,225 20 32 14 16
+NGA,,,%Nigeria%,%not_available%,+234 1 27 10 156
+NIU,,,%Niue%,%not_available%,+ 61 2 9870 2131
+NFK,,,%Norfolk_Island%,%not_available%,+ 61 2 9870 2131
+MNP,,,%Northern_Mariana_Islands%,%not_available%,+ 61 2 9870 2131
+NOR,,,%Norway%,800 56615,+47 23 162 126
+OMN,,,%Oman%,%not_available%,968 691 191
+PAK,,,%Pakistan%,%not_available%,92 21 111 674 357
+PLW,,,%Palau%,%not_available%,+ 61 2 9870 2131
+PAN,,,%Panama%,(00) (800) 5060001,%not_available%
+PNG,,,%Papua_New_Guinea%,%not_available%,+ 61 2 9870 2131
+PRY,,,%Paraguay%,%not_available%,%Collect_call_to_activate%
+PER,,,%Peru%,0-800-50-810,%Collect_call_to_activate%
+PHL,,,%Philippines%,00-800-2468-1668,+ 65-324-8098
+PCN,,,%Pitcairn%,%not_available%,+64 9 356 3093
+POL,,,%Poland%,%not_available%, 0 801 308 801 %(local_connection_fee)% %or% +48 (22) 594 19 99
+PRT,,,%Portugal%,00800 22848283,+351 214 154 065
+PRI,,,%Puerto_Rico%,1-888-508-2398,%Collect_call_to_activate%
+QAT,,,%Qatar%,%not_available%,971 4 397 5443
+REU,,,%Reunion%,%not_available%,+27 11 257 0000
+ROM,,,%Romania%,%not_available%,+40 1 203 6161
+RUS,,,%Russian_Federation%,8 800 200 8002,7 495 745 5445 %(free_for_Moscow)%
+RWA,,,%Rwanda%,%not_available%,+27 11 257 0000
+SHN,,,%Saint_Helena%,%not_available%,+27 11 257 0000
+KNA,,,%Saint_Kitts_and_Nevis%,%not_available%,%Collect_call_to_activate%
+LCA,,,%Saint_Lucia%,%not_available%,%Collect_call_to_activate%
+SPM,,,%Saint_Pierre_and_Miquelon%,%not_available%,716-871-2929
+VCT,,,%Saint_Vincent_and_The_Grenadines%,%not_available%,%Collect_call_to_activate%
+WSM,,,%Samoa%,%not_available%,+ 61 2 9870 2131
+SMR,,,%San_Marino%,800 531042,+39 02 696 334 37
+STP,,,%Sao_Tome_and_Principe%,%not_available%,225 20 32 14 16
+SAU,,,%Saudi_Arabia%,800 124 22 55,966 1 218 0821
+SEN,,,%Senegal%,%not_available%,225 20 32 14 16
+SCG,,,%Serbia_and_Montenegro%,%not_available%,+381 11 330 55 00
+SYC,,,%Seychelles%,%not_available%,+27 11 257 0000
+SLE,,,%Sierra_Leone%,%not_available%,225 20 32 14 16
+SGP,,,%Singapore%,1800-324-8098,+ 65-324-8098
+SVK,,,%Slovakia%,0800 178 278 ,+421 (2) 67 296 297
+SVN,,,%Slovenia%,%not_available%,+386 1 5853 449
+SLB,,,%Solomon_Islands%,%not_available%,+ 61 2 9870 2131
+SLM,,,%Somalia%,%not_available%,+27 11 257 0000
+ZAF,,,%South_Africa%,0800 99 56 37,+27 11 257 0000
+SGS,,,%South_Georgia_and_Sandwich_Islands%,%not_available%,+ 61 2 9870 2131
+ESP,,,%Spain%,900 150 889,+ 34 91 377 8170
+LKA,,,%Sri_Lanka%,%not_available%,+ 65-324-8098
+SUR,,,%Suriname%,%not_available%,%Collect_call_to_activate%
+SJM,,,%Svalbard_and_Jan_Mayen%,%not_available%,+47 23 162 126
+SWZ,,,%Swaziland%,%not_available%,+27 11 257 0000
+SWE,,,%Sweden%,020-140 0015,+46 8 587 704 23
+CHE,,,%Switzerland%,0800111060,+41 1 800 9201
+TWN,,,%Taiwan%,00-800-2468-1668,+886 2-8771 7276
+TJK,,,%Tajikistan%,%not_available%,7 495 745 54 45
+TZA,,,%Tanzania%,%not_available%,+27 11 257 0000
+THA,,,%Thailand%,001-800-2468-1668,+ 65-324-8098
+TGO,,,%Togo%,%not_available%,225 20 32 14 16
+TKL,,,%Tokelau%,%not_available%,+ 61 2 9870 2131
+TON,,,%Tonga%,%not_available%,+ 61 2 9870 2131
+TTO,,,%Trinidad_and_Tobago%,%not_available%,%Collect_call_to_activate%
+TUN,,,%Tunisia%,%not_available%,216 1 969 902
+TUR,,,%Turkey%,%not_available%,90 212 33 66 999
+TKM,,,%Turkmenistan%,%not_available%,7 495 745 54 45
+TCA,,,%Turks_and_Caicos_Islands%,%not_available%,%Collect_call_to_activate%
+TUV,,,%Tuvalu%,%not_available%,+ 61 2 9870 2131
+UGA,,,%Uganda%,%not_available%,+27 11 257 0000
+UKR,,,%Ukraine%,%not_available%,380 44 230 51 02 %(free_for_Kyiv)%
+ARE,,,%United_Arab_Emirates%,800 4089,971 4 397 5443
+GBR,,,%United_Kingdom%,0800 018 8354,+ 44 870 2411963
+USA,,,%United_States%,888-571-2048,716-871-2929
+UMI,,,%United_States_Minor_Outlying_Islands%,888-571-2048,716-871-2929
+URY,,,%Uruguay%,000-4-054-107,%Collect_call_to_activate%
+UZB,,,%Uzbekistan%,%not_available%,7 495 745 54 45
+VUT,,,%Vanuatu%,%not_available%,+64 9 356 3093
+VAT,,,%Vatican_City_State%,800 531042,+39 02 696 334 37
+VEN,,,%Venezuela%,800-1-5550,%Collect_call_to_activate%
+VNM,,,%Viet_Nam%,%not_available%,+ 65-324-8098
+VGB,,,%Virgin_Islands_(British)%,%not_available%,%Collect_call_to_activate%
+VIR,,,%Virgin_Islands_(U.S.)%,%not_available%,%Collect_call_to_activate%
+WLF,,,%Wallis_And_Futuna_Islands%,%not_available%,+ 61 2 9870 2131
+YEM,,,%Yemen%,%not_available%,971 4 397 5443
+ZMB,,,%Zambia%,%not_available%,+27 11 257 0000
+ZWE,,,%Zimbabwe%,%not_available%,+27 11 257 0000
+
+[TapiCodes]
+1 = USA
+7 = RUS
+20 = EGY
+27 = ZAF
+30 = GRC
+31 = NLD
+32 = BEL
+33 = FRA
+34 = ESP
+36 = HUN
+39 = ITA
+40 = ROM
+41 = CHE
+43 = AUT
+44 = GBR
+45 = DNK
+46 = SWE
+47 = NOR
+48 = POL
+49 = DEU
+51 = PER
+52 = MEX
+53 = CUB
+54 = ARG
+55 = BRA
+56 = CHL
+57 = COL
+58 = VEN
+60 = MYS
+61 = AUS
+62 = IDN
+63 = PHL
+64 = NZL
+65 = SGP
+66 = THA
+81 = JPN
+82 = KOR
+84 = VNM
+86 = CHN
+90 = TUR
+91 = IND
+92 = PAK
+93 = AFG
+94 = LKA
+95 = MMR
+98 = IRN
+101 = AIA
+102 = ATG
+103 = BHS
+104 = BRB
+105 = BMU
+106 = VGB
+107 = CAN
+108 = CYM
+109 = DMA
+110 = DOM
+111 = GRD
+112 = JAM
+113 = MSR
+115 = KNA
+116 = VCT
+117 = TTO
+118 = TCA
+120 = ATG
+121 = PRI
+122 = LCA
+123 = VIR
+124 = GUM
+212 = MAR
+213 = DZA
+216 = TUN
+218 = LBY
+220 = GMB
+221 = SEN
+222 = MRT
+223 = MLI
+224 = GIN
+225 =
+226 = BFA
+227 = NER
+228 = TGO
+229 = BEN
+230 = MUS
+231 = LBR
+232 = SLE
+233 = GHA
+234 = NGA
+235 = TCD
+236 = CAF
+237 = CMR
+238 = CPV
+239 = STP
+240 = GNQ
+241 = GAB
+242 = COG
+243 = COD
+244 = AGO
+245 = GNB
+246 =
+247 =
+248 = SYC
+249 = SDN
+250 = RWA
+251 = ETH
+252 = SOM
+253 = DJI
+254 = KEN
+255 = TZA
+256 = UGA
+257 = BDI
+258 = MOZ
+260 = ZMB
+261 = MDG
+262 = REU
+263 = ZWE
+264 = NAM
+265 = MWI
+266 = LSO
+267 = BWA
+268 = SWZ
+269 = MYT
+290 = SHN
+291 = ERI
+297 = ABW
+298 = FRO
+299 = GRL
+350 = GIB
+351 = PRT
+352 = LUX
+353 = IRL
+354 = ISL
+355 = ALB
+356 = MLT
+357 = CYP
+358 = FIN
+359 = BGR
+370 = LTU
+371 = LVA
+372 = EST
+373 = MDA
+374 = ARM
+375 = BLR
+376 = AND
+377 = MCO
+378 = SMR
+379 = VAT
+380 = UKR
+381 = SCG
+385 = HRV
+386 = SVN
+387 = BIH
+389 = MKD
+420 = CZE
+421 = SVK
+423 = LIE
+500 = FLK
+501 = BLZ
+502 = GTM
+503 = SLV
+504 = HND
+505 = NIC
+506 = CRI
+507 = PAN
+508 = SPM
+509 = HTI
+590 = GLP
+591 = BOL
+592 = GUY
+593 = ECU
+594 = GUF
+595 = PRY
+596 = MTQ
+597 = SUR
+598 = URY
+599 = ANT
+670 = TMP
+672 = NFK
+673 = BRN
+674 = NRU
+675 = PNG
+676 = TON
+677 = SLB
+678 = VUT
+679 = FJI
+680 = PLW
+681 = WLF
+682 = COK
+683 = NIU
+684 = ASM
+685 = WSM
+686 = KIR
+687 = NCL
+688 = TUV
+689 = PYF
+690 = TKL
+691 = FSM
+692 = MHL
+705 = KAZ
+800 =
+850 = PRK
+852 = HKG
+853 = MAC
+855 = KHM
+856 = LAO
+870 =
+871 =
+872 =
+873 =
+874 =
+880 = BGD
+886 = TWN
+960 = MDV
+961 = LBN
+962 = JOR
+963 = SYR
+964 = IRQ
+965 = KWT
+966 = SAU
+967 = YEM
+968 = OMN
+971 = ARE
+972 = ISR
+973 = BHR
+974 = QAT
+975 = BTN
+976 = MNG
+977 = NPL
+992 = TJK
+993 = TKM
+994 = AZE
+995 = GEO
+996 = KGZ
+998 = UZB
+2691 = COM
+5399 =
+5901 = FXX
+6101 = CCK
+
+[Strings]
+not_available       =   "not available"
+Albania         =   "Albania"
+Algeria         =   "Algeria"
+American_Samoa      =   "American Samoa"
+Andorra         =   "Andorra"
+Angola          =   "Angola"
+Anguilla        =   "Anguilla"
+Antarctica      =   "Antarctica"
+Antigua_and_Barbuda =   "Antigua and Barbuda"
+Argentina       =   "Argentina"
+Armenia         =   "Armenia"
+Aruba           =   "Aruba"
+Australia       =   "Australia"
+Austria         =   "Austria"
+Azerbaijan      =   "Azerbaijan"
+Bahamas         =   "Bahamas"
+Bahrain         =   "Bahrain"
+Bangladesh      =   "Bangladesh"
+Barbados        =   "Barbados"
+Belarus         =   "Belarus"
+Belgium         =   "Belgium"
+Belize          =   "Belize"
+Benin           =   "Benin"
+Bermuda         =   "Bermuda"
+Bhutan          =   "Bhutan"
+Bolivia         =   "Bolivia"
+Bosnia_and_Herzegovina  =   "Bosnia and Herzegovina"
+Botswana        =   "Botswana"
+Bouvet_Island       =   "Bouvet Island"
+Brazil          =   "Brazil"
+British_Indian_Ocean_Territories="British Indian Ocean Territories"
+Brunei_Darussalam   =   "Brunei Darussalam"
+Bulgaria        =   "Bulgaria"
+Burkina_Faso        =   "Burkina Faso"
+Burundi         =   "Burundi"
+Cambodia        =   "Cambodia"
+Cameroon        =   "Cameroon"
+Canada          =   "Canada"
+Cape_Verde      =   "Cape Verde"
+Cayman_Islands      =   "Cayman Islands"
+Central_African_Republic=   "Central African Republic"
+Chad            =   "Chad"
+Chile           =   "Chile"
+China           =   "China"
+Christmas_Island    =   "Christmas Island"
+Cocos_Islands       =   "Cocos Islands"
+Colombia        =   "Colombia"
+Comoros         =   "Comoros"
+Congo_(DRC)     =   "Congo (DRC)"
+Cook_Islands        =   "Cook Islands"
+Costa_Rica      =   "Costa Rica"
+Cote_D'Ivoire       =   "Cote D'Ivoire"
+Croatia         =   "Croatia"
+Cyprus          =   "Cyprus"
+Czech_Republic      =   "Czech Republic"
+Denmark         =   "Denmark"
+Djibouti        =   "Djibouti"
+Dominica        =   "Dominica"
+Dominican_Republic  =   "Dominican Republic"
+East_Timor      =   "East Timor"
+Ecuador         =   "Ecuador"
+Egypt           =   "Egypt"
+El_Salvador     =   "El Salvador"
+Equatorial_Guinea   =   "Equatorial Guinea"
+Eritrea         =   "Eritrea"
+Estonia         =   "Estonia"
+Ethiopia        =   "Ethiopia"
+Falkland_Islands_(Islas_Malvinas)="Falkland Islands (Islas Malvinas)"
+Faroe_Islands       =   "Faroe Islands"
+Fiji            =   "Fiji"
+Finland         =   "Finland"
+France          =   "France"
+France_Metropolitan =   "France Metropolitan"
+French_Guiana       =   "French Guiana"
+French_Polynesia    =   "French Polynesia"
+French_Southern_Territories=    "French Southern Territories"
+Gabon           =   "Gabon"
+Gambia          =   "Gambia"
+Georgia         =   "Georgia"
+Germany         =   "Germany"
+Ghana           =   "Ghana"
+Gibraltar       =   "Gibraltar"
+Greece          =   "Greece"
+Greenland       =   "Greenland"
+Grenada         =   "Grenada"
+Guadeloupe      =   "Guadeloupe"
+Guam            =   "Guam"
+Guatemala       =   "Guatemala"
+Guinea          =   "Guinea"
+Guinea-Bissau       =   "Guinea-Bissau"
+Guyana          =   "Guyana"
+Haiti           =   "Haiti"
+Heard_Island_and_Mcdonald_Islands="Heard Island and Mcdonald Islands"
+Honduras        =   "Honduras"
+Hong_Kong       =   "Hong Kong"
+Hungary         =   "Hungary"
+Iceland         =   "Iceland"
+India           =   "India"
+Indonesia       =   "Indonesia"
+Ireland         =   "Ireland"
+Israel          =   "Israel"
+Italy           =   "Italy"
+Jamaica         =   "Jamaica"
+Japan           =   "Japan"
+Jordan          =   "Jordan"
+Kazakhstan      =   "Kazakhstan"
+Kenya           =   "Kenya"
+Kiribati        =   "Kiribati"
+Korea           =   "Korea"
+Kuwait          =   "Kuwait"
+Kyrgyzstan      =   "Kyrgyzstan"
+Lao_Peoples_Democratic_Republic ="Lao Peoples Democratic Republic"
+Latvia          =   "Latvia"
+Lebanon         =   "Lebanon"
+Lesotho         =   "Lesotho"
+Liberia         =   "Liberia"
+Liechtenstein       =   "Liechtenstein"
+Lithuania       =   "Lithuania"
+Luxembourg      =   "Luxembourg"
+Macao_SAR           =   "Macao SAR"
+Macedonia_(FYROM)   =   "Macedonia (FYROM)"
+Madagascar      =   "Madagascar"
+Malawi          =   "Malawi"
+Malaysia        =   "Malaysia"
+Maldives        =   "Maldives"
+Mali            =   "Mali"
+Malta           =   "Malta"
+Marshall_Islands    =   "Marshall Islands"
+Martinique      =   "Martinique"
+Mauritania      =   "Mauritania"
+Mauritius       =   "Mauritius"
+Mayotte         =   "Mayotte"
+Mexico          =   "Mexico"
+Micronesia      =   "Micronesia"
+Moldova         =   "Moldova"
+Monaco          =   "Monaco"
+Mongolia        =   "Mongolia"
+Montserrat      =   "Montserrat"
+Morocco         =   "Morocco"
+Mozambique      =   "Mozambique"
+Myanmar         =   "Myanmar"
+Namibia         =   "Namibia"
+Nauru           =   "Nauru"
+Nepal           =   "Nepal"
+Netherlands     =   "Netherlands"
+Netherlands_Antilles    =   "Netherlands Antilles"
+New_Caledonia       =   "New Caledonia"
+New_Zealand     =   "New Zealand"
+Nicaragua       =   "Nicaragua"
+Niger           =   "Niger"
+Nigeria         =   "Nigeria"
+Niue            =   "Niue"
+Norfolk_Island      =   "Norfolk Island"
+Northern_Mariana_Islands=   "Northern Mariana Islands"
+Norway          =   "Norway"
+Oman            =   "Oman"
+Pakistan        =   "Pakistan"
+Palau           =   "Palau"
+Panama          =   "Panama"
+Papua_New_Guinea    =   "Papua New Guinea"
+Paraguay        =   "Paraguay"
+Peru            =   "Peru"
+Philippines     =   "Philippines"
+Pitcairn        =   "Pitcairn"
+Poland          =   "Poland"
+Portugal        =   "Portugal"
+Puerto_Rico     =   "Puerto Rico"
+Qatar           =   "Qatar"
+Reunion         =   "Reunion"
+Romania         =   "Romania"
+Russian_Federation  =   "Russian Federation"
+Rwanda          =   "Rwanda"
+Saint_Helena        =   "Saint Helena"
+Saint_Kitts_and_Nevis   =   "Saint Kitts and Nevis"
+Saint_Lucia     =   "Saint Lucia"
+Saint_Pierre_and_Miquelon=  "Saint Pierre and Miquelon"
+Saint_Vincent_and_The_Grenadines="Saint Vincent and The Grenadines"
+Samoa           =   "Samoa"
+San_Marino      =   "San Marino"
+Sao_Tome_and_Principe   =   "Sao Tome and Principe"
+Saudi_Arabia        =   "Saudi Arabia"
+Senegal         =   "Senegal"
+Serbia_and_Montenegro   = "Serbia and Montenegro"
+Seychelles      =   "Seychelles"
+Sierra_Leone        =   "Sierra Leone"
+Singapore       =   "Singapore"
+Slovakia        =   "Slovakia"
+Slovenia        =   "Slovenia"
+Solomon_Islands     =   "Solomon Islands"
+Somalia         =   "Somalia"
+South_Africa        =   "South Africa"
+South_Georgia_and_Sandwich_Islands="South Georgia and Sandwich Islands"
+Spain           =   "Spain"
+Sri_Lanka       =   "Sri Lanka"
+Suriname        =   "Suriname"
+Svalbard_and_Jan_Mayen  =   "Svalbard and Jan Mayen"
+Swaziland       =   "Swaziland"
+Sweden          =   "Sweden"
+Switzerland     =   "Switzerland"
+Taiwan          =   "Taiwan"
+Tajikistan      =   "Tajikistan"
+Tanzania        =   "Tanzania"
+Thailand        =   "Thailand"
+Togo            =   "Togo"
+Tokelau         =   "Tokelau"
+Tonga           =   "Tonga"
+Trinidad_and_Tobago =   "Trinidad and Tobago"
+Tunisia         =   "Tunisia"
+Turkey          =   "Turkey"
+Turkmenistan        =   "Turkmenistan"
+Turks_and_Caicos_Islands=   "Turks and Caicos Islands"
+Tuvalu          =   "Tuvalu"
+Uganda          =   "Uganda"
+Ukraine         =   "Ukraine"
+United_Arab_Emirates    =   "United Arab Emirates"
+United_Kingdom      =   "United Kingdom"
+United_States       =   "United States"
+United_States_Minor_Outlying_Islands="United States Minor Outlying Islands"
+Uruguay         =   "Uruguay"
+Uzbekistan      =   "Uzbekistan"
+Vanuatu         =   "Vanuatu"
+Vatican_City_State  =   "Vatican City State"
+Venezuela       =   "Venezuela"
+Viet_Nam        =   "Viet Nam"
+Virgin_Islands_(British)=   "Virgin Islands (British)"
+Virgin_Islands_(U.S.)   =   "Virgin Islands (U.S.)"
+Wallis_And_Futuna_Islands=  "Wallis And Futuna Islands"
+Yemen           =   "Yemen"
+Zambia          =   "Zambia"
+Zimbabwe        =   "Zimbabwe"
+or          =   "or"
+(free_for_Moscow)   =   "(free for Moscow)"
+(free_for_Kyiv)     =   "(free for Kyiv)"
+(free_for_Kazakhstan)   =   "(free for Kazakhstan)"
+(local_connection_fee)  =   "(local connection fee)"
+(free_for_Almaty)       =   "(free_for_Almaty)"   
+Hungarian_toll_activation_numbers = "Phone: 06 (1) 267-4636 / SMS (mobile): 06 (20) 962-5848 (Send Installation ID SMS message and receive Confirmation ID response.)"
+Collect_call_to_activate  = "To activate your product please make a collect call to 54-11-4317-2626. (You will not be charged for the call)"
+

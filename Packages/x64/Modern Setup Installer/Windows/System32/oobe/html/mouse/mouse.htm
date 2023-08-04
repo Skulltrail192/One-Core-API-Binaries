@@ -1,0 +1,99 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="../../setup/oobestyl.css">
+<script>
+function LocInit() {
+   if(window.parent.g_bInHighScreenRes) {
+     spcspan.style.visibility='hidden';
+   }
+}
+
+
+var L_MouseContStr_Text="<ID id=mou_s3>If you are comfortable using the mouse, click </ID>";
+var L_MouseNextStr_Text="<ID id=dd3>Next</ID>";
+var L_MouseContStr2_Text="<ID id=dd44>.<br>To return to the previous screen, click </ID>";
+var L_MouseNextStr2_Text="<ID id=mou_s4>Back</ID>";
+var L_MousePeriod_Text="<ID id=mou_s5>.</ID>";
+
+var L_MouseClickNextStrTopPercent800_Text="80%";
+var L_MouseClickNextStrTopPercent1024_Text="84%";
+var L_MouseClickNextStrLeftPercent_Text="14%";
+
+var L_MouseClickNextStr = "<table tabindex=-1 border=0 style=\"position:absolute; top: " + ((!window.parent.g_bInHighScreenRes) ? L_MouseClickNextStrTopPercent800_Text : L_MouseClickNextStrTopPercent1024_Text) + "; left:2%;\"><tr><td width="+L_MouseClickNextStrLeftPercent_Text+"></td>"
++"<td class=\"text-primary\" ID=NextText>"+L_MouseContStr_Text+" <span class=\"emphasis-lesser\">" +L_MouseNextStr_Text+"</span>"+L_MouseContStr2_Text+"<span class=\"emphasis-lesser\">" +L_MouseNextStr2_Text+"</span>"+L_MousePeriod_Text+"</td></tr></table>";
+
+var L_MouseNextStrTopPercent_Text="83%";
+
+
+</script>
+
+</head>
+
+<body style="background-color:transparent; background-repeat: no-repeat;" tabindex=-1 onload="LocInit(); window.parent.MouseTut_LoadMe();window.parent.Agent_Activate('MouseTut');"
+      onunload="window.parent.Agent_Deactivate();">
+
+
+    <table align=center border=0 cellpadding=0 cellspacing=0 width="100%" height="100%"><tr> <td ID=leftmargincell width=7%></td>
+<td ID=maincell class="text-primary">
+<br><br>
+
+<span class="title"><ID id=mou_s1>
+Learn to use the mouse</ID>
+</span>
+
+<br><br>
+
+<div class="text-primary"ID id=mou_s2>
+You can use the mouse to interact with items on your screen as you would use your hands to interact with objects in the physical world. You can move objects, open them, change them, or delete them, among other things.</div>
+<br><br>
+<TABLE border=0 align=center>
+<tr>
+    <td align=middle>
+    <img src="images/mouseimg.gif" align=middle>
+    </td>
+</tr>
+<tr>
+    <td valign=middle><span class="text-primary" ID=tuttxt1><ID id=mtutstr1>To begin the mouse <u>t</u>utorial, click: </ID></span>&nbsp;
+    <BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=4  ACCESSKEY="T" style="visibility:visible;"></BUTTON>
+    </td>
+</tr>
+</table>
+<br>
+<span ID=spcspan> 
+<br><br>
+</span>
+
+<script>
+  document.write(L_MouseClickNextStr);
+</script>
+</span>
+
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=5 ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="TempBtnLocalText" style="visibility:hidden;"><label for=btnTemp><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btntemp" class="newbuttonsSkip" TABINDEX=-1 ACCESSKEY="S" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnSkip><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsNext" TABINDEX=6  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+
+
+</body>
+</html>
+

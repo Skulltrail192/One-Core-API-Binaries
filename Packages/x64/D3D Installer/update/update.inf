@@ -25,7 +25,7 @@
 [Strings]
     HelpLink 				= "http://shorthornproject.com"
     URLInfoAbout 			= "http://shorthornproject.com"
-	D3DR_VERSION            = "2.10.0.0"
+	D3DR_VERSION            = "3.0.0"
 	SP_TITLE                = "One-Core-API D3D Runtime"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAD3DR"
@@ -34,6 +34,7 @@
 	SERVICEPACKSOURCEFILES  = "One-Core-API D3D Runtime"
 	LatestBaseUpdateFail    = "Please Install latest One-Core-API Base first!"
 	LatestAPISetUpdateFail  = "Please Install latest One-Core-API API-SET first!"
+	LatestBrandingUpdateFail  = "Please Install latest One-Core-API Windows Modern Branding first!"
     PARENT_DISPLAY_NAME     = "One-Core-API"
 	FNTCACHESVC_DISPLAY_NAME="Windows Font Cache Service"
 	FNTCACHESVC_DESCRIPTION ="Optimizes performance of applications by caching commonly used font data. Applications will start this service if it is not already running. It can be disabled, though doing so will degrade application performance."
@@ -42,6 +43,7 @@
 [Prerequisite]
 	condition=SingleOp,LatestUpdateCheck1.Section
 	condition=SingleOp,LatestUpdateCheck2.Section
+	condition=SingleOp,LatestUpdateCheck3.Section
 	
 [LatestUpdateCheck1.Section]
     EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCAB",Installed,0x10001,==,1
@@ -49,7 +51,11 @@
 
 [LatestUpdateCheck2.Section]
     EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCAAS",Installed,0x10001,==,1
-    Display_String="%LatestAPISetUpdateFail%"		
+    Display_String="%LatestAPISetUpdateFail%"
+
+[LatestUpdateCheck3.Section]
+    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCAWMB",Installed,0x10001,==,1
+    Display_String="%LatestBrandingUpdateFail%"		
 	
 [Product.Add.Reg]
 	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed",0x10001,1
@@ -81,7 +87,6 @@
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files
 	CopyFiles                  = CopyAlways.SysWOW64.files
-	CopyFiles                  = CopyAlways.Branding.Main.files	
 	
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg
@@ -92,7 +97,6 @@
 [DestinationDirs]
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
 	CopyAlways.SysWOW64.files=10,SysWOW64  ; %windir%\system32 (don't delay until reboot)
-	CopyAlways.Branding.Main.files = 10 ; %windir%	
 	
 [CopyAlways.System32.Files]
     d2d1.dll,amd64/d2d1.dll
@@ -111,11 +115,7 @@
 	wined3d.dll,amd64/wined3d.dll	
 	fntcache.dll,amd64/fntcache.dll
 	vcruntime140.dll,amd64/vcruntime140.dll
-	wineft2.dll,amd64/wineft2.dll
-	
-[CopyAlways.Branding.Main.files]
-	Branding\Basebrd\basebrd.dll, Branding\Basebrd\basebrd.dll	
-	Branding\ShellBrd\shellbrd.dll, Branding\ShellBrd\shellbrd.dll		
+	wineft2.dll,amd64/wineft2.dll	
 	
 [CopyAlways.SysWOW64.Files]
     d2d1.dll,i386/wd2d1.dll
@@ -170,8 +170,6 @@
 	i386/wdxgi.dll = 1
 	i386/fntcache.dll = 1
 	i386/wwined3d.dll = 1	
-	Branding\Basebrd\basebrd.dll = 1 
-	Branding\ShellBrd\shellbrd.dll = 1		
 
 [UninstallSections]
     GlobalRegistryChanges, GlobalRegistryChanges.UnInstall

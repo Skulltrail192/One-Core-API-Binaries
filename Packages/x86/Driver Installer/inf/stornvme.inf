@@ -9,13 +9,14 @@ ClassGUID   = {4D36E97B-E325-11CE-BFC1-08002BE10318}
 Provider    = %MSFT%
 PnpLockdown = 1
 DriverVer=06/21/2006,6.1.7601.23403
+LayoutFile=layout.inf
 
-[SourceDisksNames]
-1 = %DiskName%,,,"\I386"
-1 = %DiskName%,,,
+; [SourceDisksNames]
+; 1 = %DiskName%,,,"\I386"
+; 1 = %DiskName%,,,
 
-[SourceDisksFiles]
-stornvme.sys = 1
+; [SourceDisksFiles]
+; stornvme.sys = 1
 
 [DestinationDirs]
 ; DIRID_DRIVERS
@@ -32,7 +33,7 @@ ExcludeFromSelect = *
 %PCI\CC_010802.DeviceDesc% = Stornvme_Inst, PCI\CC_010802
 
 [Stornvme_Inst]
-CopyFiles = Stornvme_copyfiles
+CopyFiles = @stornvme.sys
 
 [Stornvme_copyfiles]
 stornvme.sys,,,0x100

@@ -1,0 +1,80 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="oobestyl.css">
+</head>
+
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="window.parent.jndomainLoadMe2(); window.parent.Agent_Activate('JNDOM_A');"
+      onunload="window.parent.Agent_Deactivate();">
+
+<table border=0 cellpadding=0 cellspacing=0 width=100% height=100%>
+<tr>
+    <td ID=leftmargincell width=7%></td>
+    <td ID=maincell valign=middle class="text-primary">
+    <br><br>
+
+    <span class="title">
+        <ID id=JoinDomainTitle>Enter your domain settings</ID>
+    </span>
+
+    <br><br>
+    <span class="text-primary">
+        <ID id="txtJoinDomain">Enter the name and password of a user who is authorized to join this machine to the domain.  The name should be in the form, "domain\username".</ID>
+    </span>
+    <br><br>
+
+    <table border=0 cellpadding=5>
+    <tr>
+        <td valign=top>
+        <LABEL TABINDEX=-1 id=text_textboxDomUser for="textboxDomUser" class="text-primary">
+        <u>U</u>ser name:
+        </LABEL>
+        </td>
+        <td valign=top>
+        <input TABINDEX=4 ACCESSKEY="U" type="text" name="jndomainUser" ID="textboxDomUser" size=25 onkeypress="window.parent.jndom_a_OnKeyPress();" onClick="window.parent.OnClick();" onfocus="window.parent.OnFocus();">
+        </td>
+    </tr>
+    <tr>
+        <td valign=top>
+        <LABEL TABINDEX=-1 id=text_textboxDomPass for="textboxDomPass" class="text-primary">
+        <u>P</u>assword:
+        </LABEL>
+        </td>
+        <td valign=top>
+        <input TABINDEX=4 ACCESSKEY="P" type="password" name="jndomainPass" ID="textboxDomPass" size=25 onkeypress="window.parent.jndom_a_OnKeyPress();" onClick="window.parent.OnClick();" onfocus="this.select(); window.parent.OnFocus();">
+        </td>
+    </tr>
+    </table>
+
+    <script>
+    document.write(window.parent.g_ClickNextStr);
+    </script>
+
+    <!-- Navigation buttons -->
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=6  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:hidden;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=-1 ACCESSKEY="S" style="visibility:hidden;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=7  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+</body>
+</html>
+

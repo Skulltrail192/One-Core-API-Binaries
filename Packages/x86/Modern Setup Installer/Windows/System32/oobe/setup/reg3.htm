@@ -1,0 +1,198 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+    <title>out of box experience</title>
+    <LINK REL="stylesheet" TYPE="text/css" HREF="oobestyl.css">
+</head>
+
+<body style="background-Color: transparent; background-repeat: no-repeat;" TABINDEX=-1
+      onload="window.parent.Reg3_LoadMe(); window.parent.Agent_Activate('Reg3');"
+      onunload="MainPageCell.style.visibility='hidden';window.parent.ProcessQueuedEvents();window.parent.Agent_Deactivate();">
+
+
+<table ID=MainPageCell style="visibility:hidden" border=0 cellpadding=0 cellspacing=0 width=100% height=100%><tr><td ID=leftmargincell width=7%></td>
+<td ID=maincell valign=middle class="text-primary">
+<br><br>
+
+<span ID=Reg3Title class="title">
+<ID id=t34>Collecting Registration Information</ID>
+</span>
+
+<br><br>
+
+<div ID=reg3_str2 class="text-primary">
+<ID id="txtReg3">To move to the next box, press <span class="emphasis-lesser">TAB</span> on your keyboard.</ID>
+</div>
+<br>
+
+<table border=0 cellpadding=5 cellspacing=0>
+<tr>
+    <td width=60% valign=top>
+
+    <table ID=FieldTable border=0>
+    <tr>
+      <td id=LabelColumn width=100><LABEL class="text-primary" for=UserFirstName ACCESSKEY="F" ID=LabelFirstName><u>F</u>irst name:</LABEL></td>
+      <td><input type="text" name="firstname" size="30" maxlength="75"
+            id=UserFirstName onfocus="window.parent.OnFocus();"></td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr ID=LastNameRow>
+      <td><LABEL class="text-primary" for=UserLastName ACCESSKEY="L" ID=LabelLastName><u>L</u>ast name:</LABEL></td>
+      <td><input type="text" name="lastname" size="30" maxlength="75"
+           id=UserLastName onfocus="window.parent.OnFocus();"
+           ></td>
+       <td class="text-primary">&nbsp;</td>
+    </tr>
+    <tr>
+      <td><LABEL class="text-primary" for=UserAddress ACCESSKEY="A" ID=LabelAddress><u>A</u>ddress:</LABEL></td>
+      <td><input type="text" name="Address" size="30" maxlength="120"
+           id=UserAddress onfocus="window.parent.OnFocus();"
+           ></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td><input type="text" name="Address2" size="30" maxlength="120"
+           id=UserAddress2 onfocus="window.parent.OnFocus();"
+           ></td>
+      <td class="text-primary"><id id="txtReg3Address">&nbsp;(<i>Optional</i>)</id></td>
+    </tr>
+    <tr>
+      <td><LABEL class="text-primary" for=UserCity ACCESSKEY="C" ID=LabelCity><u>C</u>ity:</LABEL></td>
+      <td><input type="text" name="City" size="30" maxlength="50"
+           id=UserCity onfocus="window.parent.OnFocus();"></td>
+    </tr>
+    <tr>
+      <td><!-- LABEL "for" attrib set dynamically-->
+          <SPAN ID=LabelLeft>
+            <LABEL ID=StateLabel class="text-primary">State/<u>P</u>rovince:</LABEL>
+          </span>
+      </td>
+      <td height=30>
+            <SPAN ID=MenuLeft>
+                <span ID=StateContainer name="StateSelect">
+
+                    <!-- only 1 of the following three will be displayed at once -->
+                    <input type="text" id=UserStateTextBox ACCESSKEY="P" style="display:none" name="State" size="17" maxlength="50"  onfocus="window.parent.OnFocus();">
+
+                    <!-- WW is placeholder for bug workaround, will be deleted onload -->
+                    <select id=selUSState ACCESSKEY="P" style="display:none" size=1 onfocus="window.parent.OnFocus();" onclick="window.parent.OnSelectClick();" onchange="window.parent.Reg3UserStateChanged();">
+                        <OPTION VALUE="0">WW
+                    </select>
+
+                    <select id=selCAProvince ACCESSKEY="P" style="display:none"  size=1 onfocus="window.parent.OnFocus();" onclick="window.parent.OnSelectClick();" onchange="window.parent.Reg3UserStateChanged();">
+                    </select>
+
+                </span>
+            </span>
+
+      </td>
+      <td id="Reg3StateProvinceOptional" class="text-primary"><ID id=reg3_optional1>(<i>Optional</i>)</ID></td>
+    </tr>
+    <tr>
+      <td>
+            <SPAN ID=LabelRight>
+                <LABEL class="text-primary" for=UserZipCode ACCESSKEY="Z"  ID=LabelZIP>Postal or <u>Z</u>IP code:</LABEL>
+            </span>
+      </td>
+      <td>
+            <SPAN ID=MenuRight>
+                <input type="text" style="ime-mode:disabled" name="Zipcode" size="7" maxlength="15"
+                id=UserZipCode onfocus="window.parent.OnFocus();">
+            </span>
+      </td>
+      <td><span id="Reg3ZipPostalCodeOptional" class="text-primary"><ID id=reg3_optional2>(<i>Optional</i>)</ID></span></td>
+      </tr>
+      <tr>
+      <td>
+        <LABEL class="text-primary" ID=LabelCountry>Coun<u>t</u>ry/Region:</LABEL>
+      </td>
+      <td>
+          <select id=selCountry ACCESSKEY="T" size=1 onfocus="window.parent.OnFocus();" onclick="window.parent.OnSelectClick();" >
+          </select>
+      </td>
+    </tr>
+    <tr ID=FE_ZIPRow style="display:none">  <!-- filled in FarEast cases -->
+        <td ID=FE_ZIPLabel></td>
+        <td ID=FE_ZIPInput></td>
+        <td id="FE_Reg3ZipPostalCodeOptional" class="text-primary"><ID id=reg3_optional3>(<i>Optional</i>)</ID></td>
+    </tr>
+    <tr>
+      <td id=LabelColumn><LABEL class="text-primary" for=UserEmailAddress ACCESSKEY="E" ID=LabelEmail><u>E</u>-mail address:</LABEL></td>
+      <td><input type="text" style="ime-mode:disabled" name="Email" size="30" maxlength="75"
+           id=UserEmailAddress onfocus="window.parent.OnFocus();">
+     </td>
+      <td class="text-primary"><id id="txtReg3EMail">&nbsp;(<i>Optional</i>)</id></td>
+    </tr>
+    </table>
+
+    </td>
+
+    <td valign=top>
+        <!-- legal message for France, Belgium, or other localization -->
+        <DIV class="text-primary" ID=cnil_mesg style="display:none; padding-top:20px">
+        </DIV>
+    </td>
+</tr>
+</table>
+
+
+<SPAN ID="RegChkBxMSOnlyGrp" style="DISPLAY:NONE">
+<table border=0 cellspacing=0 cellpadding=0 class="text-primary"  style="width:100%;">
+<tr class="font9pt">
+    <td><p><br>
+        <input ACCESSKEY="M" type="checkbox" id="sharemsonly" name="sharemsonly" value="share ms only" onfocus="window.parent.OnFocus();">
+        <LABEL id="cb_txt1M" for="sharemsonly">
+        Send me promotions and offers from <u>M</u>icrosoft.
+        </LABEL>
+        </SPAN>
+    </td>
+</tr>
+</table>
+</span>
+    
+<SPAN ID="RegChkBxMSGrp" style="DISPLAY:NONE">
+<table border=0 cellspacing=0 cellpadding=0 class="text-primary"  style="width:100%;">
+<tr class="font9pt">
+    <td>
+        <input ACCESSKEY="D" type="checkbox" id="sharems" name="sharems" value="share ms" onfocus="window.parent.OnFocus();">
+        <LABEL id="cb_txt1" for="sharems">
+        Sen<u>d</u> me promotions and offers from Microsoft's partners.
+        </LABEL>
+    </td>
+</tr>
+</table>
+</span>
+
+<TABLE  border=0 cellspacing=0 cellpadding=7 class="text-primary"  style="width:100%;">
+<!--<tr><TD ID=rask1 class="emphasis-lesser" class="font9pt" style="padding-left:0px"><br><br><b><id ID="RegAsteriskExpl">To register later, click Skip.</id></b>
+</td></tr>-->
+<tr><td ID=error_mesg class="text-error" style="padding-left:0px;display:none;">
+</td></tr>
+</table>
+
+    <table border=0 class="newbuttonposition">
+    <tr>
+        <td width=10>&nbsp;&nbsp;</td>
+        <td><BUTTON ID="btnBack" class="newbuttonsBack" TABINDEX=4  ACCESSKEY="B" style="visibility:visible;"></BUTTON></td>
+        <td nowrap valign=middle class="text-primary"><span id="BackBtnLocalText" style="visibility:visible;"><label for=btnBack><id id="LocalBtnBack_Text"><u>B</u>ack</id></label></span></td>
+
+        <td width=99%>&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="SkipBtnLocalText" style="visibility:visible;"><label for=btnSkip><id id="LocalBtnSkip_Text"><u>S</u>kip</id></label></span></td>
+        <td><BUTTON ID="btnSkip" class="newbuttonsSkip" TABINDEX=5  ACCESSKEY="S" style="visibility:visible;"></BUTTON></td>
+
+        <td width=10>&nbsp;&nbsp;</td>
+        <td nowrap valign=middle class="text-primary"><span id="NextBtnLocalText" style="visibility:visible;"><label for=btnNext><id id="LocalBtnNext_Text"><u>N</u>ext</id></label></span></td>
+        <td><BUTTON ID="btnNext" class="newbuttonsNext" TABINDEX=6  ACCESSKEY="N" style="visibility:visible;"></BUTTON></td>
+    </tr>
+    </table>
+
+    </td>
+</tr>
+</table>
+
+
+</body>
+</html>
+
