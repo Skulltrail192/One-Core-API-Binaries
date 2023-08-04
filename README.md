@@ -10,12 +10,15 @@ x64 SP2.
 - Test: Some binaries and documents for testing.
 
 **The One-Core-API Binaries project consists of the following packages:**
-- Base: One-Core-API base. This package is required by all other packages, except Kernel Standalone, and contains all wrappers used in this project (like kernelbase and ntext);
+- Base: One-Core-API base. Main package of One-Core-API and is required by all other packages, except Kernel Standalone, and contains all wrappers used in this project (like kernelbase and ntext);
 - Additional Dlls: Several new dlls introduced in later versions of Windows.
 - API-SET: Contains UCRT dlls based on wine.
 - D3d: D3D runtime (Mainly DX10 and DX11, based on WineD3D);
-- Kernel Standalone: Experimental kernel update. Does not depend on the Base package. This package cannot be installed alongside any other packages, except App Compat.
 - App Compat: Application compatbility settings, backported from later versions of Windows.
+- Driver Update: Bring updated acpi driver what support ACPI 2.0, new drivers like Storachi (for AHCI driver controllers), NVME
+(for NVME M.2 driver controllers) and USBXHCI (USB 3.0); 
+- Branding: New branding system introduced on Windows Vista, required to D3D and Modern Setup packages;
+- Modern Setup: bring support to turn Windows XP/2003 installation  installable using Windows Vista or above Setup engines; 
 
 **One-Core-API allows you to run:**
 - Web Storm 2018;
@@ -51,7 +54,6 @@ x64 SP2.
   - Crysis 1,2, and 3 (directx 10-11 mode);
   
 **Known Limitations:**
-- When you install Windows XP or Windows Server 2003 on VirtualBox, by default, APIC option is disabled. For now, One-Core-API has limitation on cannot be installed on Machine with only PIC mode (ACPI option) enabled. So, you MUST enable APIC mode on VM options to use One-Core-API on Windows XP/2003 inside Virtual Box; 
 - The unique language on binaries for now is English. You can install on Windows with another language, however, several dialogs and strings will be displayed in engilsh;
 - New applications installers may not work, like Chrome, Maxthon, Utorrent, Discord, Team vieweretc crash and application isn't installed. Need 
 use a pre-installed version, copied from other operation system;
@@ -69,7 +71,15 @@ use a pre-installed version, copied from other operation system;
 **Installation order of packages:**
 - **App Compat only:** This package can be installed without any other packages;
 
-- **Base first**: Base-> D3d -> API-SET -> Driver Update -> App Compat-> Additional Dlls; 
+- **Base first**: Base-> API-SET -> Branding -> D3d -> Modern Setup -> Driver Update -> App Compat-> Additional Dlls;
+
+- **Modern Setup**:
+  - **x86**: Branding -> Modern Setup -> Base-> API-SET -> D3d -> Driver Update -> App Compat-> Additional Dlls;
+  - **x64**: Base -> Branding -> Modern Setup -> Base-> API-SET -> D3d -> Driver Update -> App Compat-> Additional Dlls;
+     
+- **Modern Setup Only**:
+  - **x86**: Branding -> Modern Setup;
+  - **x64**: Base -> Branding -> Modern Setup;
 
 - **AppCompat first**: App Compat -> Base -> Driver Update -> D3d -> API-SET -> Additional Dlls.
 
