@@ -27,7 +27,7 @@ x64 SP2.
 - Allow support for new hardware with new drivers controllers;
 - Allow support for install Windows on any computers, with generalized hardware;
 
-Modern Setup
+**Modern Setup**
 - After install One-Core-API Modern Setup and restart computer, you can run Sysprep, a tool to prepare Windows to be generalize Windows Installation to any hardware;
 - Sysprep is placed on: Windows\System32\Sysprep, like as Windows Vista have;
 - The tools is very similar what is present on Vista. For same behavior on prepare XP/2003 what is presented on Visdta or above systems to install on new computers, you must run sysprep.exe and select Action to "Enter System Out-of-Box Experience (OOBE)". Is recommeded check "Generalize" too. After choose Action and mark, you can choose on Shutdown Options if only quit program, shutdown or reboot system. On press "Ok", sysprep will run cleanup plugins and do the shutdown option selected;
@@ -99,6 +99,15 @@ use a pre-installed version, copied from other operation system;
 - **Driver Update Only**: Driver Update; 
 
 - **AppCompat first**: App Compat -> Base -> Driver Update -> D3d -> API-SET -> Additional Dlls.
+
+**Issues Report**
+For help to reproduce issue, is recommend **always** follow this template:
+- Description whats happened.
+  Ex: Always get BSOD when try load Windows. Windows stuck on Boot Screen. Windows always get a Black screen, etc;
+- VM/PC config
+  Ex: Vmware 10, virtualBox 6.1.0 or Core 2 Duo 8400, 2Gb DDR2, IDE/SATA Hard Disk;
+- Windows Edition and configuration
+  Ex: Windows XP Service Pack 3 with POSReady 2009 updates installed, with this program list: Adobe, office, etc;
 
 Some screenshots of Applicaions running on XP/Server 2003:
 **Chrome 58**
