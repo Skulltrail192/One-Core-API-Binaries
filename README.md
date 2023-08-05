@@ -28,6 +28,7 @@ x64 SP2.
 - Allow support for install Windows on any computers, with generalized hardware;
 
 **Modern Setup**
+This is a package designed to prepare Windows to get ability to be installed in others computers. If you don't want capture the Windows installation, don't need install this package.
 - After install One-Core-API Modern Setup and restart computer, you can run Sysprep, a tool to prepare Windows to be generalize Windows Installation to any hardware;
 - Sysprep is placed on: Windows\System32\Sysprep, like as Windows Vista have;
 - The tools is very similar what is present on Vista. For same behavior on prepare XP/2003 what is presented on Visdta or above systems to install on new computers, you must run sysprep.exe and select Action to "Enter System Out-of-Box Experience (OOBE)". Is recommeded check "Generalize" too. After choose Action and mark, you can choose on Shutdown Options if only quit program, shutdown or reboot system. On press "Ok", sysprep will run cleanup plugins and do the shutdown option selected;
