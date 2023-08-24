@@ -3,6 +3,8 @@
 This repositry contains binary releases of the One-Core-API project. These are compatible with Windows Server 2003 SP2, Windows XP SP3 and Windows XP
 x64 SP2.
 
+**Official Discord Server**: https://discord.gg/eRcGuFtn6p
+
 **Folders in this repository:**
 - Documents: Project documentation, known bugs, sfxcab usage (for making installers), etc.
 - Packages\x86 and Packages\x64: Binary releases categorized by package. You can download and install/update the packages directly from here (i.e. by going to Packages\x86\Base installer\update and runnning update.exe).
