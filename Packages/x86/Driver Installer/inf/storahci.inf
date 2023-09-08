@@ -12,12 +12,6 @@ ClassGuid={4D36E96A-E325-11CE-BFC1-08002BE10318}
 Provider=%ROS%
 LayoutFile=layout.inf
 
-; [SourceDisksNames]
-; 1 = %DeviceDesc%,,,
-
-; [SourceDisksFiles]
-; storahci.sys = 1
-
 [DestinationDirs]
 DefaultDestDir = 12 ; DIRID_DRIVERS
 

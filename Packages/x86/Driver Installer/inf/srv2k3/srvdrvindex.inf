@@ -1049,6 +1049,7 @@ dpt60l20.ppd
 dpt60s20.ppd
 dpt8.gpd
 dpty8pm1.ppd
+drmk.sys
 drmkaud.sys
 ds4bri.bit
 ds4bri2.bit
@@ -3840,6 +3841,7 @@ sxfep.bin
 sxports.dll
 sxvip21.ppd
 symc810.sys
+SysFxUI.dll
 t1.t4
 t1513470.ppd
 t1535470.ppd
@@ -4099,6 +4101,7 @@ wch7xxnt.sys
 wd.sys
 wdhaalba.sys
 wlluc48.sys
+WMALFXGFXDSP.dll
 wowfax.dll
 wowfaxui.dll
 wp1050px.gpd

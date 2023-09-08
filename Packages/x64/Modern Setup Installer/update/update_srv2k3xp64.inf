@@ -26,7 +26,7 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink 				= "http://shorthornproject.com"
     URLInfoAbout 			= "http://shorthornproject.com"
-	OCAMS_VERSION           = "3.0.0"
+	OCAMS_VERSION           = "3.0.1"
 	SP_TITLE                = "One-Core-API Modern Setup"
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
@@ -4925,7 +4925,7 @@
 	ServerWeb.xml, BootString\Web\ServerWeb.xml
 
 [DataCenter.Windows.files]
-	ServerDatacenter.xml, BootString\Pro\ServerDatacenter.xml
+	ServerDatacenter.xml, BootString\DataCenter\ServerDatacenter.xml
 	
 [Tablet.Windows.files]
 	Tablet.xml, BootString\Tablet\Tablet.xml

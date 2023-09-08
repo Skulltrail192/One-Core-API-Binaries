@@ -37,7 +37,7 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink 				= "http://shorthornproject.com"
     URLInfoAbout 			= "http://shorthornproject.com"
-	OCAMS_VERSION           = "3.0.0"
+	OCAMS_VERSION           = "3.0.1"
 	SP_TITLE                = "One-Core-API Modern Setup"
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
@@ -100,6 +100,21 @@
 	HKLM,"SYSTEM\CurrentControlSet\Services\vga\Device0",DefaultSettings.YResolution,0x10001,768	
 	HKLM,"SYSTEM\CurrentControlSet\Services\vga\Security","Security",0x1,01,00,14,80,b8,00,00,00,c4,00,00,00,14,00,00,00,30,00,00,00,02,00,1c,00,01,00,00,00,02,80,14,00,ff,01,0f,00,01,01,00,00,00,00,00,01,00,00,00,00,02,00,88,00,06,00,00,00,00,00,14,00,fd,01,02,00,01,01,00,00,00,00,00,05,12,00,00,00,00,00,18,00,ff,01,0f,00,01,02,00,00,00,00,00,05,20,00,00,00,20,02,00,00,00,00,14,00,8d,01,02,00,01,01,00,00,00,00,00,05,04,00,00,00,00,00,14,00,8d,01,02,00,01,01,00,00,00,00,00,05,06,00,00,00,00,00,14,00,00,01,00,00,01,01,00,00,00,00,00,05,0b,00,00,00,00,00,18,00,fd,01,02,00,01,02,00,00,00,00,00,05,20,00,00,00,23,02,00,00,01,01,00,00,00,00,00,05,12,00,00,00,01,01,00,00,00,00,00,05,12,00,00,00
 	HKLM,"SYSTEM\CurrentControlSet\Services\vga\Video","Service",0x0,"vga"
+	; Added videoprt service to force vga work on UEFI mode
+	HKLM,"SYSTEM\ControlSet001\Services\videoprt","Type",0x10001,01,00,00,00
+	HKLM,"SYSTEM\ControlSet001\Services\videoprt","Start",0x10001,00,00,00,00
+	HKLM,"SYSTEM\ControlSet001\Services\videoprt","ErrorControl",0x10001,01,00,00,00
+	HKLM,"SYSTEM\ControlSet001\Services\videoprt","Tag",0x10001,01,00,00,00
+	HKLM,"SYSTEM\ControlSet001\Services\videoprt","ImagePath",0x20000,"system32\DRIVERS\videoprt.sys"
+	HKLM,"SYSTEM\ControlSet001\Services\videoprt","Group",0x0,"Video"
+	HKLM,"SYSTEM\ControlSet001\Services\videoprt","DisplayName",0x0,"Video Port Driver"
+	HKLM,"SYSTEM\ControlSet002\Services\videoprt","Type",0x10001,01,00,00,00
+	HKLM,"SYSTEM\ControlSet002\Services\videoprt","Start",0x10001,00,00,00,00
+	HKLM,"SYSTEM\ControlSet002\Services\videoprt","ErrorControl",0x10001,01,00,00,00
+	HKLM,"SYSTEM\ControlSet002\Services\videoprt","Tag",0x10001,01,00,00,00
+	HKLM,"SYSTEM\ControlSet002\Services\videoprt","ImagePath",0x20000,"system32\DRIVERS\videoprt.sys"
+	HKLM,"SYSTEM\ControlSet002\Services\videoprt","Group",0x0,"Video"
+	HKLM,"SYSTEM\ControlSet002\Services\videoprt","DisplayName",0x0,"Video Port Driver"	
 	;Set default resolution of Vga to 1024x768x32
 	HKLM,"SYSTEM\CurrentControlSet\Hardware Profiles\Current\System\CurrentControlSet\Control\VIDEO\{23A77BF7-ED96-40EC-AF06-9B1F4867732A}",,0x10
 	HKLM,"SYSTEM\CurrentControlSet\Hardware Profiles\Current\System\CurrentControlSet\Control\VIDEO\{23A77BF7-ED96-40EC-AF06-9B1F4867732A}\0000","Attach.ToDesktop",0x10001,01,00,00,00

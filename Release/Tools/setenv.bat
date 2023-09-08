@@ -5,31 +5,31 @@ cls
 for %%d in (%~dp0..\..) do set ProjectDir=%%~fd
 echo ProjectDir=%ProjectDir%
 
-ECHO Please choose architecture of you want compress package:
-ECHO.
-ECHO 1.x86
-ECHO 2.x64
-ECHO.
+REM ECHO Please choose architecture of you want compress package:
+REM ECHO.
+REM ECHO 1.x86
+REM ECHO 2.x64
+REM ECHO.
 
-set /p a=Type option:
-IF %a%==1 (
-	REM Call patch bins
-	set arch=x86
-)
+REM set /p a=Type option:
+REM IF %a%==1 (
+	REM REM Call patch bins
+	REM set arch=x86
+REM )
 
-IF %a%==2 (
-	REM Call patch bins
-	set arch=x64
-)
+REM IF %a%==2 (
+	REM REM Call patch bins
+	REM set arch=x64
+REM )
 
-IF NOT %a%==1 (
-	IF NOT %a%==2 (
-		REM Call patch bins
-		ECHO Wrong option, will do nothing
-		pause
-		goto :EOF
-	)
-)
+REM IF NOT %a%==1 (
+	REM IF NOT %a%==2 (
+		REM REM Call patch bins
+		REM ECHO Wrong option, will do nothing
+		REM pause
+		REM goto :EOF
+	REM )
+REM )
 
 set root=%ProjectDir%\Packages\%arch%
 set output=%ProjectDir%\Output\%arch%

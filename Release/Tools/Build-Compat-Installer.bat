@@ -3,6 +3,7 @@
 cls
 
 if "%arch%" == "" (
+	call choose-arch.bat
 	call setenv.bat
 )
 
@@ -10,4 +11,6 @@ if "%arch%" == "" (
 
 ECHO Done!
 
-timeout 3>nul
+timeout /T 3>nul
+
+cls

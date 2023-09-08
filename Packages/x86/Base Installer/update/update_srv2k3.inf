@@ -25,7 +25,7 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	BASE_VERSION            = "3.0.0"	
+	BASE_VERSION            = "3.0.1"	
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
     SECURITY_UPDATE       	= "Security Update"
@@ -442,7 +442,7 @@
 	HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\KnownDLLs","API-MS-WIN-CORE-MEMORY-L1-1-0",0x0,"API-MS-WIN-CORE-MEMORY-L1-1-0.DLL"	
 
 	;key to prevent .net framework 4.5+ installation error when Windows XP is without any previous .net Framework installed
-	HKLM,"Software\Microsoft\.NETFramework","InstallRoot",0x0,"%SystemRoot%\Microsoft.NET\Framework\"
+	;HKLM,"Software\Microsoft\.NETFramework","InstallRoot",0x0,"%SystemRoot%\Microsoft.NET\Framework\" ;Commented for now, because .net Framework not allow %SystemRoot% to get "C:\Windows"
 	
 [ProductInstall.ReplaceFilesIfExist]
     CopyFiles=System32.files
@@ -457,7 +457,8 @@
 	CopyFiles                  = CopyAlways.WinSxS.Main.files
 	CopyFiles                  = CopyAlways.WinSxS.Manifests.files
 	CopyFiles                  = CopyAlways.WinSxS.Policies.files
-    CopyFiles				   = CopyAlways.DriverCab.files	
+    CopyFiles				   = CopyAlways.DriverCab.files
+	CopyFiles				   = CopyAlways.PCHealth.files
 	
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg
@@ -487,6 +488,7 @@
 	CopyAlways.WinSxS.Main.files = 10 ; %windir%
 	CopyAlways.WinSxS.Manifests.files = 10 ; %windir%
 	CopyAlways.WinSxS.Policies.files = 10 ; %windir%
+	CopyAlways.PCHealth.files=10,PCHealth ; %windir%
 	MustReplace.System32.files=11       ; %windir%\system32 (don't delay until reboot)
     CopyAlways.DriverCab.files=65623 ; Destination determined at runtime
     Uniprocessor.Kernel.files=11    ; %windir%\system32 (don't delay until reboot)
@@ -539,6 +541,9 @@
 	halmacpi.dll,2k3SP2\srvhalmacpi.dll	
 	halmps.dll,2k3SP2\srvhalmps.dll	
 	;halsp.dll,2k3SP2\srvhalsp.dll
+	
+[CopyAlways.PCHealth.files]	
+	;HelpCtr\Binaries\esent.dll, 2k3SP2\srvesent.dll		
 
 [Uniprocessor.Kernel.files]
     ntoskrnl.exe,2k3SP2\srvntoskrnl.exe
@@ -551,7 +556,7 @@
 	hal.dll,2k3SP2\srvhalmacpi.dll
 	
 [CopyAlways.System32.Mui.0409.files]
-	mui\0409\mscorees.dll,mui\0409\mscorees.dll
+	;mui\0409\mscorees.dll,mui\0409\mscorees.dll
 	
 [MustReplace.WinSxS.Main.files]	
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winsrv2k3\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
@@ -580,8 +585,11 @@
 	comdlgbase.dll,2k3SP2\srvcomdlgbase.dll
 	crypt32.dll,2k3SP2\srvcrypt32.dll
     gdibase.dll,2k3SP2\srvgdibase.dll	
+	halacpi.dll,2k3SP2\srvhalacpi.dll
+	halaacpi.dll,2k3SP2\srvhalaacpi.dll
+	halmacpi.dll,2k3SP2\srvhalmacpi.dll
     kernel32.dll,2k3SP2\srvkernel32.dll
-    netapibase.dll,2k3SP2\srvnetapibase.dll	
+    netapibase.dll,2k3SP2\srvnetapibase.dll
 	;ntdsapi.dll,2k3SP2\srvntdsapi.dll	
     olebase.dll,2k3SP2\srvolebase.dll		
     oleacc.dll,2k3SP2\srvoleacc.dll		
@@ -595,21 +603,20 @@
     uxthemebase.dll,2k3SP2\srvuxthemebase.dll
     ws2_base.dll,2k3SP2\srvws2_base.dll
 	winsrv.dll, 2k3SP2\srvwinsrv.dll
+	winhttp.dll, 2k3SP2\srvwinhttp.dll
 	winstabase.dll, 2k3SP2\srvwinstabase.dll		
 	win32k.sys, 2k3SP2\srvwin32k.sys
-	halacpi.dll,2k3SP2\srvhalacpi.dll
-	halaacpi.dll,2k3SP2\srvhalaacpi.dll
-	halmacpi.dll,2k3SP2\srvhalmacpi.dll		
     advapi32.dll
 	API-MS-WIN-CORE-MEMORY-L1-1-0.dll	
     bcrypt.dll
     certupdate.exe
     comctlext.dll
     comdlg32.dll
-	cryptext.dll
+	cryptex.dll
 	cryptnew.dll
 	d3dkmt.dll
 	devcon.exe
+	esent.dll
 	fileextd.dll
     pdhbase.dll
     gdi32.dll
@@ -618,7 +625,7 @@
     iphlpapibase.dll
     idndl.dll
     kernelbase.dll
-    mscoree.dll
+    ;mscoree.dll ;comment becuase if copied, must be set HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft.NETFramework\InstallRoot too, however, we don't know Windows drive letter installation. 
     msctfime.ime
 	msvcrt.dll
     netapi32.dll
@@ -686,7 +693,7 @@
     comctlext.dll =1
     comdlg32.dll =1
 	cryptnew.dll = 1
-	cryptext.dll = 1
+	cryptex.dll = 1
 	d3dkmt.dll = 1
 	devcon.exe = 1
 	fileextd.dll = 1
@@ -696,8 +703,8 @@
     iphlpapibase.dll = 1
     idndl.dll = 1
     kernelbase.dll = 1
-    mscoree.dll = 1
-    mscorees.dll = 1	
+    ;mscoree.dll = 1
+    ;mscorees.dll = 1	
 	msctfime.ime = 1
 	msvcrt.dll = 1
     netapi32.dll = 1
@@ -730,7 +737,7 @@
     winbrand.dll = 1	
     ws2_32.dll = 1
 	drivers\ntoskrn8.sys = 1
-	mui\0409\mscorees.dll = 1
+	;mui\0409\mscorees.dll = 1
 	WinSxS\winsrv2k3\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll = 1
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.cat = 1
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.manifest = 1

@@ -959,6 +959,8 @@ dpt60l20.ppd
 dpt60s20.ppd
 dpt8.gpd
 dpti2o.sys
+drmk.sys
+drmkaud.sys
 dpty8pm1.ppd
 ds4bri2.bit
 dsap8.bit
@@ -3642,6 +3644,7 @@ sym_hi.sys
 sym_u3.sys
 symc8xx.sys
 symmpi.sys
+SysFxUI.dll
 t1.t4
 t1513470.ppd
 t1535470.ppd
@@ -3882,6 +3885,7 @@ wd.sys
 wdmaud.drv
 wetn5b64.sys
 wiafbdrv.dll
+WMALFXGFXDSP.dll
 wmiacpi.sys
 wp1050px.gpd
 wp24res.dll

@@ -25,7 +25,7 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	BASE_VERSION            = "3.0.0"	
+	BASE_VERSION            = "3.0.1"	
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
     SECURITY_UPDATE       	= "Security Update"
@@ -40,7 +40,6 @@
     LOC_SECURITY_UPDATE="Security Update"	
 	
 [Product.Add.Reg]
-    HKLM,"Software\Microsoft\Windows\CurrentVersion\RunOnce",%SP_SHORT_TITLE%,,"rundll32.exe apphelp.dll,ShimFlushCache"
     HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Setup", "LogLevel", 0x10001, 0
     HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
     HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentDisplayName",0x00000000,"%PARENT_DISPLAY_NAME%"
@@ -58,7 +57,7 @@
     HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"Old Link Date",0,""
 	HKLM,SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%,"DisplayVersion",0x00000000,%BASE_VERSION%
     HKLM,SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%,"ReleaseType",0,%HOTFIX%
-	
+
 	; propsys.dll registry info
 	HKLM, Software\Classes\Interface\{20076C7E-4851-41ed-9EB8-F4E5F2BB0286}, , 0, "IShowModalDialog"
 	HKLM, Software\Classes\Interface\{20076C7E-4851-41ed-9EB8-F4E5F2BB0286}\NumMethods, , 0x10001, 1
@@ -440,10 +439,10 @@
 	HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "program"
 	
 	;Special key to bypass palemon and some others application startup error
-	HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\KnownDLLs","API-MS-WIN-CORE-MEMORY-L1-1-0",0x0,"API-MS-WIN-CORE-MEMORY-L1-1-0.DLL"
-	
+	HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\KnownDLLs","API-MS-WIN-CORE-MEMORY-L1-1-0",0x0,"API-MS-WIN-CORE-MEMORY-L1-1-0.DLL"	
+
 	;key to prevent .net framework 4.5+ installation error when Windows XP is without any previous .net Framework installed
-	HKLM,"Software\Microsoft\.NETFramework","InstallRoot",0x0,"C:\WINDOWS\Microsoft.NET\Framework\"
+	;HKLM,"Software\Microsoft\.NETFramework","InstallRoot",0x0,"%SystemRoot%\Microsoft.NET\Framework\" ;Commented for now, because .net Framework not allow %SystemRoot% to get "C:\Windows"
 	
 [ProductInstall.ReplaceFilesIfExist]
     CopyFiles=System32.files
@@ -454,11 +453,12 @@
 [ProductInstall.CopyFilesAlways]
 	CopyFiles				   = Drivers.CoreDriverFiles
     CopyFiles                  = CopyAlways.System32.files
-	CopyFiles                  = CopyAlways.System32.Mui.0409.files
+    CopyFiles                  = CopyAlways.System32.Mui.0409.files
 	CopyFiles                  = CopyAlways.WinSxS.Main.files
 	CopyFiles                  = CopyAlways.WinSxS.Manifests.files
 	CopyFiles                  = CopyAlways.WinSxS.Policies.files
-    CopyFiles				   = CopyAlways.DriverCab.files	
+    CopyFiles				   = CopyAlways.DriverCab.files
+	CopyFiles				   = CopyAlways.PCHealth.files
 	
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg
@@ -474,7 +474,7 @@
 
 [ProcessesToRun]
     "regsvr32.exe /s propsys.dll"
-	"updatehal.exe"		
+	"updatehal.exe"
 	
 [ProcessesToRunAfterCopying]
 	"certupdate.exe" /Y /C /Q
@@ -484,20 +484,21 @@
 	Drivers.CoreDriverFiles = 12 ; %windir%\system32\drivers
 	System32.files=11                   ; %windir%\system32 (replace if exist)
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
-	CopyAlways.System32.Mui.0409.files=11  ; %windir%\system32 (don't delay until reboot)
+    CopyAlways.System32.Mui.0409.files=11  ; %windir%\system32 (don't delay until reboot)
 	CopyAlways.WinSxS.Main.files = 10 ; %windir%
 	CopyAlways.WinSxS.Manifests.files = 10 ; %windir%
 	CopyAlways.WinSxS.Policies.files = 10 ; %windir%
+	CopyAlways.PCHealth.files=10,PCHealth ; %windir%
 	MustReplace.System32.files=11       ; %windir%\system32 (don't delay until reboot)
     CopyAlways.DriverCab.files=65623 ; Destination determined at runtime
     Uniprocessor.Kernel.files=11    ; %windir%\system32 (don't delay until reboot)
     Multiprocessor.Kernel.files=11  ; %windir%\system32 (don't delay until reboot)
 	
 [ProductInstall.ReplaceFilesIfExist]
-	CopyFiles = Drivers.CoreDriverFiles	
+	CopyFiles = Drivers.CoreDriverFiles
 
 [Drivers.CoreDriverFiles]
-	ntoskrn8.sys, drivers\ntoskrn8.sys		
+	ntoskrn8.sys, drivers\ntoskrn8.sys	
 
 [System32.files]
 	win32k.sys, XPSP3\xpspwin32k.sys
@@ -506,19 +507,27 @@
 	halapic.dll,XPSP3\xpsphalapic.dll	
 	halmacpi.dll,XPSP3\xpsphalmacpi.dll	
 	halmps.dll,XPSP3\xpsphalmps.dll	
-	halsp.dll,XPSP3\xpsphalsp.dll
+    ntkrnlup.exe,XPSP3\xpspntoskrnl.exe
+    ntkrpamp.exe,XPSP3\xpspntkrpamp.exe
+    ntkrpaup.exe,XPSP3\xpspntkrnlpa.exe
+    ntkrnlmp.exe,XPSP3\xpspntkrnlmp.exe	
+
+[MustReplace.System32.files]
+	basesrv.dll,XPSP3\xpspbasesrv.dll
+	crypt32.dll,XPSP3\xpspcrypt32.dll
+    ntdll.dll,XPSP3\xpspntdll.dll
+	kernel32.dll, XPSP3\xpspkernel32.dll
+	winsrv.dll, XPSP3\xpspwinsrv.dll
+	win32k.sys, XPSP3\xpspwin32k.sys
+	halaacpi.dll,XPSP3\xpsphalaacpi.dll	
+	halacpi.dll,XPSP3\xpsphalacpi.dll	
+	halapic.dll,XPSP3\xpsphalapic.dll	
+	halmacpi.dll,XPSP3\xpsphalmacpi.dll	
+	halmps.dll,XPSP3\xpsphalmps.dll	
     ntkrnlup.exe,XPSP3\xpspntoskrnl.exe
     ntkrpamp.exe,XPSP3\xpspntkrpamp.exe
     ntkrpaup.exe,XPSP3\xpspntkrnlpa.exe
     ntkrnlmp.exe,XPSP3\xpspntkrnlmp.exe		
-
-[MustReplace.System32.files]
-	crypt32.dll,XPSP3\xpspcrypt32.dll
-	basesrv.dll,XPSP3\xpspbasesrv.dll
-    ntdll.dll,XPSP3\xpspntdll.dll
-	kernel32.dll, XPSP3\xpspkernel32.dll
-	winsrv.dll, XPSP3\xpspwinsrv.dll
-	win32k.sys, XPSP3\xpspwin32k.sys	
 	
 [CopyAlways.DriverCab.files]
     ntoskrnl.exe,XPSP3\xpspntoskrnl.exe
@@ -532,6 +541,9 @@
 	halmacpi.dll,XPSP3\xpsphalmacpi.dll	
 	halmps.dll,XPSP3\xpsphalmps.dll	
 	halsp.dll,XPSP3\xpsphalsp.dll
+	
+[CopyAlways.PCHealth.files]	
+	;HelpCtr\Binaries\esent.dll, XPSP3\xpspesent.dll	
 
 [Uniprocessor.Kernel.files]
     ntoskrnl.exe,XPSP3\xpspntoskrnl.exe
@@ -542,16 +554,16 @@
     ntkrnlpa.exe,XPSP3\xpspntkrpamp.exe
     ntoskrnl.exe,XPSP3\xpspntkrnlmp.exe
 	hal.dll,XPSP3\xpsphalmacpi.dll
-
+	
 [CopyAlways.System32.Mui.0409.files]
-	mui\0409\mscorees.dll,mui\0409\mscorees.dll	
+	;mui\0409\mscorees.dll,mui\0409\mscorees.dll
 	
 [MustReplace.WinSxS.Main.files]	
-	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winxp\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
+	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winsrv2k3\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
 	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c\gdiplus.dll	
 	
 [CopyAlways.WinSxS.Main.files]	
-	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winxp\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
+	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winsrv2k3\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
 	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c\gdiplus.dll
 	
 [CopyAlways.WinSxS.Manifests.files]	
@@ -566,15 +578,19 @@
 	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24180.cat"
 	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24180.policy"
 	
-[CopyAlways.System32.files]
+[CopyAlways.System32.Files]
     advapibase.dll,XPSP3\xpspadvapibase.dll
-	; basesrv.dll,XPSP3\xpspbasesrv.dll
-	; advpack.dll,XPSP3\xpspadvpack.dll
+	advpack.dll,XPSP3\xpspadvpack.dll
+	basesrv.dll,XPSP3\xpspbasesrv.dll
 	comdlgbase.dll,XPSP3\xpspcomdlgbase.dll
 	crypt32.dll,XPSP3\xpspcrypt32.dll
     gdibase.dll,XPSP3\xpspgdibase.dll	
+	halacpi.dll,XPSP3\xpsphalacpi.dll
+	halaacpi.dll,XPSP3\xpsphalaacpi.dll
+	halmacpi.dll,XPSP3\xpsphalmacpi.dll
     kernel32.dll,XPSP3\xpspkernel32.dll
     netapibase.dll,XPSP3\xpspnetapibase.dll
+	;ntdsapi.dll,XPSP3\xpspntdsapi.dll	
     olebase.dll,XPSP3\xpspolebase.dll		
     oleacc.dll,XPSP3\xpspoleacc.dll		
     powrprofbase.dll,XPSP3\xpsppowrprofbase.dll
@@ -587,21 +603,20 @@
     uxthemebase.dll,XPSP3\xpspuxthemebase.dll
     ws2_base.dll,XPSP3\xpspws2_base.dll
 	winsrv.dll, XPSP3\xpspwinsrv.dll
+	winhttp.dll, XPSP3\xpspwinhttp.dll
 	winstabase.dll, XPSP3\xpspwinstabase.dll		
 	win32k.sys, XPSP3\xpspwin32k.sys
-	halacpi.dll, XPSP3\xpsphalacpi.dll
-	halaacpi.dll, XPSP3\xpsphalaacpi.dll
-	halmacpi.dll, XPSP3\xpsphalmacpi.dll	
     advapi32.dll
-	API-MS-WIN-CORE-MEMORY-L1-1-0.dll
+	API-MS-WIN-CORE-MEMORY-L1-1-0.dll	
     bcrypt.dll
-	certupdate.exe
+    certupdate.exe
     comctlext.dll
     comdlg32.dll
-	cryptext.dll
+	cryptex.dll
 	cryptnew.dll
 	d3dkmt.dll
 	devcon.exe
+	esent.dll
 	fileextd.dll
     pdhbase.dll
     gdi32.dll
@@ -610,14 +625,14 @@
     iphlpapibase.dll
     idndl.dll
     kernelbase.dll
-    mscoree.dll
+    ;mscoree.dll ;comment becuase if copied, must be set HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft.NETFramework\InstallRoot too, however, we don't know Windows drive letter installation. 
     msctfime.ime
 	msvcrt.dll
     netapi32.dll
     netfxperf.dll
     Nlsdl.dll
     normaliz.dll		
-    nsi.dll
+    nsi.dll		
 	ntext.dll	
 	ole32.dll
     pdh.dll	
@@ -674,11 +689,11 @@
     advapi32.dll = 1
 	API-MS-WIN-CORE-MEMORY-L1-1-0.dll = 1	
     bcrypt.dll = 1
-    certupdate.exe = 1
+    certupdate.exe =1
     comctlext.dll =1
     comdlg32.dll =1
 	cryptnew.dll = 1
-	cryptext.dll = 1
+	cryptex.dll = 1
 	d3dkmt.dll = 1
 	devcon.exe = 1
 	fileextd.dll = 1
@@ -688,12 +703,12 @@
     iphlpapibase.dll = 1
     idndl.dll = 1
     kernelbase.dll = 1
-    mscoree.dll = 1
-    mscorees.dll = 1	
+    ;mscoree.dll = 1
+    ;mscorees.dll = 1	
 	msctfime.ime = 1
 	msvcrt.dll = 1
     netapi32.dll = 1
-	netfxperf.dll = 1
+    netfxperf.dll = 1	
     Nlsdl.dll = 1
     normaliz.dll = 1
     nsi.dll = 1
@@ -712,8 +727,8 @@
     shlwapi.dll = 1
     sspicli.dll = 1
     user32.dll = 1
-	version.dll = 1
-	updatehal.exe = 1	
+	version.dll = 1	
+	updatehal.exe = 1
     uxtheme.dll = 1
 	;wevtold.dll = 1
     wevtapibase.dll = 1	
@@ -722,8 +737,8 @@
     winbrand.dll = 1	
     ws2_32.dll = 1
 	drivers\ntoskrn8.sys = 1
-	mui\0409\mscorees.dll = 1
-	WinSxS\winxp\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll = 1
+	;mui\0409\mscorees.dll = 1
+	WinSxS\winsrv2k3\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll = 1
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.cat = 1
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.manifest = 1
 	WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.policy = 1
@@ -741,7 +756,7 @@
 	
 [Save.Reg.For.Uninstall]
     HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Setup","LogLevel"
-    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%	
 
 [LinkItems.Create.Uninstall]
 

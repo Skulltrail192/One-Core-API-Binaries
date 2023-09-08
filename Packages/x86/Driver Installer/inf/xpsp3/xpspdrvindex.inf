@@ -3933,6 +3933,7 @@ sym_hi.sys
 sym_u3.sys
 symc810.sys
 symc8xx.sys
+SysFxUI.dll
 t1.t4
 t1513470.ppd
 t1535470.ppd
@@ -6700,7 +6701,11 @@ halmacpi.dll
 halmps.dll
 halsp.dll
 hccoin.dll
-hdaudbus.sys
+HdAProp.dll
+HdAShCut.exe
+HdAudBus.sys
+HdAudRes.dll
+HdAudio.sys
 hid.dll
 hidbatt.sys
 hidbth.sys
@@ -6940,6 +6945,7 @@ wch7xxnt.sys
 wdmaud.drv
 wdmaud.sys
 wlluc48.sys
+WMALFXGFXDSP.dll
 wmiacpi.sys
 wshbth.dll
 wshirda.dll

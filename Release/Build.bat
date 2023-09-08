@@ -1,7 +1,8 @@
 @echo off
 
-title One-Core-API Binaries Maker
+title One-Core-API Binaries x86 Maker
 
+call Tools\choose-arch.bat
 call Tools\setenv.bat
 
 call Tools\Build-Additional-Dll-Installer.bat

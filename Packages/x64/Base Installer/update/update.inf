@@ -26,7 +26,7 @@
 [Strings]
     HelpLink 				= "http://shorthornproject.com"
     URLInfoAbout 			= "http://shorthornproject.com"
-	BASE_VERSION            = "3.0.0"
+	BASE_VERSION            = "3.0.1"
 	SP_TITLE                = "One-Core-API Base"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAB"
@@ -2469,8 +2469,8 @@
 	HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\KnownDLLs","API-MS-WIN-CORE-MEMORY-L1-1-0",0x0,"API-MS-WIN-CORE-MEMORY-L1-1-0.DLL"
 
 	;key to prevent .net framework 4.5+ installation error when Windows XP is without any previous .net Framework installed
-	HKLM,"Software\Microsoft\.NETFramework","InstallRoot",0x0,"%SystemRoot%\Microsoft.NET\Framework64\"
-	HKLM,"Software\Wow6432Node\Microsoft\.NETFramework","InstallRoot",0x0,"%SystemRoot%\Microsoft.NET\Framework\"
+	;HKLM,"Software\Microsoft\.NETFramework","InstallRoot",0x0,"%SystemRoot%\Microsoft.NET\Framework64\"
+	;HKLM,"Software\Wow6432Node\Microsoft\.NETFramework","InstallRoot",0x0,"%SystemRoot%\Microsoft.NET\Framework\" ;Commented for now, because .net Framework not allow %SystemRoot% to get "C:\Windows"
 
 [ProductInstall.CopyFilesAlways]
 	CopyFiles				   = Drivers.CoreDriverFiles
@@ -2595,6 +2595,7 @@
     iphlpapibase.dll,XP64SP2/amd64/iphlpapibase.dll
     winstabase.dll,XP64SP2/amd64/winstabase.dll
     ws2_base.dll,XP64SP2/amd64/ws2_base.dll
+    winhttp.dll,XP64SP2/amd64/winhttp.dll	
 	winsrv.dll, XP64SP2/amd64/winsrv.dll
 	wow64win.dll, XP64SP2/amd64/wow64win.dll
 	win32k.sys, XP64SP2/amd64/win32k.sys	
@@ -2604,7 +2605,7 @@
     comctlext.dll,amd64/comctlext.dll
     comdlg32.dll,amd64/comdlg32.dll
     cryptnew.dll,amd64/cryptnew.dll	
-    cryptext.dll,amd64/cryptext.dll	
+    cryptex.dll,amd64/cryptex.dll	
     d3dkmt.dll,amd64/d3dkmt.dll	
 	fileextd.dll,amd64/fileextd.dll		
     gdi32.dll,amd64/gdi32.dll
@@ -2612,7 +2613,7 @@
     iphlpapi.dll,amd64/iphlpapi.dll
     idndl.dll,amd64/idndl.dll
     kernelbase.dll,amd64/kernelbase.dll
-    mscoree.dll,amd64/mscoree.dll
+    ;mscoree.dll,amd64/mscoree.dll ;comment becuase if copied, must be set HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft.NETFramework\InstallRoot too, however, we don't know Windows drive letter installation. 
     msctfime.ime,amd64/msctfime.ime
     msvcrt.dll,amd64/msvcrt.dll	
     netapi32.dll,amd64/netapi32.dll
@@ -2636,11 +2637,11 @@
     user32.dll,amd64/user32.dll
     uxtheme.dll,amd64/uxtheme.dll
 	version.dll,amd64/version.dll
-    winbrand.dll,amd64/winbrand.dll		
+    winbrand.dll,amd64/winbrand.dll	
     winsta.dll,amd64/winsta.dll		
     winstanew.dll,amd64/winstanew.dll		
     ws2_32.dll,amd64/ws2_32.dll
-	mui/0409/mscorees.dll,amd64/mui/0409/mscorees.dll
+	;mui/0409/mscorees.dll,amd64/mui/0409/mscorees.dll
 	
 [CopyAlways.SysWOW64.Files]
     advapibase.dll,XP64SP2/i386/wadvapibase.dll
@@ -2660,6 +2661,7 @@
     shlwapibase.dll,XP64SP2/i386/wshlwapibase.dll	
     userbase.dll,XP64SP2/i386/wuserbase.dll
     uxthemebase.dll,XP64SP2/i386/wuxthemebase.dll
+    winhttp.dll,XP64SP2/i386/wwinhttp.dll	
     winstabase.dll,XP64SP2/i386/wwinstabase.dll
     ws2_base.dll,XP64SP2/i386/wws2_base.dll
     advapi32.dll,i386/wadvapi32.dll
@@ -2669,7 +2671,7 @@
     comctlext.dll,i386/wcomctlext.dll
     comdlg32.dll,i386/wcomdlg32.dll
     cryptnew.dll,i386/wcryptnew.dll
-    cryptext.dll,i386/wcryptext.dll
+    cryptex.dll,i386/wcryptex.dll
     d3dkmt.dll,i386/wd3dkmt.dll
 	fileextd.dll,i386/wfileextd.dll
     gdi32.dll,i386/wgdi32.dll
@@ -2677,7 +2679,7 @@
     iphlpapi.dll,i386/wiphlpapi.dll
     idndl.dll,i386/widndl.dll
     kernelbase.dll,i386/wkernelbase.dll	
-    mscoree.dll,i386/wmscoree.dll
+    ;mscoree.dll,i386/wmscoree.dll ;comment becuase if copied, must be set HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft.NETFramework\InstallRoot too, however, we don't know Windows drive letter installation. 
 	msctfime.ime,i386/wmsctfime.ime
     msvcrt.dll,i386/wmsvcrt.dll
     netapi32.dll,i386/wnetapi32.dll
@@ -2701,11 +2703,11 @@
     user32.dll,i386/wuser32.dll
     uxtheme.dll,i386/wuxtheme.dll
 	version.dll,i386/wversion.dll
-    winbrand.dll,i386/wwinbrand.dll		
-    winsta.dll,i386/wwinsta.dll		
+    winbrand.dll,i386/wwinbrand.dll	
+    winsta.dll,i386/wwinsta.dll
     winstanew.dll,i386/wwinstanew.dll		
     ws2_32.dll,i386/wws2_32.dll
-	mui/0409/mscorees.dll,i386/mui/0409/wmscorees.dll
+	;mui/0409/mscorees.dll,i386/mui/0409/wmscorees.dll
 	
 [CopyAlways.DriverCab.files]
     ntoskrnl.exe,XP64SP2/amd64/ntoskrnl.exe
@@ -2771,7 +2773,7 @@
     amd64/comctlext.dll =1
     amd64/comdlg32.dll =1
     amd64/cryptnew.dll =1
-    amd64/cryptext.dll =1
+    amd64/cryptex.dll =1
     amd64/fileextd.dll =1		
     amd64/gdi32.dll = 1
     amd64/gdiplusnew.dll = 1
@@ -2779,7 +2781,7 @@
     amd64/iphlpapibase.dll = 1
     amd64/idndl.dll = 1
     amd64/kernelbase.dll = 1
-    amd64/mscoree.dll = 1
+    ;amd64/mscoree.dll = 1
 	amd64/msctfime.ime = 1
     amd64/msvcrt.dll = 1
     amd64/netapi32.dll = 1
@@ -2805,14 +2807,14 @@
 	; amd64/wevtold.dll = 1
     amd64/winbrand.dll = 1	
     amd64/ws2_32.dll = 1
-	amd64/mui/0409/mscorees.dll = 1
+	;amd64/mui/0409/mscorees.dll = 1
     i386/wadvapi32.dll = 1
 	i386/wAPI-MS-WIN-CORE-MEMORY-L1-1-0.DLL
     i386/wbcrypt.dll = 1
     i386/wcomctlext.dll =1
     i386/wcomdgl32.dll =1
     i386/wcryptnew.dll =1
-    i386/wcryptext.dll =1
+    i386/wcryptex.dll =1
     i386/wfileextd.dll =1		
     i386/wgdi32.dll = 1
     i386/wgdiplusnew.dll = 1
@@ -2821,8 +2823,7 @@
     i386/widndl.dll = 1
 	i386/wiertutil.dll = 1
     i386/wkernelbase.dll = 1
-    i386/wmscoree.dll = 1
-    i386/wmscorees.dll = 1
+    ;i386/wmscoree.dll = 1
 	i386/wmsctfime.ime = 1	
     i386/wmsvcrt.dll = 1
     i386/wnetapi32.dll = 1
