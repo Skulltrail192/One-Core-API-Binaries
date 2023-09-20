@@ -32,15 +32,15 @@ x64 SP2.
 **Modern Setup**
 This is a package designed to prepare Windows to get ability to be installed in others computers. If you don't want capture the Windows installation, don't need install this package.
 - This package has a limitation: Cannot be installed on VirtualBox VM if that VM if I/O APIC option is disabled. You must change the ACPI HAL type on Device Manager and enable I/O APIC on VM properties or reinstall Windows with I/O APIC option enabled.     You can see that option below:
-  ![Enable-I-O-APIC](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/78da59f8-ab81-4863-ba6c-315c64d5cb40)
-  
- **How Update HAL:**
+ ![Enable-I-O-APIC](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/78da59f8-ab81-4863-ba6c-315c64d5cb40)
+
+**How Update HAL:**
 ![Update-Driver](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/e52032d9-e887-4507-819e-37f2ada02945)
 ![Install-Manually](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/5e09b3ea-8854-4682-b2b2-352f0a30e1e5)
 ![Don't Search](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/4793385a-0800-4042-98fb-dac1100eab4b)
-  Choose this option: 
-  ![Update-HAL](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/d6411b32-5381-4a7c-bee6-53fe67ed0ec0)
 
+**Choose this option:**
+![Update-HAL](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/d6411b32-5381-4a7c-bee6-53fe67ed0ec0)
 
 - After install One-Core-API Modern Setup and restart computer, you can run Sysprep, a tool to prepare Windows to be generalize Windows Installation to any hardware;
 - Sysprep is placed on: Windows\System32\Sysprep, like as Windows Vista have;
