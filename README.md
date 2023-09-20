@@ -40,7 +40,9 @@ This is a package designed to prepare Windows to get ability to be installed in 
 **How Update HAL:**
 
 ![Update-Driver](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/e52032d9-e887-4507-819e-37f2ada02945)
+
 ![Install-Manually](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/5e09b3ea-8854-4682-b2b2-352f0a30e1e5)
+
 ![Don't Search](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/4793385a-0800-4042-98fb-dac1100eab4b)
 
 **Choose this option:**
