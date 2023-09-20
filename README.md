@@ -31,7 +31,7 @@ x64 SP2.
 
 **Modern Setup**
 This is a package designed to prepare Windows to get ability to be installed in others computers. If you don't want capture the Windows installation, don't need install this package.
-- This package has a limitation: Cannot be installed on VirtualBox VM if that VM if I/O APIC option is disabled. You must change the ACPI HAL type on Device Manager and enable I/O APIC on VM properties or reinstall Windows with I/O APIC option enabled.     You can see that option below:
+- This package has a limitation: Cannot be installed on VirtualBox VM if that VM if I/O APIC option is disabled. You must change the ACPI HAL type on Device Manager and enable I/O APIC on VM properties or reinstall Windows with I/O APIC option enabled. You can see that option below:
  ![Enable-I-O-APIC](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/78da59f8-ab81-4863-ba6c-315c64d5cb40)
 
 **How Update HAL:**
