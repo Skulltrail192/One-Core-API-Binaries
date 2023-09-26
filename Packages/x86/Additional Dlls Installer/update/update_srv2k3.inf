@@ -2814,6 +2814,7 @@
 	"milcore.dll"
 	"mlang.dll"
 	"mmdevapi.dll"
+	"mscms.dll"
 	"msdrm.dll"
 	"msidcrl30.dll"
 	"mspatcha.dll"
@@ -2915,6 +2916,7 @@
 	"milcore.dll" = 1
 	"mlang.dll" = 1
 	"mmdevapi.dll" = 1
+	"mscms.dll" = 1
 	"msdrm.dll" = 1
 	"msidcrl30.dll" = 1
 	"mspatcha.dll" = 1

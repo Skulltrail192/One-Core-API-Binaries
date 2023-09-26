@@ -5284,6 +5284,7 @@
 	milcore.dll,amd64/milcore.dll
 	mlang.dll,amd64/mlang.dll
 	mmdevapi.dll,amd64/mmdevapi.dll
+	mscms.dll,amd64/mscms.dll
 	msdrm.dll,amd64/msdrm.dll
 	msidcrl30.dll,amd64/msidcrl30.dll
 	mspatcha.dll,amd64/mspatcha.dll
@@ -5383,6 +5384,7 @@
 	milcore.dll,i386/wmilcore.dll
 	mlang.dll,i386/wmlang.dll
 	mmdevapi.dll,i386/wmmdevapi.dll
+	mscms.dll,i386/wmscms.dll
 	msdrm.dll,i386/wmsdrm.dll
 	msidcrl30.dll,i386/wmsidcrl30.dll
 	mspatcha.dll,i386/wmspatcha.dll
@@ -5485,6 +5487,7 @@
 	amd64/milcore.dll = 1
 	amd64/mlang.dll = 1
 	amd64/mmdevapi.dll = 1
+	amd64/mscms.dll = 1
 	amd64/msdrm.dll = 1
 	amd64/msidcrl30.dll = 1
 	amd64/mspatcha.dll = 1
@@ -5583,6 +5586,7 @@
 	i386/wmilcore.dll = 1
 	i386/wmlang.dll = 1
 	i386/wmmdevapi.dll = 1
+	i386/wmscms.dll = 1
 	i386/wmsdrm.dll = 1
 	i386/wmsidcrl30.dll = 1
 	i386/wmspatcha.dll = 1

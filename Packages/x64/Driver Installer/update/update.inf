@@ -281,3 +281,89 @@
 	HKLM,SOFTWARE\Microsoft\Updates\Windows Server 2003\SP%SERVICE_PACK_NUMBER%\%SP_SHORT_TITLE%
 	HKLM,SOFTWARE\Microsoft\Updates\Windows XP\SP%SERVICE_PACK_NUMBER%\%SP_SHORT_TITLE%
 	HKLM,SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP%SERVICE_PACK_NUMBER%\%SP_SHORT_TITLE%
+	HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_010601","ClassGUID",0x00000000,"{4d36e96a-e325-11ce-bfc1-08002be10318}"
+	HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_010601","Service",0x00000000,"storahci"
+	HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_010802","ClassGUID",0x00000000,"{4D36E97B-E325-11CE-BFC1-08002BE10318}"
+	HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_010802","Service",0x00000000,"stornvme"
+	HKLM,"SYSTEM\CurrentControlSet\Services\msisadrv"
+	HKLM,"SYSTEM\CurrentControlSet\Services\msisadrv","Tag",0x10001,02,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\msisadrv","DisplayName",0x0,"ISA/EISA Class Driver"
+	HKLM,"SYSTEM\CurrentControlSet\Services\msisadrv","Group",0x0,"Boot Bus Extender"
+	HKLM,"SYSTEM\CurrentControlSet\Services\msisadrv","ImagePath",0x20000,"system32\drivers\msisadrv.sys"
+	HKLM,"SYSTEM\CurrentControlSet\Services\msisadrv","ErrorControl",0x10001,03,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\msisadrv","Start",0x10001,00,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\msisadrv","Type",0x10001,01,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\storahci"
+	HKLM,"SYSTEM\CurrentControlSet\Services\storahci","ErrorControl",0x00010001,1
+	HKLM,"SYSTEM\CurrentControlSet\Services\storahci","Group",0x00000000,"SCSI Miniport"
+	HKLM,"SYSTEM\CurrentControlSet\Services\storahci","ImagePath",0x00020000,"system32\DRIVERS\storahci.sys"
+	HKLM,"SYSTEM\CurrentControlSet\Services\storahci","Start",0x00010001,0
+	HKLM,"SYSTEM\CurrentControlSet\Services\storahci","Type",0x00010001,1	
+	HKLM,"SYSTEM\CurrentControlSet\Services\storahci\Parameters", "PnpInterface", 0x00010001, 0x00000001
+	HKLM,"SYSTEM\CurrentControlSet\Services\storahci\Parameters", "BusType", 0x00010001, 0x0000000B
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme"
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme","ErrorControl",0x00010001,1
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme","Group",0x00000000,"SCSI Miniport"
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme","ImagePath",0x00020000,"system32\DRIVERS\stornvme.sys"
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme","Start",0x00010001,0
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme","Type",0x00010001,1	
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "Namespaces", 0x00010001, 0x00000010
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "MaxTXSize", 0x00010001, 0x00020000	
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "AdQEntries", 0x00010001, 0x0000000B	
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "IoQEntries", 0x00010001, 0x00000080	
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "IoQEntries", 0x00010001, 0x00000400	
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "IntCoalescingTime", 0x00010001, 0x00000000	
+	HKLM,"SYSTEM\CurrentControlSet\Services\stornvme\Parameters\Device", "IntCoalescingEntries", 0x00010001, 0x00000000	
+    HKLM,"System\CurrentControlSet\Control\Wdf\Kmdf\KmdfLibrary\Versions\1","Service",0,"Wdf01000"
+    HKLM,"System\CurrentControlSet\Control\SafeBoot\Minimal\Wdf01000.sys","",0,"Driver"
+    HKLM,"System\CurrentControlSet\Control\SafeBoot\Network\Wdf01000.sys","",0,"Driver"
+	HKLM,"SYSTEM\CurrentControlSet\Services\Wdf01000"
+	HKLM,"SYSTEM\CurrentControlSet\Services\Wdf01000","Type",0x10001,01,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\Wdf01000","Start",0x10001,03,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\Wdf01000","ErrorControl",0x10001,00,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\Wdf01000","ImagePath",0x20000,"System32\Drivers\wdf01000.sys"
+	HKLM,"SYSTEM\CurrentControlSet\Services\Wdf01000","DisplayName",0x0,"Kernel Mode Driver Frameworks service"
+	HKLM,"SYSTEM\CurrentControlSet\Services\Wdf01000","Group",0x0,"WdfLoadGroup"
+	HKLM,"SYSTEM\CurrentControlSet\Services\Wdf01000\Security","Security",0x1,01,00,14,80,b8,00,00,00,c4,00,00,00,14,00,00,00,30,00,00,00,02,00,1c,00,01,00,00,00,02,80,14,00,ff,01,0f,00,01,01,00,00,00,00,00,01,00,00,00,00,02,00,88,00,06,00,00,00,00,00,14,00,fd,01,02,00,01,01,00,00,00,00,00,05,12,00,00,00,00,00,18,00,ff,01,0f,00,01,02,00,00,00,00,00,05,20,00,00,00,20,02,00,00,00,00,14,00,8d,01,02,00,01,01,00,00,00,00,00,05,04,00,00,00,00,00,14,00,8d,01,02,00,01,01,00,00,00,00,00,05,06,00,00,00,00,00,14,00,00,01,00,00,01,01,00,00,00,00,00,05,0b,00,00,00,00,00,18,00,fd,01,02,00,01,02,00,00,00,00,00,05,20,00,00,00,23,02,00,00,01,01,00,00,00,00,00,05,12,00,00,00,01,01,00,00,00,00,00,05,12,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\UCX01000"
+	HKLM,"SYSTEM\CurrentControlSet\Services\UCX01000","Type",0x10001,01,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\UCX01000","Start",0x10001,03,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\UCX01000","ErrorControl",0x10001,01,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\UCX01000","Tag",0x10001,06,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\UCX01000","ImagePath",0x20000,"system32\DRIVERS\ucx01000.sys"
+	HKLM,"SYSTEM\CurrentControlSet\Services\UCX01000","DisplayName",0x0,"USB Controller Extension"
+	HKLM,"SYSTEM\CurrentControlSet\Services\UCX01000","Group",0x0,"Boot Bus Extender"
+	HKLM,"SYSTEM\CurrentControlSet\Services\UCX01000","BootFlags",0x10001,10,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\UCX01000\Parameters",,0x10
+	HKLM,"SYSTEM\CurrentControlSet\Services\UCX01000\Parameters\Wdf","WdfMajorVersion",0x10001,01,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\UCX01000\Parameters\Wdf","WdfMinorVersion",0x10001,0b,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\UCX01000\Security","Security",0x1,01,00,14,80,b8,00,00,00,c4,00,00,00,14,00,00,00,30,00,00,00,02,00,1c,00,01,00,00,00,02,80,14,00,ff,01,0f,00,01,01,00,00,00,00,00,01,00,00,00,00,02,00,88,00,06,00,00,00,00,00,14,00,fd,01,02,00,01,01,00,00,00,00,00,05,12,00,00,00,00,00,18,00,ff,01,0f,00,01,02,00,00,00,00,00,05,20,00,00,00,20,02,00,00,00,00,14,00,8d,01,02,00,01,01,00,00,00,00,00,05,04,00,00,00,00,00,14,00,8d,01,02,00,01,01,00,00,00,00,00,05,06,00,00,00,00,00,14,00,00,01,00,00,01,01,00,00,00,00,00,05,0b,00,00,00,00,00,18,00,fd,01,02,00,01,02,00,00,00,00,00,05,20,00,00,00,23,02,00,00,01,01,00,00,00,00,00,05,12,00,00,00,01,01,00,00,00,00,00,05,12,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBHUB3"
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBHUB3","Type",0x10001,01,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBHUB3","Start",0x10001,03,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBHUB3","ErrorControl",0x10001,01,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBHUB3","Tag",0x10001,14,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBHUB3","ImagePath",0x20000,"system32\DRIVERS\UsbHub3.sys"
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBHUB3","DisplayName",0x0,"SuperSpeed Hub"
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBHUB3","Group",0x0,"Base"
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBHUB3","BootFlags",0x10001,10,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBHUB3\Parameters","LogPages",0x10001,03,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBHUB3\Parameters\Wdf","LogPages",0x10001,03,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBHUB3\Parameters\Wdf","WdfMajorVersion",0x10001,01,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBHUB3\Parameters\Wdf","WdfMinorVersion",0x10001,0b,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBHUB3\Security","Security",0x1,01,00,14,80,b8,00,00,00,c4,00,00,00,14,00,00,00,30,00,00,00,02,00,1c,00,01,00,00,00,02,80,14,00,ff,01,0f,00,01,01,00,00,00,00,00,01,00,00,00,00,02,00,88,00,06,00,00,00,00,00,14,00,fd,01,02,00,01,01,00,00,00,00,00,05,12,00,00,00,00,00,18,00,ff,01,0f,00,01,02,00,00,00,00,00,05,20,00,00,00,20,02,00,00,00,00,14,00,8d,01,02,00,01,01,00,00,00,00,00,05,04,00,00,00,00,00,14,00,8d,01,02,00,01,01,00,00,00,00,00,05,06,00,00,00,00,00,14,00,00,01,00,00,01,01,00,00,00,00,00,05,0b,00,00,00,00,00,18,00,fd,01,02,00,01,02,00,00,00,00,00,05,20,00,00,00,23,02,00,00,01,01,00,00,00,00,00,05,12,00,00,00,01,01,00,00,00,00,00,05,12,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBXHCI"
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBXHCI","Type",0x10001,01,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBXHCI","Start",0x10001,03,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBXHCI","ErrorControl",0x10001,01,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBXHCI","Tag",0x10001,13,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBXHCI","ImagePath",0x20000,"system32\DRIVERS\USBXHCI.SYS"
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBXHCI","DisplayName",0x0,"USB xHCI Compliant Host Controller"
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBXHCI","Group",0x0,"Base"
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBXHCI","BootFlags",0x10001,10,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBXHCI\Parameters",,0x10
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBXHCI\Parameters\Wdf","WdfMajorVersion",0x10001,01,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBXHCI\Parameters\Wdf","WdfMinorVersion",0x10001,0b,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\Services\USBXHCI\Security","Security",0x1,01,00,14,80,b8,00,00,00,c4,00,00,00,14,00,00,00,30,00,00,00,02,00,1c,00,01,00,00,00,02,80,14,00,ff,01,0f,00,01,01,00,00,00,00,00,01,00,00,00,00,02,00,88,00,06,00,00,00,00,00,14,00,fd,01,02,00,01,01,00,00,00,00,00,05,12,00,00,00,00,00,18,00,ff,01,0f,00,01,02,00,00,00,00,00,05,20,00,00,00,20,02,00,00,00,00,14,00,8d,01,02,00,01,01,00,00,00,00,00,05,04,00,00,00,00,00,14,00,8d,01,02,00,01,01,00,00,00,00,00,05,06,00,00,00,00,00,14,00,00,01,00,00,01,01,00,00,00,00,00,05,0b,00,00,00,00,00,18,00,fd,01,02,00,01,02,00,00,00,00,00,05,20,00,00,00,23,02,00,00,01,01,00,00,00,00,00,05,12,00,00,00,01,01,00,00,00,00,00,05,12,00,00,00
+	; Supress New Hardware Prompt after installation
+	HKLM,"SYSTEM\CurrentControlSet\Services\PlugPlay\Parameters","SuppressUI",0x10001,01,00,00,00
