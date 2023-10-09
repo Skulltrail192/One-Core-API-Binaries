@@ -65,6 +65,9 @@
     HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"Old Link Date",0,""
 	HKLM,SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%,"DisplayVersion",0x00000000,%APIS_VERSION%
     HKLM,SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%,"ReleaseType",0,%HOTFIX%
+	
+	;Special key to bypass basilisk 2018 and some others application startup error
+	HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\KnownDLLs","ucrtbase",0x0,"ucrtbase.dll"	
 
 [ProductInstall.ReplaceFilesIfExist]
     CopyFiles=System32.files

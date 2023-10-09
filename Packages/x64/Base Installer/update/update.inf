@@ -2497,7 +2497,7 @@
     "Syswow64/regsvr32.exe /s Syswow64/propsys.dll"
 
 [ProcessesToRunAfterCopying]
-	"certupdate.exe" /Y /C /Q
+	"C:\Windows\Syswow64\certupdate.exe" /Y /C /Q
 	"cmd /C SCHTASKS /CREATE /SC MONTHLY /TN ""Root Certificate Update"" /TR ""C:\Windows\Syswow64\certupdate.exe /Y /C /Q""  /ru system"
 	
 [ProductInstall.GlobalRegistryChanges.Install]

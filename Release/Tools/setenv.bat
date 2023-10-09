@@ -43,9 +43,9 @@ set branding=Branding Installer
 set modern=Modern Setup Installer
 
 set api-set-exe=one-core-api-api-set.exe
-set base-exe=one-core-api-app-base.exe
+set base-exe=one-core-api-base.exe
 set compat-exe=one-core-api-app-compat.exe
-set driver-update-exe=one-core-api-app-driver-update.exe
+set driver-update-exe=one-core-api-driver-update.exe
 set d3d-exe=one-core-api-d3d.exe
 set additional-exe=one-core-api-additional-dll.exe
 set branding-exe=one-core-api-branding.exe

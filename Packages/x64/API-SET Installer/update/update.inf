@@ -60,7 +60,10 @@
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
     HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentDisplayName",0x00000000,"%PARENT_DISPLAY_NAME%"	
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
-	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSION%"	
+	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSION%"
+	
+	;Special key to bypass basilisk 2018 and some others application startup error
+	HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\KnownDLLs","ucrtbase",0x0,"ucrtbase.dll"
 
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files
