@@ -71,6 +71,8 @@ This is a package designed to prepare Windows to get ability to be installed in 
 - Yandex latest version;
 - Thorium browser up 109;
 - Supermium up version 117;
+- Seamonkey up version 2.53.10;
+- Thunderbird up version 70x;
 - Java Alternative JDK up version 21;
 - Maxthon up version 7.1.6;
 - Vivaldi up latest version;
