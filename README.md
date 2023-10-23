@@ -22,7 +22,7 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - **App Compat**: Application compatbility settings, backported from later versions of Windows.
 - **Driver Update**: Bring updated acpi driver what support ACPI 2.0, new drivers like Storachi (for AHCI driver controllers), NVME (for NVME M.2 driver controllers) and USBXHCI (USB 3.0); 
 - **Branding**: New branding system introduced on Windows Vista, required to D3D and Modern Setup packages;
-- **Modern Setup**: bring support to turn Windows XP/2003 installation installable using Windows Vista or above Setup engines on newers computers;
+- **Modern Setup**: bring support to turn Windows XP/2003 installation installable using Windows Vista or above Setup engines on newers computers. This package is only if you install Windows on VM or real computer and want install to other computer, using a tool called SYSPREP. Don't need install if you don't want do it;
 
 **Installation order of packages:**
 - **App Compat only:** This package can be installed without any other packages;
