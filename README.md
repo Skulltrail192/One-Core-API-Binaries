@@ -14,6 +14,7 @@ x64 SP2.
 - Output: Binaries output, you can generate using scripts on Release folder;
 
 **The One-Core-API Binaries project consists of the following packages:**
+Warning: Always if OCA package require restart, do it. If you install all packages and restart only on last, Windows will be corrupted.  
 - **Base**: Main package of One-Core-API and is required by all other packages, except App Compat, Modern Setup (x86 only) and Driver Update, and contains all wrappers used in this project (like kernelbase and ntext);
 - **Additional Dlls**: Several new dlls introduced in later versions of Windows.
 - **API-SET**: Contains UCRT dlls based on wine.
@@ -21,7 +22,24 @@ x64 SP2.
 - **App Compat**: Application compatbility settings, backported from later versions of Windows.
 - **Driver Update**: Bring updated acpi driver what support ACPI 2.0, new drivers like Storachi (for AHCI driver controllers), NVME (for NVME M.2 driver controllers) and USBXHCI (USB 3.0); 
 - **Branding**: New branding system introduced on Windows Vista, required to D3D and Modern Setup packages;
-- **Modern Setup**: bring support to turn Windows XP/2003 installation  installable using Windows Vista or above Setup engines; 
+- **Modern Setup**: bring support to turn Windows XP/2003 installation installable using Windows Vista or above Setup engines on newers computers;
+
+**Installation order of packages:**
+- **App Compat only:** This package can be installed without any other packages;
+
+- **Base first**: Base-> API-SET -> Branding -> D3d -> Modern Setup -> Driver Update -> App Compat-> Additional Dlls;
+
+- **Modern Setup**:
+  - **x86**: Branding -> Modern Setup -> Base-> API-SET -> D3d -> Driver Update -> App Compat-> Additional Dlls;
+  - **x64**: Base -> Branding -> Modern Setup -> Base-> API-SET -> D3d -> Driver Update -> App Compat-> Additional Dlls;
+     
+- **Modern Setup Only** (Recommended install Driver Update too):
+  - **x86**: Branding -> Modern Setup;
+  - **x64**: Base -> Branding -> Modern Setup;
+ 
+- **Driver Update Only**: Driver Update; 
+
+- **AppCompat first**: App Compat -> Base -> Driver Update -> D3d -> API-SET -> Additional Dlls. 
 
 **Main Features**:
 - Increase memory support for 128 GB for x86 and 2 TB for x64 by default;
@@ -29,7 +47,7 @@ x64 SP2.
 - Allow support for new hardware with new drivers controllers;
 - Allow support for install Windows on any computers, with generalized hardware;
 
-**Modern Setup**
+**Modern Setup - Detailed**
 This is a package designed to prepare Windows to get ability to be installed in others computers. If you don't want capture the Windows installation, don't need install this package.
 - This package has a limitation: Cannot be installed on VirtualBox VM if that VM if I/O APIC option is disabled. You must change the ACPI HAL type on Device Manager and enable I/O APIC on VM properties or reinstall Windows with I/O APIC option enabled.
 
@@ -115,23 +133,6 @@ use a pre-installed version, copied from other operation system;
 - MiniChrome 87 has a issue related with high usage cpu. It is related with UpdateProcThreadAttribute, but, this function is needed for others applications, like standard chrome;
 - Opera 39+ crash on start;
 - Qt5 application what use Dwrite crash on startup. Has some glitches like black screen if you delete dwrite (application start and can be used, however)
-
-**Installation order of packages:**
-- **App Compat only:** This package can be installed without any other packages;
-
-- **Base first**: Base-> API-SET -> Branding -> D3d -> Modern Setup -> Driver Update -> App Compat-> Additional Dlls;
-
-- **Modern Setup**:
-  - **x86**: Branding -> Modern Setup -> Base-> API-SET -> D3d -> Driver Update -> App Compat-> Additional Dlls;
-  - **x64**: Base -> Branding -> Modern Setup -> Base-> API-SET -> D3d -> Driver Update -> App Compat-> Additional Dlls;
-     
-- **Modern Setup Only** (Recommended install Driver Update too):
-  - **x86**: Branding -> Modern Setup;
-  - **x64**: Base -> Branding -> Modern Setup;
- 
-- **Driver Update Only**: Driver Update; 
-
-- **AppCompat first**: App Compat -> Base -> Driver Update -> D3d -> API-SET -> Additional Dlls.
 
 **Issues Report**
 For help to reproduce issue, is recommend **always** follow this template:
