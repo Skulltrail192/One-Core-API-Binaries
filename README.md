@@ -25,21 +25,18 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - **Modern Setup**: bring support to turn Windows XP/2003 installation installable using Windows Vista or above Setup engines on newers computers. This package is only if you install Windows on VM or real computer and want install to other computer, using a tool called SYSPREP. Don't need install if you don't want do it;
 
 **Installation order of packages:**
-- **App Compat only:** This package can be installed without any other packages;
-
-- **Base first**: Base-> API-SET -> Branding -> D3d -> Modern Setup -> Driver Update -> App Compat-> Additional Dlls;
+- **Common order**: Base-> Additional Dlls -> API-SET -> Branding -> D3d -> Modern Setup -> Driver Update -> App Compat;
 
 - **Modern Setup**:
-  - **x86**: Branding -> Modern Setup -> Base-> API-SET -> D3d -> Driver Update -> App Compat-> Additional Dlls;
-  - **x64**: Base -> Branding -> Modern Setup -> Base-> API-SET -> D3d -> Driver Update -> App Compat-> Additional Dlls;
-     
-- **Modern Setup Only** (Recommended install Driver Update too):
-  - **x86**: Branding -> Modern Setup;
-  - **x64**: Base -> Branding -> Modern Setup;
- 
-- **Driver Update Only**: Driver Update; 
+  - **With others packages together**: Branding -> Modern Setup -> Base-> API-SET -> D3d -> Driver Update -> App Compat-> Additional Dlls;
+  - **Without other packages together, only for install on newer computer(Also Recommended install Driver Update too)**:
+    - **x86**: Branding -> Modern Setup;
+    - **x64**: Base -> Branding -> Modern Setup;
 
-- **AppCompat first**: App Compat -> Base -> Driver Update -> D3d -> API-SET -> Additional Dlls. 
+- **Standalone packages (don't require other packages together, only if you want)**
+  - **App Compat only:** This package can be installed without any other packages; 
+  - **Driver Update Only**: This package can be installed without any other packages; 
+  - **AppCompat first**: This package can be installed without any other packages. 
 
 **Main Features**:
 - Increase memory support for 128 GB for x86 and 2 TB for x64 by default;
