@@ -25,7 +25,7 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	BASE_VERSION            = "3.0.2"	
+	BASE_VERSION            = "3.0.3"	
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
     SECURITY_UPDATE       	= "Security Update"
@@ -444,6 +444,39 @@
 	;key to prevent .net framework 4.5+ installation error when Windows XP is without any previous .net Framework installed
 	;HKLM,"Software\Microsoft\.NETFramework","InstallRoot",0x0,"%SystemRoot%\Microsoft.NET\Framework\" ;Commented for now, because .net Framework not allow %SystemRoot% to get "C:\Windows"
 	
+	;Keys to support IFileDialog
+	HKLM,"SOFTWARE\Classes\CLSID\{DC1C5A9C-E88A-4dde-A5A1-60F82A20AEF7}",,0x0,"File Open Dialog"
+	HKLM,"SOFTWARE\Classes\CLSID\{DC1C5A9C-E88A-4dde-A5A1-60F82A20AEF7}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\comdlg32.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{DC1C5A9C-E88A-4dde-A5A1-60F82A20AEF7}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\CLSID\{C0B4E2F3-BA21-4773-8DBA-335EC946EB8B}",,0x0,"File Save Dialog"
+	HKLM,"SOFTWARE\Classes\CLSID\{C0B4E2F3-BA21-4773-8DBA-335EC946EB8B}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\comdlg32.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{C0B4E2F3-BA21-4773-8DBA-335EC946EB8B}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKCR,"SOFTWARE\Classes\CLSID\{AF02484C-A0A9-4669-9051-058AB12B9195}",,0x0,"File Save Dialog Legacy"
+	HKCR,"SOFTWARE\Classes\CLSID\{AF02484C-A0A9-4669-9051-058AB12B9195}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\comdlg32.dll"
+	HKCR,"SOFTWARE\Classes\CLSID\{AF02484C-A0A9-4669-9051-058AB12B9195}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\CLSID\{725F645B-EAED-4fc5-B1C5-D9AD0ACCBA5E}",,0x0,"File Open Dialog Legacy"
+	HKLM,"SOFTWARE\Classes\CLSID\{725F645B-EAED-4fc5-B1C5-D9AD0ACCBA5E}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\comdlg32.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{725F645B-EAED-4fc5-B1C5-D9AD0ACCBA5E}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	
+	;Keys to support IFileOperation
+	HKLM,"SOFTWARE\Classes\CLSID\{3ad05575-8857-4850-9277-11b85bdb8e09}",,0x0,"Copy/Move/Rename/Delete/Link Object"
+	HKLM,"SOFTWARE\Classes\CLSID\{3ad05575-8857-4850-9277-11b85bdb8e09}","AppId",0x0,"{3ad05575-8857-4850-9277-11b85bdb8e09}"
+	HKLM,"SOFTWARE\Classes\CLSID\{3ad05575-8857-4850-9277-11b85bdb8e09}","LocalizedString",0x20000,"@%%SystemRoot%%\system32\shell32.dll,-50176"
+	HKLM,"SOFTWARE\Classes\CLSID\{3ad05575-8857-4850-9277-11b85bdb8e09}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\shell32.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{3ad05575-8857-4850-9277-11b85bdb8e09}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	
+	HKCR,"SOFTWARE\Classes\Interface\{04B0F1A7-9490-44BC-96E1-4296A31252E2}",,0x0,"IFileOperationProgressSink"
+	HKCR,"SOFTWARE\Classes\Interface\{04B0F1A7-9490-44BC-96E1-4296A31252E2}\NumMethods",,0x0,"19"
+	HKCR,"SOFTWARE\Classes\Interface\{04B0F1A7-9490-44BC-96E1-4296A31252E2}\ProxyStubClsid32",,0x0,"{C90250F3-4D7D-4991-9B69-A5C5BC1C2AE6}"
+	
+	;Keys to support IApplicationAssociationRegistration
+	HKCR,"CLSID\{591209c7-767b-42b2-9fba-44ee4615f2c7}",,0x0,"Application Registration"
+	HKCR,"CLSID\{591209c7-767b-42b2-9fba-44ee4615f2c7}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\shell32.dll"
+	HKCR,"CLSID\{591209c7-767b-42b2-9fba-44ee4615f2c7}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\Interface\{4E530B0A-E611-4C77-A3AC-9031D022281B}",,0x0,"IApplicationAssociationRegistration"
+	HKLM,"SOFTWARE\Classes\Interface\{4E530B0A-E611-4C77-A3AC-9031D022281B}\NumMethods",,0x0,"9"
+	HKLM,"SOFTWARE\Classes\Interface\{4E530B0A-E611-4C77-A3AC-9031D022281B}\ProxyStubClsid32",,0x0,"{C90250F3-4D7D-4991-9B69-A5C5BC1C2AE6}"	
+	
 [ProductInstall.ReplaceFilesIfExist]
     CopyFiles=System32.files
 	
@@ -453,6 +486,7 @@
 [ProductInstall.CopyFilesAlways]
 	CopyFiles				   = Drivers.CoreDriverFiles
     CopyFiles                  = CopyAlways.System32.files
+	CopyFiles                  = CopyAlways.System32.APISET.Files
     CopyFiles                  = CopyAlways.System32.Mui.0409.files
 	CopyFiles                  = CopyAlways.WinSxS.Main.files
 	CopyFiles                  = CopyAlways.WinSxS.Manifests.files
@@ -484,6 +518,7 @@
 	Drivers.CoreDriverFiles = 12 ; %windir%\system32\drivers
 	System32.files=11                   ; %windir%\system32 (replace if exist)
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+    CopyAlways.System32.APISET.Files=11  ; %windir%\system32 (don't delay until reboot)
     CopyAlways.System32.Mui.0409.files=11  ; %windir%\system32 (don't delay until reboot)
 	CopyAlways.WinSxS.Main.files = 10 ; %windir%
 	CopyAlways.WinSxS.Manifests.files = 10 ; %windir%
@@ -606,8 +641,7 @@
 	winhttp.dll, 2k3SP2\srvwinhttp.dll
 	winstabase.dll, 2k3SP2\srvwinstabase.dll		
 	win32k.sys, 2k3SP2\srvwin32k.sys
-    advapi32.dll
-	API-MS-WIN-CORE-MEMORY-L1-1-0.dll	
+    advapi32.dll	
     bcrypt.dll
     certupdate.exe
     comctlext.dll
@@ -631,6 +665,7 @@
     netapi32.dll
     netfxperf.dll
     Nlsdl.dll
+    NNN4NT5.exe
     normaliz.dll		
     nsi.dll		
 	ntext.dll	
@@ -654,6 +689,308 @@
     winsta.dll
     winstanew.dll
     ws2_32.dll
+	
+[CopyAlways.System32.APISET.Files]	
+   API-MS-WIN-APPMODEL-IDENTITY-L1-1-0.dll,api-sets\API-MS-WIN-APPMODEL-IDENTITY-L1-1-0.dll
+   API-MS-WIN-APPMODEL-RUNTIME-L1-1-0.dll,api-sets\API-MS-WIN-APPMODEL-RUNTIME-L1-1-0.dll
+   API-MS-WIN-APPMODEL-RUNTIME-L1-1-1.dll,api-sets\API-MS-WIN-APPMODEL-RUNTIME-L1-1-1.dll
+   API-MS-WIN-APPMODEL-RUNTIME-L1-1-2.dll,api-sets\API-MS-WIN-APPMODEL-RUNTIME-L1-1-2.dll
+   API-MS-WIN-BASE-UTIL-L1-1-0.dll,api-sets\API-MS-WIN-BASE-UTIL-L1-1-0.dll
+   API-MS-WIN-CORE-APIQUERY-L1-1-0.dll,api-sets\API-MS-WIN-CORE-APIQUERY-L1-1-0.dll
+   API-MS-WIN-CORE-APPCOMPAT-L1-1-1.dll,api-sets\API-MS-WIN-CORE-APPCOMPAT-L1-1-1.dll
+   API-MS-WIN-CORE-APPINIT-L1-1-0.dll,api-sets\API-MS-WIN-CORE-APPINIT-L1-1-0.dll
+   API-MS-WIN-CORE-ATOMS-L1-1-0.dll,api-sets\API-MS-WIN-CORE-ATOMS-L1-1-0.dll
+   API-MS-WIN-CORE-BEM-L1-1-0.dll,api-sets\API-MS-WIN-CORE-BEM-L1-1-0.dll
+   API-MS-WIN-CORE-COM-L1-1-0.dll,api-sets\API-MS-WIN-CORE-COM-L1-1-0.dll
+   API-MS-WIN-CORE-COM-L1-1-1.dll,api-sets\API-MS-WIN-CORE-COM-L1-1-1.dll
+   API-MS-WIN-CORE-COMM-L1-1-0.dll,api-sets\API-MS-WIN-CORE-COMM-L1-1-0.dll
+   API-MS-WIN-CORE-COM-PRIVATE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-COM-PRIVATE-L1-1-0.dll
+   API-MS-WIN-CORE-CONSOLE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-CONSOLE-L1-1-0.dll
+   API-MS-WIN-CORE-CONSOLE-L1-2-0.dll,api-sets\API-MS-WIN-CORE-CONSOLE-L1-2-0.dll
+   API-MS-WIN-CORE-CONSOLE-L2-1-0.dll,api-sets\API-MS-WIN-CORE-CONSOLE-L2-1-0.dll
+   API-MS-WIN-CORE-CONSOLE-L3-2-0.dll,api-sets\API-MS-WIN-CORE-CONSOLE-L3-2-0.dll
+   API-MS-WIN-CORE-CRT-L1-1-0.dll,api-sets\API-MS-WIN-CORE-CRT-L1-1-0.dll
+   API-MS-WIN-CORE-CRT-L2-1-0.dll,api-sets\API-MS-WIN-CORE-CRT-L2-1-0.dll
+   API-MS-WIN-CORE-DATETIME-L1-1-0.dll,api-sets\API-MS-WIN-CORE-DATETIME-L1-1-0.dll
+   API-MS-WIN-CORE-DATETIME-L1-1-1.dll,api-sets\API-MS-WIN-CORE-DATETIME-L1-1-1.dll
+   API-MS-WIN-CORE-DEBUG-L1-1-0.dll,api-sets\API-MS-WIN-CORE-DEBUG-L1-1-0.dll
+   API-MS-WIN-CORE-DEBUG-L1-1-1.dll,api-sets\API-MS-WIN-CORE-DEBUG-L1-1-1.dll
+   API-MS-WIN-CORE-DELAYLOAD-L1-1-0.dll,api-sets\API-MS-WIN-CORE-DELAYLOAD-L1-1-0.dll
+   API-MS-WIN-CORE-DELAYLOAD-L1-1-1.dll,api-sets\API-MS-WIN-CORE-DELAYLOAD-L1-1-1.dll
+   API-MS-WIN-CORE-ERRORHANDLING-L1-1-0.dll,api-sets\API-MS-WIN-CORE-ERRORHANDLING-L1-1-0.dll
+   API-MS-WIN-CORE-ERRORHANDLING-L1-1-1.dll,api-sets\API-MS-WIN-CORE-ERRORHANDLING-L1-1-1.dll
+   API-MS-WIN-CORE-ERRORHANDLING-L1-1-2.dll,api-sets\API-MS-WIN-CORE-ERRORHANDLING-L1-1-2.dll
+   API-MS-WIN-CORE-ERRORHANDLING-L1-1-3.dll,api-sets\API-MS-WIN-CORE-ERRORHANDLING-L1-1-3.dll
+   API-MS-WIN-CORE-FEATURESTAGING-L1-1-0.dll,api-sets\API-MS-WIN-CORE-FEATURESTAGING-L1-1-0.dll
+   API-MS-WIN-CORE-FIBERS-L1-1-0.dll,api-sets\API-MS-WIN-CORE-FIBERS-L1-1-0.dll
+   API-MS-WIN-CORE-FIBERS-L1-1-1.dll,api-sets\API-MS-WIN-CORE-FIBERS-L1-1-1.dll
+   API-MS-WIN-CORE-FIBERS-L2-1-0.dll,api-sets\API-MS-WIN-CORE-FIBERS-L2-1-0.dll
+   API-MS-WIN-CORE-FIBERS-L2-1-1.dll,api-sets\API-MS-WIN-CORE-FIBERS-L2-1-1.dll
+   API-MS-WIN-CORE-FILE-ANSI-L2-1-0.dll,api-sets\API-MS-WIN-CORE-FILE-ANSI-L2-1-0.dll
+   API-MS-WIN-CORE-FILE-FROMAPP-L1-1-0.dll,api-sets\API-MS-WIN-CORE-FILE-FROMAPP-L1-1-0.dll
+   API-MS-WIN-CORE-FILE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-FILE-L1-1-0.dll
+   API-MS-WIN-CORE-FILE-L1-2-0.dll,api-sets\API-MS-WIN-CORE-FILE-L1-2-0.dll
+   API-MS-WIN-CORE-FILE-L1-2-1.dll,api-sets\API-MS-WIN-CORE-FILE-L1-2-1.dll
+   API-MS-WIN-CORE-FILE-L1-2-2.dll,api-sets\API-MS-WIN-CORE-FILE-L1-2-2.dll
+   API-MS-WIN-CORE-FILE-L2-1-0.dll,api-sets\API-MS-WIN-CORE-FILE-L2-1-0.dll
+   API-MS-WIN-CORE-FILE-L2-1-1.dll,api-sets\API-MS-WIN-CORE-FILE-L2-1-1.dll
+   API-MS-WIN-CORE-FILE-L2-1-2.dll,api-sets\API-MS-WIN-CORE-FILE-L2-1-2.dll
+   API-MS-WIN-CORE-HANDLE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-HANDLE-L1-1-0.dll
+   API-MS-WIN-CORE-HEAP-L1-1-0.dll,api-sets\API-MS-WIN-CORE-HEAP-L1-1-0.dll
+   API-MS-WIN-CORE-HEAP-L1-2-0.dll,api-sets\API-MS-WIN-CORE-HEAP-L1-2-0.dll
+   API-MS-WIN-CORE-HEAP-L2-1-0.dll,api-sets\API-MS-WIN-CORE-HEAP-L2-1-0.dll
+   API-MS-WIN-CORE-HEAP-OBSOLETE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-HEAP-OBSOLETE-L1-1-0.dll
+   API-MS-WIN-CORE-INTERLOCKED-L1-1-0.dll,api-sets\API-MS-WIN-CORE-INTERLOCKED-L1-1-0.dll
+   API-MS-WIN-CORE-INTERLOCKED-L1-2-0.dll,api-sets\API-MS-WIN-CORE-INTERLOCKED-L1-2-0.dll
+   API-MS-WIN-CORE-IO-L1-1-0.dll,api-sets\API-MS-WIN-CORE-IO-L1-1-0.dll
+   API-MS-WIN-CORE-IO-L1-1-1.dll,api-sets\API-MS-WIN-CORE-IO-L1-1-1.dll
+   API-MS-WIN-CORE-JOB-L1-1-0.dll,api-sets\API-MS-WIN-CORE-JOB-L1-1-0.dll
+   API-MS-WIN-CORE-JOB-L2-1-0.dll,api-sets\API-MS-WIN-CORE-JOB-L2-1-0.dll
+   API-MS-WIN-CORE-KERNEL32-LEGACY-L1-1-0.dll,api-sets\API-MS-WIN-CORE-KERNEL32-LEGACY-L1-1-0.dll
+   API-MS-WIN-CORE-KERNEL32-LEGACY-L1-1-1.dll,api-sets\API-MS-WIN-CORE-KERNEL32-LEGACY-L1-1-1.dll
+   API-MS-WIN-CORE-KERNEL32-LEGACY-L1-1-2.dll,api-sets\API-MS-WIN-CORE-KERNEL32-LEGACY-L1-1-2.dll
+   API-MS-WIN-CORE-KERNEL32-LEGACY-L1-1-5.dll,api-sets\API-MS-WIN-CORE-KERNEL32-LEGACY-L1-1-5.dll
+   API-MS-WIN-CORE-KERNEL32-PRIVATE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-KERNEL32-PRIVATE-L1-1-0.dll
+   API-MS-WIN-CORE-KERNEL32-PRIVATE-L1-1-1.dll,api-sets\API-MS-WIN-CORE-KERNEL32-PRIVATE-L1-1-1.dll
+   API-MS-WIN-CORE-LARGEINTEGER-L1-1-0.dll,api-sets\API-MS-WIN-CORE-LARGEINTEGER-L1-1-0.dll
+   API-MS-WIN-CORE-LIBRARYLOADER-L1-1-0.dll,api-sets\API-MS-WIN-CORE-LIBRARYLOADER-L1-1-0.dll
+   API-MS-WIN-CORE-LIBRARYLOADER-L1-1-1.dll,api-sets\API-MS-WIN-CORE-LIBRARYLOADER-L1-1-1.dll
+   API-MS-WIN-CORE-LIBRARYLOADER-L1-2-0.dll,api-sets\API-MS-WIN-CORE-LIBRARYLOADER-L1-2-0.dll
+   API-MS-WIN-CORE-LIBRARYLOADER-L1-2-1.dll,api-sets\API-MS-WIN-CORE-LIBRARYLOADER-L1-2-1.dll
+   API-MS-WIN-CORE-LIBRARYLOADER-L1-2-2.dll,api-sets\API-MS-WIN-CORE-LIBRARYLOADER-L1-2-2.dll
+   API-MS-WIN-CORE-LIBRARYLOADER-L2-1-0.dll,api-sets\API-MS-WIN-CORE-LIBRARYLOADER-L2-1-0.dll
+   API-MS-WIN-CORE-LOCALIZATION-L1-1-0.dll,api-sets\API-MS-WIN-CORE-LOCALIZATION-L1-1-0.dll
+   API-MS-WIN-CORE-LOCALIZATION-L1-2-0.dll,api-sets\API-MS-WIN-CORE-LOCALIZATION-L1-2-0.dll
+   API-MS-WIN-CORE-LOCALIZATION-L1-2-1.dll,api-sets\API-MS-WIN-CORE-LOCALIZATION-L1-2-1.dll
+   API-MS-WIN-CORE-LOCALIZATION-L1-2-2.dll,api-sets\API-MS-WIN-CORE-LOCALIZATION-L1-2-2.dll
+   API-MS-WIN-CORE-LOCALIZATION-L2-1-0.dll,api-sets\API-MS-WIN-CORE-LOCALIZATION-L2-1-0.dll
+   API-MS-WIN-CORE-LOCALIZATION-OBSOLETE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-LOCALIZATION-OBSOLETE-L1-1-0.dll
+   API-MS-WIN-CORE-LOCALIZATION-OBSOLETE-L1-2-0.dll,api-sets\API-MS-WIN-CORE-LOCALIZATION-OBSOLETE-L1-2-0.dll
+   API-MS-WIN-CORE-LOCALIZATION-OBSOLETE-L1-3-0.dll,api-sets\API-MS-WIN-CORE-LOCALIZATION-OBSOLETE-L1-3-0.dll
+   API-MS-WIN-CORE-LOCALIZATION-PRIVATE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-LOCALIZATION-PRIVATE-L1-1-0.dll
+   API-MS-WIN-CORE-LOCALREGISTRY-L1-1-0.dll,api-sets\API-MS-WIN-CORE-LOCALREGISTRY-L1-1-0.dll
+   API-MS-WIN-CORE-MEMORY-L1-1-0.dll,api-sets\API-MS-WIN-CORE-MEMORY-L1-1-0.dll
+   API-MS-WIN-CORE-MEMORY-L1-1-1.dll,api-sets\API-MS-WIN-CORE-MEMORY-L1-1-1.dll
+   API-MS-WIN-CORE-MEMORY-L1-1-2.dll,api-sets\API-MS-WIN-CORE-MEMORY-L1-1-2.dll
+   API-MS-WIN-CORE-MEMORY-L1-1-3.dll,api-sets\API-MS-WIN-CORE-MEMORY-L1-1-3.dll
+   API-MS-WIN-CORE-MEMORY-L1-1-4.dll,api-sets\API-MS-WIN-CORE-MEMORY-L1-1-4.dll
+   API-MS-WIN-CORE-MISC-L1-1-0.dll,api-sets\API-MS-WIN-CORE-MISC-L1-1-0.dll
+   API-MS-WIN-CORE-NAMEDPIPE-ANSI-L1-1-0.dll,api-sets\API-MS-WIN-CORE-NAMEDPIPE-ANSI-L1-1-0.dll
+   API-MS-WIN-CORE-NAMEDPIPE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-NAMEDPIPE-L1-1-0.dll
+   API-MS-WIN-CORE-NAMEDPIPE-L1-2-0.dll,api-sets\API-MS-WIN-CORE-NAMEDPIPE-L1-2-0.dll
+   API-MS-WIN-CORE-NAMESPACE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-NAMESPACE-L1-1-0.dll
+   API-MS-WIN-CORE-NORMALIZATION-L1-1-0.dll,api-sets\API-MS-WIN-CORE-NORMALIZATION-L1-1-0.dll
+   API-MS-WIN-CORE-PATH-L1-1-0.dll,api-sets\API-MS-WIN-CORE-PATH-L1-1-0.dll
+   API-MS-WIN-CORE-PRIVATEPROFILE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-PRIVATEPROFILE-L1-1-0.dll
+   API-MS-WIN-CORE-PRIVATEPROFILE-L1-1-1.dll,api-sets\API-MS-WIN-CORE-PRIVATEPROFILE-L1-1-1.dll
+   API-MS-WIN-CORE-PROCESSENVIRONMENT-L1-1-0.dll,api-sets\API-MS-WIN-CORE-PROCESSENVIRONMENT-L1-1-0.dll
+   API-MS-WIN-CORE-PROCESSENVIRONMENT-L1-2-0.dll,api-sets\API-MS-WIN-CORE-PROCESSENVIRONMENT-L1-2-0.dll
+   API-MS-WIN-CORE-PROCESSTHREADS-L1-1-0.dll,api-sets\API-MS-WIN-CORE-PROCESSTHREADS-L1-1-0.dll
+   API-MS-WIN-CORE-PROCESSTHREADS-L1-1-1.dll,api-sets\API-MS-WIN-CORE-PROCESSTHREADS-L1-1-1.dll
+   API-MS-WIN-CORE-PROCESSTHREADS-L1-1-2.dll,api-sets\API-MS-WIN-CORE-PROCESSTHREADS-L1-1-2.dll
+   API-MS-WIN-CORE-PROCESSTHREADS-L1-1-3.dll,api-sets\API-MS-WIN-CORE-PROCESSTHREADS-L1-1-3.dll
+   API-MS-WIN-CORE-PROCESSTOPOLOGY-L1-1-0.dll,api-sets\API-MS-WIN-CORE-PROCESSTOPOLOGY-L1-1-0.dll
+   API-MS-WIN-CORE-PROCESSTOPOLOGY-OBSOLETE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-PROCESSTOPOLOGY-OBSOLETE-L1-1-0.dll
+   API-MS-WIN-CORE-PROFILE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-PROFILE-L1-1-0.dll
+   API-MS-WIN-CORE-PSAPI-ANSI-L1-1-0.dll,api-sets\API-MS-WIN-CORE-PSAPI-ANSI-L1-1-0.dll
+   API-MS-WIN-CORE-PSAPI-L1-1-0.dll,api-sets\API-MS-WIN-CORE-PSAPI-L1-1-0.dll
+   API-MS-WIN-CORE-PSAPI-OBSOLETE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-PSAPI-OBSOLETE-L1-1-0.dll
+   API-MS-WIN-CORE-PSM-APPNOTIFY-L1-1-0.dll,api-sets\API-MS-WIN-CORE-PSM-APPNOTIFY-L1-1-0.dll
+   API-MS-WIN-CORE-QUIRKS-L1-1-0.dll,api-sets\API-MS-WIN-CORE-QUIRKS-L1-1-0.dll
+   API-MS-WIN-CORE-REALTIME-L1-1-0.dll,api-sets\API-MS-WIN-CORE-REALTIME-L1-1-0.dll
+   API-MS-WIN-CORE-REALTIME-L1-1-1.dll,api-sets\API-MS-WIN-CORE-REALTIME-L1-1-1.dll
+   API-MS-WIN-CORE-REGISTRY-L1-1-0.dll,api-sets\API-MS-WIN-CORE-REGISTRY-L1-1-0.dll
+   API-MS-WIN-CORE-REGISTRY-L2-1-0.dll,api-sets\API-MS-WIN-CORE-REGISTRY-L2-1-0.dll
+   API-MS-WIN-CORE-REGISTRY-L2-2-0.dll,api-sets\API-MS-WIN-CORE-REGISTRY-L2-2-0.dll
+   API-MS-WIN-CORE-REGISTRYUSERSPECIFIC-L1-1-0.dll,api-sets\API-MS-WIN-CORE-REGISTRYUSERSPECIFIC-L1-1-0.dll
+   API-MS-WIN-CORE-RTLSUPPORT-L1-1-0.dll,api-sets\API-MS-WIN-CORE-RTLSUPPORT-L1-1-0.dll
+   API-MS-WIN-CORE-RTLSUPPORT-L1-2-0.dll,api-sets\API-MS-WIN-CORE-RTLSUPPORT-L1-2-0.dll
+   API-MS-WIN-CORE-SHLWAPI-LEGACY-L1-1-0.dll,api-sets\API-MS-WIN-CORE-SHLWAPI-LEGACY-L1-1-0.dll
+   API-MS-WIN-CORE-SHLWAPI-OBSOLETE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-SHLWAPI-OBSOLETE-L1-1-0.dll
+   API-MS-WIN-CORE-SHLWAPI-OBSOLETE-L1-2-0.dll,api-sets\API-MS-WIN-CORE-SHLWAPI-OBSOLETE-L1-2-0.dll
+   API-MS-WIN-CORE-SHUTDOWN-L1-1-0.dll,api-sets\API-MS-WIN-CORE-SHUTDOWN-L1-1-0.dll
+   API-MS-WIN-CORE-SIDEBYSIDE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-SIDEBYSIDE-L1-1-0.dll
+   API-MS-WIN-CORE-STRING-L1-1-0.dll,api-sets\API-MS-WIN-CORE-STRING-L1-1-0.dll
+   API-MS-WIN-CORE-STRING-L2-1-0.dll,api-sets\API-MS-WIN-CORE-STRING-L2-1-0.dll
+   API-MS-WIN-CORE-STRING-OBSOLETE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-STRING-OBSOLETE-L1-1-0.dll
+   API-MS-WIN-CORE-STRINGANSI-L1-1-0.dll,api-sets\API-MS-WIN-CORE-STRINGANSI-L1-1-0.dll
+   API-MS-WIN-CORE-STRINGLOADER-L1-1-1.dll,api-sets\API-MS-WIN-CORE-STRINGLOADER-L1-1-1.dll
+   API-MS-WIN-CORE-SYNCH-ANSI-L1-1-0.dll,api-sets\API-MS-WIN-CORE-SYNCH-ANSI-L1-1-0.dll
+   API-MS-WIN-CORE-SYNCH-L1-1-0.dll,api-sets\API-MS-WIN-CORE-SYNCH-L1-1-0.dll
+   API-MS-WIN-CORE-SYNCH-L1-2-0.dll,api-sets\API-MS-WIN-CORE-SYNCH-L1-2-0.dll
+   API-MS-WIN-CORE-SYNCH-L1-2-1.dll,api-sets\API-MS-WIN-CORE-SYNCH-L1-2-1.dll
+   API-MS-WIN-CORE-SYSINFO-L1-1-0.dll,api-sets\API-MS-WIN-CORE-SYSINFO-L1-1-0.dll
+   API-MS-WIN-CORE-SYSINFO-L1-2-0.dll,api-sets\API-MS-WIN-CORE-SYSINFO-L1-2-0.dll
+   API-MS-WIN-CORE-SYSINFO-L1-2-1.dll,api-sets\API-MS-WIN-CORE-SYSINFO-L1-2-1.dll
+   API-MS-WIN-CORE-SYSTEMTOPOLOGY-L1-1-0.dll,api-sets\API-MS-WIN-CORE-SYSTEMTOPOLOGY-L1-1-0.dll
+   API-MS-WIN-CORE-THREADPOOL-L1-1-0.dll,api-sets\API-MS-WIN-CORE-THREADPOOL-L1-1-0.dll
+   API-MS-WIN-CORE-THREADPOOL-L1-2-0.dll,api-sets\API-MS-WIN-CORE-THREADPOOL-L1-2-0.dll
+   API-MS-WIN-CORE-THREADPOOL-LEGACY-L1-1-0.dll,api-sets\API-MS-WIN-CORE-THREADPOOL-LEGACY-L1-1-0.dll
+   API-MS-WIN-CORE-THREADPOOL-PRIVATE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-THREADPOOL-PRIVATE-L1-1-0.dll
+   API-MS-WIN-CORE-TIMEZONE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-TIMEZONE-L1-1-0.dll
+   API-MS-WIN-CORE-TOOLHELP-L1-1-0.dll,api-sets\API-MS-WIN-CORE-TOOLHELP-L1-1-0.dll
+   API-MS-WIN-CORE-URL-L1-1-0.dll,api-sets\API-MS-WIN-CORE-URL-L1-1-0.dll
+   API-MS-WIN-CORE-UTIL-L1-1-0.dll,api-sets\API-MS-WIN-CORE-UTIL-L1-1-0.dll
+   API-MS-WIN-CORE-VERSION-L1-1-0.dll,api-sets\API-MS-WIN-CORE-VERSION-L1-1-0.dll
+   API-MS-WIN-CORE-VERSION-L1-1-1.dll,api-sets\API-MS-WIN-CORE-VERSION-L1-1-1.dll
+   API-MS-WIN-CORE-VERSION-PRIVATE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-VERSION-PRIVATE-L1-1-0.dll
+   API-MS-WIN-CORE-VERSIONANSI-L1-1-0.dll,api-sets\API-MS-WIN-CORE-VERSIONANSI-L1-1-0.dll
+   API-MS-WIN-CORE-WINDOWSERRORREPORTING-L1-1-0.dll,api-sets\API-MS-WIN-CORE-WINDOWSERRORREPORTING-L1-1-0.dll
+   API-MS-WIN-CORE-WINDOWSERRORREPORTING-L1-1-1.dll,api-sets\API-MS-WIN-CORE-WINDOWSERRORREPORTING-L1-1-1.dll
+   API-MS-WIN-CORE-WINRT-ERROR-L1-1-0.dll,api-sets\API-MS-WIN-CORE-WINRT-ERROR-L1-1-0.dll
+   API-MS-WIN-CORE-WINRT-ERROR-L1-1-1.dll,api-sets\API-MS-WIN-CORE-WINRT-ERROR-L1-1-1.dll
+   API-MS-WIN-CORE-WINRT-ERRORPRIVATE-L1-1-1.dll,api-sets\API-MS-WIN-CORE-WINRT-ERRORPRIVATE-L1-1-1.dll
+   API-MS-WIN-CORE-WINRT-L1-1-0.dll,api-sets\API-MS-WIN-CORE-WINRT-L1-1-0.dll
+   API-MS-WIN-CORE-WINRT-REGISTRATION-L1-1-0.dll,api-sets\API-MS-WIN-CORE-WINRT-REGISTRATION-L1-1-0.dll
+   API-MS-WIN-CORE-WINRT-ROPARAMETERIZEDIID-L1-1-0.dll,api-sets\API-MS-WIN-CORE-WINRT-ROPARAMETERIZEDIID-L1-1-0.dll
+   API-MS-WIN-CORE-WINRT-STRING-L1-1-0.dll,api-sets\API-MS-WIN-CORE-WINRT-STRING-L1-1-0.dll
+   API-MS-WIN-CORE-WINRT-STRING-L1-1-1.dll,api-sets\API-MS-WIN-CORE-WINRT-STRING-L1-1-1.dll
+   API-MS-WIN-CORE-WOW64-L1-1-0.dll,api-sets\API-MS-WIN-CORE-WOW64-L1-1-0.dll
+   API-MS-WIN-CORE-WOW64-L1-1-1.dll,api-sets\API-MS-WIN-CORE-WOW64-L1-1-1.dll
+   API-MS-WIN-CORE-XSTATE-L1-1-0.dll,api-sets\API-MS-WIN-CORE-XSTATE-L1-1-0.dll
+   API-MS-WIN-CORE-XSTATE-L2-1-0.dll,api-sets\API-MS-WIN-CORE-XSTATE-L2-1-0.dll
+   API-MS-WIN-CRT-CONIO-L1-1-0.dll,api-sets\API-MS-WIN-CRT-CONIO-L1-1-0.dll
+   API-MS-WIN-CRT-CONVERT-L1-1-0.dll,api-sets\API-MS-WIN-CRT-CONVERT-L1-1-0.dll
+   API-MS-WIN-CRT-ENVIRONMENT-L1-1-0.dll,api-sets\API-MS-WIN-CRT-ENVIRONMENT-L1-1-0.dll
+   API-MS-WIN-CRT-FILESYSTEM-L1-1-0.dll,api-sets\API-MS-WIN-CRT-FILESYSTEM-L1-1-0.dll
+   API-MS-WIN-CRT-HEAP-L1-1-0.dll,api-sets\API-MS-WIN-CRT-HEAP-L1-1-0.dll
+   API-MS-WIN-CRT-LOCALE-L1-1-0.dll,api-sets\API-MS-WIN-CRT-LOCALE-L1-1-0.dll
+   API-MS-WIN-CRT-MATH-L1-1-0.dll,api-sets\API-MS-WIN-CRT-MATH-L1-1-0.dll
+   API-MS-WIN-CRT-MULTIBYTE-L1-1-0.dll,api-sets\API-MS-WIN-CRT-MULTIBYTE-L1-1-0.dll
+   API-MS-WIN-CRT-PRIVATE-L1-1-0.dll,api-sets\API-MS-WIN-CRT-PRIVATE-L1-1-0.dll
+   API-MS-WIN-CRT-PROCESS-L1-1-0.dll,api-sets\API-MS-WIN-CRT-PROCESS-L1-1-0.dll
+   API-MS-WIN-CRT-RUNTIME-L1-1-0.dll,api-sets\API-MS-WIN-CRT-RUNTIME-L1-1-0.dll
+   API-MS-WIN-CRT-STDIO-L1-1-0.dll,api-sets\API-MS-WIN-CRT-STDIO-L1-1-0.dll
+   API-MS-WIN-CRT-STRING-L1-1-0.dll,api-sets\API-MS-WIN-CRT-STRING-L1-1-0.dll
+   API-MS-WIN-CRT-TIME-L1-1-0.dll,api-sets\API-MS-WIN-CRT-TIME-L1-1-0.dll
+   API-MS-WIN-CRT-UTILITY-L1-1-0.dll,api-sets\API-MS-WIN-CRT-UTILITY-L1-1-0.dll
+   API-MS-WIN-DEVICES-CONFIG-L1-1-0.dll,api-sets\API-MS-WIN-DEVICES-CONFIG-L1-1-0.dll
+   API-MS-WIN-DEVICES-CONFIG-L1-1-1.dll,api-sets\API-MS-WIN-DEVICES-CONFIG-L1-1-1.dll
+   API-MS-WIN-DEVICES-QUERY-L1-1-1.dll,api-sets\API-MS-WIN-DEVICES-QUERY-L1-1-1.dll
+   API-MS-WIN-DOWNLEVEL-ADVAPI32-L1-1-0.dll,api-sets\API-MS-WIN-DOWNLEVEL-ADVAPI32-L1-1-0.dll
+   API-MS-WIN-DOWNLEVEL-ADVAPI32-L2-1-0.dll,api-sets\API-MS-WIN-DOWNLEVEL-ADVAPI32-L2-1-0.dll
+   API-MS-WIN-DOWNLEVEL-KERNEL32-L2-1-0.dll,api-sets\API-MS-WIN-DOWNLEVEL-KERNEL32-L2-1-0.dll
+   API-MS-WIN-DOWNLEVEL-NORMALIZ-L1-1-0.dll,api-sets\API-MS-WIN-DOWNLEVEL-NORMALIZ-L1-1-0.dll
+   API-MS-WIN-DOWNLEVEL-OLE32-L1-1-0.dll,api-sets\API-MS-WIN-DOWNLEVEL-OLE32-L1-1-0.dll
+   API-MS-WIN-DOWNLEVEL-SHELL32-L1-1-0.dll,api-sets\API-MS-WIN-DOWNLEVEL-SHELL32-L1-1-0.dll
+   API-MS-WIN-DOWNLEVEL-SHLWAPI-L1-1-0.dll,api-sets\API-MS-WIN-DOWNLEVEL-SHLWAPI-L1-1-0.dll
+   API-MS-WIN-DOWNLEVEL-SHLWAPI-L2-1-0.dll,api-sets\API-MS-WIN-DOWNLEVEL-SHLWAPI-L2-1-0.dll
+   API-MS-WIN-DOWNLEVEL-USER32-L1-1-0.dll,api-sets\API-MS-WIN-DOWNLEVEL-USER32-L1-1-0.dll
+   API-MS-WIN-DOWNLEVEL-VERSION-L1-1-0.dll,api-sets\API-MS-WIN-DOWNLEVEL-VERSION-L1-1-0.dll
+   API-MS-WIN-DX-D3DKMT-L1-1-0.dll,api-sets\API-MS-WIN-DX-D3DKMT-L1-1-0.dll
+   API-MS-WIN-EVENTING-CLASSICPROVIDER-L1-1-0.dll,api-sets\API-MS-WIN-EVENTING-CLASSICPROVIDER-L1-1-0.dll
+   API-MS-WIN-EVENTING-CONSUMER-L1-1-0.dll,api-sets\API-MS-WIN-EVENTING-CONSUMER-L1-1-0.dll
+   API-MS-WIN-EVENTING-CONTROLLER-L1-1-0.dll,api-sets\API-MS-WIN-EVENTING-CONTROLLER-L1-1-0.dll
+   API-MS-WIN-EVENTING-LEGACY-L1-1-0.dll,api-sets\API-MS-WIN-EVENTING-LEGACY-L1-1-0.dll
+   API-MS-WIN-EVENTING-PROVIDER-L1-1-0.dll,api-sets\API-MS-WIN-EVENTING-PROVIDER-L1-1-0.dll
+   API-MS-WIN-EVENTLOG-LEGACY-L1-1-0.dll,api-sets\API-MS-WIN-EVENTLOG-LEGACY-L1-1-0.dll
+   API-MS-WIN-GAMING-TCUI-L1-1-0.dll,api-sets\API-MS-WIN-GAMING-TCUI-L1-1-0.dll
+   API-MS-WIN-GDI-DPIINFO-L1-1-0.dll,api-sets\API-MS-WIN-GDI-DPIINFO-L1-1-0.dll
+   API-MS-WIN-MM-JOYSTICK-L1-1-0.dll,api-sets\API-MS-WIN-MM-JOYSTICK-L1-1-0.dll
+   API-MS-WIN-MM-MISC-L1-1-1.dll,api-sets\API-MS-WIN-MM-MISC-L1-1-1.dll
+   API-MS-WIN-MM-MME-L1-1-0.dll,api-sets\API-MS-WIN-MM-MME-L1-1-0.dll
+   API-MS-WIN-MM-TIME-L1-1-0.dll,api-sets\API-MS-WIN-MM-TIME-L1-1-0.dll
+   API-MS-WIN-NTUSER-DC-ACCESS-L1-1-0.dll,api-sets\API-MS-WIN-NTUSER-DC-ACCESS-L1-1-0.dll
+   API-MS-WIN-NTUSER-RECTANGLE-L1-1-0.dll,api-sets\API-MS-WIN-NTUSER-RECTANGLE-L1-1-0.dll
+   API-MS-WIN-NTUSER-SYSPARAMS-L1-1-0.dll,api-sets\API-MS-WIN-NTUSER-SYSPARAMS-L1-1-0.dll
+   API-MS-WIN-PERF-LEGACY-L1-1-0.dll,api-sets\API-MS-WIN-PERF-LEGACY-L1-1-0.dll
+   API-MS-WIN-POWER-BASE-L1-1-0.dll,api-sets\API-MS-WIN-POWER-BASE-L1-1-0.dll
+   API-MS-WIN-POWER-SETTING-L1-1-0.dll,api-sets\API-MS-WIN-POWER-SETTING-L1-1-0.dll
+   API-MS-WIN-RTCORE-NTUSER-DRAW-L1-1-0.dll,api-sets\API-MS-WIN-RTCORE-NTUSER-DRAW-L1-1-0.dll
+   API-MS-WIN-RTCORE-NTUSER-PRIVATE-L1-1-0.dll,api-sets\API-MS-WIN-RTCORE-NTUSER-PRIVATE-L1-1-0.dll
+   API-MS-WIN-RTCORE-NTUSER-PRIVATE-L1-1-4.dll,api-sets\API-MS-WIN-RTCORE-NTUSER-PRIVATE-L1-1-4.dll
+   API-MS-WIN-RTCORE-NTUSER-WINDOW-L1-1-0.dll,api-sets\API-MS-WIN-RTCORE-NTUSER-WINDOW-L1-1-0.dll
+   API-MS-WIN-RTCORE-NTUSER-WINEVENT-L1-1-0.dll,api-sets\API-MS-WIN-RTCORE-NTUSER-WINEVENT-L1-1-0.dll
+   API-MS-WIN-RTCORE-NTUSER-WMPOINTER-L1-1-0.dll,api-sets\API-MS-WIN-RTCORE-NTUSER-WMPOINTER-L1-1-0.dll
+   API-MS-WIN-RTCORE-NTUSER-WMPOINTER-L1-1-3.dll,api-sets\API-MS-WIN-RTCORE-NTUSER-WMPOINTER-L1-1-3.dll
+   API-MS-WIN-SECURITY-ACTIVEDIRECTORYCLIENT-L1-1-0.dll,api-sets\API-MS-WIN-SECURITY-ACTIVEDIRECTORYCLIENT-L1-1-0.dll
+   API-MS-WIN-SECURITY-AUDIT-L1-1-1.dll,api-sets\API-MS-WIN-SECURITY-AUDIT-L1-1-1.dll
+   API-MS-WIN-SECURITY-BASE-L1-1-0.dll,api-sets\API-MS-WIN-SECURITY-BASE-L1-1-0.dll
+   API-MS-WIN-SECURITY-BASE-L1-2-0.dll,api-sets\API-MS-WIN-SECURITY-BASE-L1-2-0.dll
+   API-MS-WIN-SECURITY-BASE-PRIVATE-L1-1-1.dll,api-sets\API-MS-WIN-SECURITY-BASE-PRIVATE-L1-1-1.dll
+   API-MS-WIN-SECURITY-CREDENTIALS-L1-1-0.dll,api-sets\API-MS-WIN-SECURITY-CREDENTIALS-L1-1-0.dll
+   API-MS-WIN-SECURITY-CRYPTOAPI-L1-1-0.dll,api-sets\API-MS-WIN-SECURITY-CRYPTOAPI-L1-1-0.dll
+   API-MS-WIN-SECURITY-GROUPPOLICY-L1-1-0.dll,api-sets\API-MS-WIN-SECURITY-GROUPPOLICY-L1-1-0.dll
+   API-MS-WIN-SECURITY-LSALOOKUP-ANSI-L2-1-0.dll,api-sets\API-MS-WIN-SECURITY-LSALOOKUP-ANSI-L2-1-0.dll
+   API-MS-WIN-SECURITY-LSALOOKUP-L1-1-0.dll,api-sets\API-MS-WIN-SECURITY-LSALOOKUP-L1-1-0.dll
+   API-MS-WIN-SECURITY-LSALOOKUP-L1-1-1.dll,api-sets\API-MS-WIN-SECURITY-LSALOOKUP-L1-1-1.dll
+   API-MS-WIN-SECURITY-LSALOOKUP-L2-1-0.dll,api-sets\API-MS-WIN-SECURITY-LSALOOKUP-L2-1-0.dll
+   API-MS-WIN-SECURITY-LSALOOKUP-L2-1-1.dll,api-sets\API-MS-WIN-SECURITY-LSALOOKUP-L2-1-1.dll
+   API-MS-WIN-SECURITY-LSAPOLICY-L1-1-0.dll,api-sets\API-MS-WIN-SECURITY-LSAPOLICY-L1-1-0.dll
+   API-MS-WIN-SECURITY-PROVIDER-L1-1-0.dll,api-sets\API-MS-WIN-SECURITY-PROVIDER-L1-1-0.dll
+   API-MS-WIN-SECURITY-SDDL-L1-1-0.dll,api-sets\API-MS-WIN-SECURITY-SDDL-L1-1-0.dll
+   API-MS-WIN-SECURITY-SYSTEMFUNCTIONS-L1-1-0.dll,api-sets\API-MS-WIN-SECURITY-SYSTEMFUNCTIONS-L1-1-0.dll
+   API-MS-WIN-SERVICE-CORE-L1-1-0.dll,api-sets\API-MS-WIN-SERVICE-CORE-L1-1-0.dll
+   API-MS-WIN-SERVICE-CORE-L1-1-1.dll,api-sets\API-MS-WIN-SERVICE-CORE-L1-1-1.dll
+   API-MS-WIN-SERVICE-MANAGEMENT-L1-1-0.dll,api-sets\API-MS-WIN-SERVICE-MANAGEMENT-L1-1-0.dll
+   API-MS-WIN-SERVICE-MANAGEMENT-L2-1-0.dll,api-sets\API-MS-WIN-SERVICE-MANAGEMENT-L2-1-0.dll
+   API-MS-WIN-SERVICE-PRIVATE-L1-1-0.dll,api-sets\API-MS-WIN-SERVICE-PRIVATE-L1-1-0.dll
+   API-MS-WIN-SERVICE-PRIVATE-L1-1-1.dll,api-sets\API-MS-WIN-SERVICE-PRIVATE-L1-1-1.dll
+   API-MS-WIN-SERVICE-WINSVC-L1-1-0.dll,api-sets\API-MS-WIN-SERVICE-WINSVC-L1-1-0.dll
+   API-MS-WIN-SERVICE-WINSVC-L1-2-0.dll,api-sets\API-MS-WIN-SERVICE-WINSVC-L1-2-0.dll
+   API-MS-WIN-SHCORE-OBSOLETE-L1-1-0.dll,api-sets\API-MS-WIN-SHCORE-OBSOLETE-L1-1-0.dll
+   API-MS-WIN-SHCORE-SCALING-L1-1-0.dll,api-sets\API-MS-WIN-SHCORE-SCALING-L1-1-0.dll
+   API-MS-WIN-SHCORE-SCALING-L1-1-1.dll,api-sets\API-MS-WIN-SHCORE-SCALING-L1-1-1.dll
+   API-MS-WIN-SHCORE-STREAM-L1-1-0.dll,api-sets\API-MS-WIN-SHCORE-STREAM-L1-1-0.dll
+   API-MS-WIN-SHCORE-STREAM-WINRT-L1-1-0.dll,api-sets\API-MS-WIN-SHCORE-STREAM-WINRT-L1-1-0.dll
+   API-MS-WIN-SHCORE-THREAD-L1-1-0.dll,api-sets\API-MS-WIN-SHCORE-THREAD-L1-1-0.dll
+   API-MS-WIN-SHELL-SHELLCOM-L1-1-0.dll,api-sets\API-MS-WIN-SHELL-SHELLCOM-L1-1-0.dll
+   API-MS-WIN-SHELL-SHELLFOLDERS-L1-1-0.dll,api-sets\API-MS-WIN-SHELL-SHELLFOLDERS-L1-1-0.dll
+   ext-ms-win-appmodel-usercontext-l1-1-0.dll,api-sets\ext-ms-win-appmodel-usercontext-l1-1-0.dll
+   ext-ms-win-authz-context-l1-1-0.dll,api-sets\ext-ms-win-authz-context-l1-1-0.dll
+   ext-ms-win-domainjoin-netjoin-l1-1-0.dll,api-sets\ext-ms-win-domainjoin-netjoin-l1-1-0.dll
+   ext-ms-win-dwmapi-ext-l1-1-0.dll,api-sets\ext-ms-win-dwmapi-ext-l1-1-0.dll
+   ext-ms-win-gdi-dc-create-l1-1-0.dll,api-sets\ext-ms-win-gdi-dc-create-l1-1-0.dll
+   ext-ms-win-gdi-dc-create-l1-1-1.dll,api-sets\ext-ms-win-gdi-dc-create-l1-1-1.dll
+   ext-ms-win-gdi-dc-l1-2-0.dll,api-sets\ext-ms-win-gdi-dc-l1-2-0.dll
+   ext-ms-win-gdi-devcaps-l1-1-0.dll,api-sets\ext-ms-win-gdi-devcaps-l1-1-0.dll
+   ext-ms-win-gdi-draw-l1-1-0.dll,api-sets\ext-ms-win-gdi-draw-l1-1-0.dll
+   ext-ms-win-gdi-draw-l1-1-1.dll,api-sets\ext-ms-win-gdi-draw-l1-1-1.dll
+   ext-ms-win-gdi-font-l1-1-0.dll,api-sets\ext-ms-win-gdi-font-l1-1-0.dll
+   ext-ms-win-gdi-font-l1-1-1.dll,api-sets\ext-ms-win-gdi-font-l1-1-1.dll
+   ext-ms-win-gdi-render-l1-1-0.dll,api-sets\ext-ms-win-gdi-render-l1-1-0.dll
+   ext-ms-win-kernel32-package-current-l1-1-0.dll,api-sets\ext-ms-win-kernel32-package-current-l1-1-0.dll
+   ext-ms-win-kernel32-package-l1-1-1.dll,api-sets\ext-ms-win-kernel32-package-l1-1-1.dll
+   ext-ms-win-ntuser-dialogbox-l1-1-0.dll,api-sets\ext-ms-win-ntuser-dialogbox-l1-1-0.dll
+   ext-ms-win-ntuser-draw-l1-1-0.dll,api-sets\ext-ms-win-ntuser-draw-l1-1-0.dll
+   ext-ms-win-ntuser-gui-l1-1-0.dll,api-sets\ext-ms-win-ntuser-gui-l1-1-0.dll
+   ext-ms-win-ntuser-gui-l1-3-0.dll,api-sets\ext-ms-win-ntuser-gui-l1-3-0.dll
+   ext-ms-win-ntuser-keyboard-l1-3-0.dll,api-sets\ext-ms-win-ntuser-keyboard-l1-3-0.dll
+   ext-ms-win-ntuser-message-l1-1-0.dll,api-sets\ext-ms-win-ntuser-message-l1-1-0.dll
+   ext-ms-win-ntuser-message-l1-1-1.dll,api-sets\ext-ms-win-ntuser-message-l1-1-1.dll
+   ext-ms-win-ntuser-misc-l1-1-0.dll,api-sets\ext-ms-win-ntuser-misc-l1-1-0.dll
+   ext-ms-win-ntuser-misc-l1-2-0.dll,api-sets\ext-ms-win-ntuser-misc-l1-2-0.dll
+   ext-ms-win-ntuser-misc-l1-5-1.dll,api-sets\ext-ms-win-ntuser-misc-l1-5-1.dll
+   ext-ms-win-ntuser-mouse-l1-1-0.dll,api-sets\ext-ms-win-ntuser-mouse-l1-1-0.dll
+   ext-ms-win-ntuser-private-l1-1-1.dll,api-sets\ext-ms-win-ntuser-private-l1-1-1.dll
+   ext-ms-win-ntuser-private-l1-3-1.dll,api-sets\ext-ms-win-ntuser-private-l1-3-1.dll
+   ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll,api-sets\ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll
+   ext-ms-win-ntuser-uicontext-ext-l1-1-0.dll,api-sets\ext-ms-win-ntuser-uicontext-ext-l1-1-0.dll
+   ext-ms-win-ntuser-window-l1-1-0.dll,api-sets\ext-ms-win-ntuser-window-l1-1-0.dll   
+   ext-ms-win-ntuser-window-l1-1-1.dll,api-sets\ext-ms-win-ntuser-window-l1-1-1.dll   
+   ext-ms-win-ntuser-window-l1-1-4.dll,api-sets\ext-ms-win-ntuser-window-l1-1-4.dll   
+   ext-ms-win-oleacc-l1-1-0.dll,api-sets\ext-ms-win-oleacc-l1-1-0.dll   
+   ext-ms-win-ntuser-windowclass-l1-1-0.dll,api-sets\ext-ms-win-ntuser-windowclass-l1-1-0.dll
+   ext-ms-win-ntuser-windowclass-l1-1-1.dll,api-sets\ext-ms-win-ntuser-windowclass-l1-1-1.dll
+   ext-ms-win-ras-rasapi32-l1-1-0.dll,api-sets\ext-ms-win-ras-rasapi32-l1-1-0.dll
+   ext-ms-win-rtcore-gdi-devcaps-l1-1-0.dll,api-sets\ext-ms-win-rtcore-gdi-devcaps-l1-1-0.dll
+   ext-ms-win-rtcore-gdi-object-l1-1-0.dll,api-sets\ext-ms-win-rtcore-gdi-object-l1-1-0.dll
+   ext-ms-win-rtcore-gdi-rgn-l1-1-0.dll,api-sets\ext-ms-win-rtcore-gdi-rgn-l1-1-0.dll
+   ext-ms-win-rtcore-ntuser-cursor-l1-1-0.dll,api-sets\ext-ms-win-rtcore-ntuser-cursor-l1-1-0.dll
+   ext-ms-win-rtcore-ntuser-dc-access-l1-1-0.dll,api-sets\ext-ms-win-rtcore-ntuser-dc-access-l1-1-0.dll
+   ext-ms-win-rtcore-ntuser-dpi-l1-1-0.dll,api-sets\ext-ms-win-rtcore-ntuser-dpi-l1-1-0.dll
+   ext-ms-win-rtcore-ntuser-dpi-l1-2-0.dll,api-sets\ext-ms-win-rtcore-ntuser-dpi-l1-2-0.dll
+   ext-ms-win-rtcore-ntuser-rawinput-l1-1-0.dll,api-sets\ext-ms-win-rtcore-ntuser-rawinput-l1-1-0.dll
+   ext-ms-win-rtcore-ntuser-syscolors-l1-1-0.dll,api-sets\ext-ms-win-rtcore-ntuser-syscolors-l1-1-0.dll
+   ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll,api-sets\ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll
+   ext-ms-win-security-credui-l1-1-0.dll,api-sets\ext-ms-win-security-credui-l1-1-0.dll
+   ext-ms-win-security-cryptui-l1-1-0.dll,api-sets\ext-ms-win-security-cryptui-l1-1-0.dll
+   ext-ms-win-shell-comctl32-init-l1-1-0.dll,api-sets\ext-ms-win-shell-comctl32-init-l1-1-0.dll
+   ext-ms-win-shell-comdlg32-l1-1-0.dll,api-sets\ext-ms-win-shell-comdlg32-l1-1-0.dll
+   ext-ms-win-shell-shell32-l1-2-0.dll,api-sets\ext-ms-win-shell-shell32-l1-2-0.dll   
+   ext-ms-win-uxtheme-themes-l1-1-0.dll,api-sets\ext-ms-win-uxtheme-themes-l1-1-0.dll
+   ext-ms-win-xaml-pal-l1-1-0.dll,api-sets\ext-ms-win-xaml-pal-l1-1-0.dll
+   ucrtbase.dll,api-sets\ucrtbase.dll	
 
 [DirectoriesToCleanUp.Uninstall]
 
@@ -687,7 +1024,6 @@
 	2k3SP2\srvwinstabase.dll=1	
 	2k3SP2\srvwin32k.sys=1	
     advapi32.dll = 1
-	API-MS-WIN-CORE-MEMORY-L1-1-0.dll = 1	
     bcrypt.dll = 1
     certupdate.exe =1
     comctlext.dll =1
@@ -710,6 +1046,7 @@
     netapi32.dll = 1
     netfxperf.dll = 1	
     Nlsdl.dll = 1
+    NNN4NT5.exe = 1
     normaliz.dll = 1
     nsi.dll = 1
 	ntext.dll = 1	
@@ -773,5 +1110,11 @@
 
 [PreRequisite.Uninstall]
 
+[ProcessesToRunBeforeUninstall]
+	"SCHTASKS /DELETE /TN ""Root Certificate Update"" /f"
+	
+[ProcessesToRunAfterCopyingUninstall]	
+	"SCHTASKS /DELETE /TN ""Root Certificate Update"" /f"
+	
 [ProcessesToRunAfterUninstall]
-	"cmd /C schtasks /delete /tn ""Root Certificate Update"" /f"
+	"SCHTASKS /DELETE /TN ""Root Certificate Update"" /f"

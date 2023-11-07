@@ -25,7 +25,7 @@
 [Strings]
     HelpLink 				= "http://shorthornproject.com"
     URLInfoAbout 			= "http://shorthornproject.com"
-	D3DR_VERSION            = "3.0.2"
+	D3DR_VERSION            = "3.0.3"
 	SP_TITLE                = "One-Core-API D3D Runtime"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAD3DR"
@@ -33,7 +33,6 @@
 	;COMMENT                 = "One-Core-API D3D Runtime [See Q100000 for more information]"
 	SERVICEPACKSOURCEFILES  = "One-Core-API D3D Runtime"
 	LatestBaseUpdateFail    = "Please Install latest One-Core-API Base first!"
-	LatestAPISetUpdateFail  = "Please Install latest One-Core-API API-SET first!"
 	LatestBrandingUpdateFail  = "Please Install latest One-Core-API Windows Modern Branding first!"
     PARENT_DISPLAY_NAME     = "One-Core-API"
 	FNTCACHESVC_DISPLAY_NAME="Windows Font Cache Service"
@@ -43,19 +42,14 @@
 [Prerequisite]
 	condition=SingleOp,LatestUpdateCheck1.Section
 	condition=SingleOp,LatestUpdateCheck2.Section
-	condition=SingleOp,LatestUpdateCheck3.Section
 	
 [LatestUpdateCheck1.Section]
     EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCAB",Installed,0x10001,==,1
     Display_String="%LatestBaseUpdateFail%"
 
 [LatestUpdateCheck2.Section]
-    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCAAS",Installed,0x10001,==,1
-    Display_String="%LatestAPISetUpdateFail%"
-
-[LatestUpdateCheck3.Section]
     EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCAWMB",Installed,0x10001,==,1
-    Display_String="%LatestBrandingUpdateFail%"		
+    Display_String="%LatestBrandingUpdateFail%"	
 	
 [Product.Add.Reg]
 	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed",0x10001,1

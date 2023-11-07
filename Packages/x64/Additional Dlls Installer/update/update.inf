@@ -23,7 +23,7 @@
     AppFileinUseDetect        = 3
 	
 [Strings]
-	OCAAD_VERSION           = "3.0.2"
+	OCAAD_VERSION           = "3.0.3"
 	SP_TITLE                = "One-Core-API Additional Dlls"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAAD"
@@ -5275,7 +5275,7 @@
 	GameUXLegacyGDFs.dll,amd64/GameUXLegacyGDFs.dll
 	gamingtcui.dll,amd64/gamingtcui.dll
 	httpapi.dll,amd64/httpapi.dll
-	httpapinew.dll,amd64/httpapinew.dll		
+	httpnew.dll,amd64/httpnew.dll		
 	ktmw32.dll,amd64/ktmw32.dll
 	lsalookup.dll,amd64/lsalookup.dll
 	mf.dll,amd64/mf.dll
@@ -5375,7 +5375,7 @@
 	GameUXLegacyGDFs.dll,i386/wGameUXLegacyGDFs.dll
 	gamingtcui.dll,i386/wgamingtcui.dll
 	httpapi.dll,i386/whttpapi.dll
-	httpapinew.dll,i386/whttpapinew.dll		
+	httpnew.dll,i386/whttpnew.dll		
 	ktmw32.dll,i386/wktmw32.dll
 	lsalookup.dll,i386/wlsalookup.dll
 	mf.dll,i386/wmf.dll
@@ -5478,7 +5478,7 @@
 	amd64/GameUXLegacyGDFs.dll = 1
 	amd64/gamingtcui.dll = 1
 	amd64/httpapi.dll = 1
-	amd64/httpapinew.dll = 1
+	amd64/httpnew.dll = 1
 	amd64/ktmw32.dll = 1
 	amd64/lsalookup.dll = 1
 	amd64/mf.dll = 1
@@ -5577,7 +5577,7 @@
 	i386/wGameUXLegacyGDFs.dll = 1
 	i386/wgamingtcui.dll = 1
 	i386/whttpapi.dll = 1
-	i386/whttpapinew.dll = 1
+	i386/whttpnew.dll = 1
 	i386/wktmw32.dll = 1
 	i386/wlsalookup.dll = 1
 	i386/wmf.dll = 1

@@ -29,7 +29,7 @@
     Display_String="%LatestUpdateFail%"		
 	
 [Strings]
-	OCAAD_VERSION           = "3.0.2"
+	OCAAD_VERSION           = "3.0.3"
 	SP_TITLE                = "One-Core-API Additional Dlls"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAAD"
@@ -2805,7 +2805,7 @@
 	"gameux.dll"
 	;"GameUXLegacyGDFs.dll" - Cause error with sfxcab when build hotfix	
 	"httpapi.dll"
-	"httpapinew.dll"
+	"httpnew.dll"
 	"ktmw32.dll"
 	"lsalookup.dll"
 	"mf.dll"
@@ -2907,7 +2907,7 @@
 	"gameux.dll" = 1
 	;"GameUXLegacyGDFs.dll" = 1 - Cause error with sfxcab when build hotfix	
 	"httpapi.dll" = 1
-	"httpapinew.dll" = 1
+	"httpnew.dll" = 1
 	"ktmw32.dll" = 1
 	"lsalookup.dll" = 1
 	"mf.dll" = 1

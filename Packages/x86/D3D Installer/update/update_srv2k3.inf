@@ -24,22 +24,17 @@
 [Prerequisite]
 	condition=SingleOp,LatestUpdateCheck1.Section
 	condition=SingleOp,LatestUpdateCheck2.Section
-	condition=SingleOp,LatestUpdateCheck3.Section
 	
 [LatestUpdateCheck1.Section]
     EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCAB",Installed,0x10001,==,1
     Display_String="%LatestBaseUpdateFail%"
 
 [LatestUpdateCheck2.Section]
-    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCAAS",Installed,0x10001,==,1
-    Display_String="%LatestAPISetUpdateFail%"		
-	
-[LatestUpdateCheck3.Section]
     EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCAWMB",Installed,0x10001,==,1
-    Display_String="%LatestBrandingUpdateFail%"	
+    Display_String="%LatestBrandingUpdateFail%"
 	
 [Strings]
-	D3DR_VERSION            = "3.0.2"
+	D3DR_VERSION            = "3.0.3"
 	SP_TITLE                = "One-Core-API D3D Runtime"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAD3DR"
@@ -49,7 +44,6 @@
 	ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
 	PARENT_DISPLAY_NAME     = "One-Core-API"
 	LatestBaseUpdateFail    = "Please Install latest One-Core-API Base first!"
-	LatestAPISetUpdateFail  = "Please Install latest One-Core-API API-SET first!"
 	LatestBrandingUpdateFail  = "Please Install latest One-Core-API Windows Modern Branding first!"
 	FNTCACHESVC_DISPLAY_NAME= "Windows Font Cache Service"
 	FNTCACHESVC_DESCRIPTION = "Optimizes performance of applications by caching commonly used font data. Applications will start this service if it is not already running. It can be disabled, though doing so will degrade application performance."
