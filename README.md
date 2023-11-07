@@ -14,6 +14,7 @@ x64 SP2.
 - Output: Binaries output, you can generate using scripts on Release folder;
 
 **The One-Core-API Binaries project consists of the following packages:**
+Warning: Always if OCA package require restart, do it. If you install all packages and restart only on last, Windows will be corrupted.  
 - **Base**: Main package of One-Core-API and is required by all other packages, except App Compat, Modern Setup (x86 only) and Driver Update, and contains all wrappers used in this project (like kernelbase and ntext);
 - **Additional Dlls**: Several new dlls introduced in later versions of Windows.
 - **API-SET**: Contains UCRT dlls based on wine.
@@ -21,7 +22,21 @@ x64 SP2.
 - **App Compat**: Application compatbility settings, backported from later versions of Windows.
 - **Driver Update**: Bring updated acpi driver what support ACPI 2.0, new drivers like Storachi (for AHCI driver controllers), NVME (for NVME M.2 driver controllers) and USBXHCI (USB 3.0); 
 - **Branding**: New branding system introduced on Windows Vista, required to D3D and Modern Setup packages;
-- **Modern Setup**: bring support to turn Windows XP/2003 installation  installable using Windows Vista or above Setup engines; 
+- **Modern Setup**: bring support to turn Windows XP/2003 installation installable using Windows Vista or above Setup engines on newers computers. This package is only if you install Windows on VM or real computer and want install to other computer, using a tool called SYSPREP. Don't need install if you don't want do it;
+
+**Installation order of packages:**
+- **Common order**: Base-> Additional Dlls -> API-SET -> Branding -> D3d -> Modern Setup -> Driver Update -> App Compat;
+
+- **Modern Setup**:
+  - **With others packages together**: Branding -> Modern Setup -> Base-> API-SET -> D3d -> Driver Update -> App Compat-> Additional Dlls;
+  - **Without other packages together, only for install on newer computer(Also Recommended install Driver Update too)**:
+    - **x86**: Branding -> Modern Setup;
+    - **x64**: Base -> Branding -> Modern Setup;
+
+- **Standalone packages (don't require other packages together, only if you want)**
+  - **App Compat only:** This package can be installed without any other packages; 
+  - **Driver Update Only**: This package can be installed without any other packages; 
+  - **AppCompat first**: This package can be installed without any other packages. 
 
 **Main Features**:
 - Increase memory support for 128 GB for x86 and 2 TB for x64 by default;
@@ -29,7 +44,7 @@ x64 SP2.
 - Allow support for new hardware with new drivers controllers;
 - Allow support for install Windows on any computers, with generalized hardware;
 
-**Modern Setup**
+**Modern Setup - Detailed**
 This is a package designed to prepare Windows to get ability to be installed in others computers. If you don't want capture the Windows installation, don't need install this package.
 - After install One-Core-API Modern Setup and restart computer, you can run Sysprep, a tool to prepare Windows to be generalize Windows Installation to any hardware;
 - Sysprep is placed on: Windows\System32\Sysprep, like as Windows Vista have;
@@ -44,12 +59,21 @@ This is a package designed to prepare Windows to get ability to be installed in 
 - Web Storm 2018;
 - Intelliji 2018 (Other versions may work too);
 - Filezilla (latest);
-- Visual Studio Code 1.71;
-- Chrome up to version 102!;
-- Opera up to version 39;
-- Firefox up to version 54;
+- Visual Studio Code 1.81.1;
+- Chrome up to version 109!;
+- Opera up to version 95;
+- Firefox up to version 70~80 (with bugs and need workarounds);
+- Microsoft Edge up version 109;
+- Brave up version 117;
+- Yandex latest version;
+- Thorium browser up 109;
+- Supermium up version 117;
+- Seamonkey up version 2.53.10;
+- Thunderbird up version 70x;
+- Maxthon up version 7.1.6;
+- Vivaldi up latest version;
 - JDK 1.8 (only Windows XP x64 for now);
-- OpenJDK until version 11 (maybe others versions works). You can download from: https://bell-sw.com/pages/downloads/#/java-11-lts;
+- Java Alternative JDK or OpenJDK until version 21 (maybe others versions works). You can download from: https://bell-sw.com/pages/downloads/#/java-11-lts;
 - Maxthon 6;
 - Epic Browser 94;
 - Python 3.6;
@@ -74,36 +98,19 @@ This is a package designed to prepare Windows to get ability to be installed in 
   - Crysis 1,2, and 3 (directx 10-11 mode);
   
 **Known Limitations:**
-- The unique language on binaries for now is English. You can install on Windows with another language, however, several dialogs and strings will be displayed in engilsh;
-- New applications installers may not work, like Chrome, Maxthon, Utorrent, Discord, Team vieweretc crash and application isn't installed. Need 
+- Open/Save Dialogs from several applications not working fully because are from Vista implementation, called IFileDialog. Working in progress;
+- Some places in dialogs or windows keep only in english. Internacionalization is working in progress;
+- New applications installers may not work, like Chrome, Maxthon, Discord, Team viewer, etc crash and application isn't installed. Need 
 use a pre-installed version, copied from other operation system;
 - Some installers like VS Code and Skype genereate a erro "Class is not supported" on shortcut phase creation;
 - Chrome has stability and crash randomy. Extension isn't supported for now. Downloads crash application or has network error, depend of version;
-- Firefox 55 or above is not working, only mypal 68 (firefox fork);
+- Firefox 55 -78 working with some limitations;
 - Firefox 54 32 bits not working on Windows XP x64. Chrome 61+ not working too;
 - The packages cannot be integrate with nlite to Windows Iso, because use a tool called "SFXCAB Substitute", not standard Microsoft version;
 - Standard .Net Framework Installers starting 4.6 ins't supported for now. You need a repacked version like did here: https://github.com/abbodi1406/dotNetFx4xW7. And avaliable like here: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251. Other versions are avaliable too, search on forum topics;
 - Palemoon version 27-31 not download anything. Download not start;
-- MiniChrome 87 has a issue related with high usage cpu. It is related with UpdateProcThreadAttribute, but, this function is needed for others applications, like standard chrome;
-- Opera 39+ crash on start;
+- Opera 39 - 46 may need follow parameters to start: --disable-gpu (to prevent black screen) and --single-process(to prevent eternally first page loading);
 - Qt5 application what use Dwrite crash on startup. Has some glitches like black screen if you delete dwrite (application start and can be used, however)
-
-**Installation order of packages:**
-- **App Compat only:** This package can be installed without any other packages;
-
-- **Base first**: Base-> API-SET -> Branding -> D3d -> Modern Setup -> Driver Update -> App Compat-> Additional Dlls;
-
-- **Modern Setup**:
-  - **x86**: Branding -> Modern Setup -> Base-> API-SET -> D3d -> Driver Update -> App Compat-> Additional Dlls;
-  - **x64**: Base -> Branding -> Modern Setup -> Base-> API-SET -> D3d -> Driver Update -> App Compat-> Additional Dlls;
-     
-- **Modern Setup Only** (Recommended install Driver Update too):
-  - **x86**: Branding -> Modern Setup;
-  - **x64**: Base -> Branding -> Modern Setup;
- 
-- **Driver Update Only**: Driver Update; 
-
-- **AppCompat first**: App Compat -> Base -> Driver Update -> D3d -> API-SET -> Additional Dlls.
 
 **Issues Report**
 For help to reproduce issue, is recommend **always** follow this template:
