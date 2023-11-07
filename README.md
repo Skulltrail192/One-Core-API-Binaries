@@ -15,7 +15,7 @@ x64 SP2.
 
 **The One-Core-API Binaries project consists of the following packages:**
 Warning: Always if OCA package require restart, do it. If you install all packages and restart only on last, Windows will be corrupted.  
-- **Base**: Main package of One-Core-API and is required by all other packages, except App Compat, Modern Setup (x86 only) and Driver Update, and contains all wrappers used in this project (like kernelbase and ntext);
+- **Base**: Main package of One-Core-API and is required by all other packages, except App Compat and Driver Update, and contains all wrappers used in this project (like kernelbase and ntext);
 - **Additional Dlls**: Several new dlls introduced in later versions of Windows.
 - **D3d**: D3D runtime (Mainly DX10 and DX11, based on WineD3D);
 - **App Compat**: Application compatbility settings, backported from later versions of Windows.
