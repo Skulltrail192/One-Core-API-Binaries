@@ -88,11 +88,10 @@ This is a package designed to prepare Windows to get ability to be installed in 
 - Supermium up version 117;
 - Seamonkey up version 2.53.10;
 - Thunderbird up version 70x;
-- Java Alternative JDK up version 21;
 - Maxthon up version 7.1.6;
 - Vivaldi up latest version;
 - JDK 1.8 (only Windows XP x64 for now);
-- OpenJDK until version 11 (maybe others versions works). You can download from: https://bell-sw.com/pages/downloads/#/java-11-lts;
+- Java Alternative JDK or OpenJDK until version 21 (maybe others versions works). You can download from: https://bell-sw.com/pages/downloads/#/java-11-lts;
 - Maxthon 6;
 - Epic Browser 94;
 - Python 3.6;
@@ -117,18 +116,18 @@ This is a package designed to prepare Windows to get ability to be installed in 
   - Crysis 1,2, and 3 (directx 10-11 mode);
   
 **Known Limitations:**
-- The unique language on binaries for now is English. You can install on Windows with another language, however, several dialogs and strings will be displayed in engilsh;
-- New applications installers may not work, like Chrome, Maxthon, Utorrent, Discord, Team vieweretc crash and application isn't installed. Need 
+- Open/Save Dialogs from several applications not working fully because are from Vista implementation, called IFileDialog. Working in progress;
+- Some places in dialogs or windows keep only in english. Internacionalization is working in progress;
+- New applications installers may not work, like Chrome, Maxthon, Discord, Team viewer, etc crash and application isn't installed. Need 
 use a pre-installed version, copied from other operation system;
 - Some installers like VS Code and Skype genereate a erro "Class is not supported" on shortcut phase creation;
 - Chrome has stability and crash randomy. Extension isn't supported for now. Downloads crash application or has network error, depend of version;
-- Firefox 55 or above is not working, only mypal 68 (firefox fork);
+- Firefox 55 -78 working with some limitations;
 - Firefox 54 32 bits not working on Windows XP x64. Chrome 61+ not working too;
 - The packages cannot be integrate with nlite to Windows Iso, because use a tool called "SFXCAB Substitute", not standard Microsoft version;
 - Standard .Net Framework Installers starting 4.6 ins't supported for now. You need a repacked version like did here: https://github.com/abbodi1406/dotNetFx4xW7. And avaliable like here: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251. Other versions are avaliable too, search on forum topics;
 - Palemoon version 27-31 not download anything. Download not start;
-- MiniChrome 87 has a issue related with high usage cpu. It is related with UpdateProcThreadAttribute, but, this function is needed for others applications, like standard chrome;
-- Opera 39+ crash on start;
+- Opera 39 - 46 may need follow parameters to start: --disable-gpu (to prevent black screen) and --single-process(to prevent eternally first page loading);
 - Qt5 application what use Dwrite crash on startup. Has some glitches like black screen if you delete dwrite (application start and can be used, however)
 
 **Issues Report**
