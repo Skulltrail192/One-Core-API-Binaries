@@ -5,6 +5,9 @@ x64 SP2.
 
 **Official Discord Server**: https://discord.gg/eRcGuFtn6p
 
+**Language Support**
+Language support for almost Windows parts for: Portuguese-Brazil (my language), Portuguese (Portugual), Turkish, Chinese (Traditional and Simplified), French, Italian, Hungarian, Ukranian (partially), Spanish, Polish, Russian and Korean;
+
 **Folders in this repository:**
 - Documents: Project documentation, known bugs, sfxcab usage (for making installers), etc.
 - Packages\x86 and Packages\x64: Binary releases categorized by package. You can download and install/update the packages directly from here (i.e. by going to Packages\x86\Base installer\update and runnning update.exe).
