@@ -94,6 +94,7 @@ This is a package designed to prepare Windows to get ability to be installed in 
   
 **Known Limitations:**
 - Open/Save Dialogs from several applications not working fully because are from Vista implementation, called IFileDialog. Working in progress;
+- Running Firefox 56+ you may face page loading problems. To resolve this, from version 55 to 72, you must create an environment variable called MOZ_FORCE_DISABLE_E10S . It will be the key of the user's environment variable, and the value will be 1. For versions from 73 onwards, the value will be the version number, that is, 73.0.0, for example (check the version number).
 - Some places in dialogs or windows keep only in english. Internacionalization is working in progress;
 - New applications installers may not work, like Chrome, Maxthon, Discord, Team viewer, etc crash and application isn't installed. Need 
 use a pre-installed version, copied from other operation system;
