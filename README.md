@@ -5,6 +5,9 @@ x64 SP2.
 
 **Official Discord Server**: https://discord.gg/eRcGuFtn6p
 
+**NOTE**:
+-Windows XP Unofficial SP4 and maybe Integral Edition are not supported!
+
 **Language Support**
 Language support for almost Windows parts for: Portuguese-Brazil (my language), Portuguese (Portugual), Turkish, Chinese (Traditional and Simplified), French, Italian, Hungarian, Ukranian (partially), Spanish, Polish, Russian and Korean;
 
