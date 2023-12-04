@@ -9,10 +9,10 @@
 **官方Discord服务器**: https://discord.gg/eRcGuFtn6p
 
 **注意**：
-- 不支持Windows XP的非官方SP4和可能的Integral Edition！
+- 不支持Windows XP的非官方SP4以及Integral Edition（可能）！
 
 **语言支持**
-几乎所有Windows部分的语言支持：葡萄牙语-巴西（我的语言），葡萄牙语（葡萄牙），土耳其语，中文（繁体和简体），法语，意大利语，匈牙利语，乌克兰语（部分支持），西班牙语，波兰语，俄语和韩语；
+几乎所有Windows的语言：葡萄牙语-巴西（我的语言），葡萄牙语（葡萄牙），土耳其语，中文（繁体和简体），法语，意大利语，匈牙利语，乌克兰语（部分支持），西班牙语，波兰语，俄语和韩语；
 
 **此存储库中的文件夹:**
 - Documents（文档）：项目文档、已知错误、sfxcab使用（用于制作安装程序）等。
@@ -58,8 +58,8 @@
 - Intelliji 2018（其他版本也可能可用）；
 - Filezilla（最新版本）；
 - Visual Studio Code 1.81.1；
-- Chrome版本高达109！；
-- Opera版本高达95；
+- Chrome版本最高到109！；
+- Opera版本最高到95；
 - Firefox版本70〜80（存在一些问题，需要解决方案）；
 - Microsoft Edge版本109以上；
 - Brave版本117以上；
@@ -75,16 +75,16 @@
 - Maxthon 6；
 - Epic Browser 94；
 - Python 3.6；
-- .Net Framework高达4.8；
+- .Net Framework最高到4.8；
 - Geekbench 4.2；
-- 性能测试；
+- Performance Test；
 - Adobe Reader DC（2017年版）；
 - Windows 7游戏；
 - Vista原生应用程序；
 - Spotify在Windows XP/Vista结束支持后，版本1.0.60；
 - Yandex浏览器（最新版本）；
 - Zoom；
-- 其他多个应用程序；
+- 或者其他应用程序；
 - Node 10.24；
 - Winrar 6.11（最新版本）；
 - Directx 9EX、10和11游戏：
