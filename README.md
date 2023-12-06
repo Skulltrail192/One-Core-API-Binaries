@@ -1,7 +1,7 @@
 **Welcome to One-Core-API binaries!**
 ***
 **Language:**    
-**English** | [简体中文](README_CN.md)     
+[English](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md)
 ***
 
 This repositry contains binary releases of the One-Core-API project. These are compatible with Windows Server 2003 SP2, Windows XP SP3 and Windows XP
@@ -24,7 +24,7 @@ Language support for almost Windows parts for: Portuguese-Brazil (my language), 
 - Output: Binaries output, you can generate using scripts on Release folder;
 
 **The One-Core-API Binaries project consists of the following packages:**
-Warning: Always if OCA package require restart, do it. If you install all packages and restart only on last, Windows will be corrupted.  
+Warning: Always if OCA package require restart, do it. If you install all packages and restart only on the last, Windows will be corrupted.  
 - **Base**: Main package of One-Core-API and is required by all other packages, except App Compat and Driver Update, and contains all wrappers used in this project (like kernelbase and ntext);
 - **Additional Dlls**: Several new dlls introduced in later versions of Windows.
 - **D3d**: D3D runtime (Mainly DX10 and DX11, based on WineD3D);
@@ -46,23 +46,25 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Allow support for new hardware with new drivers controllers;
 
 **One-Core-API allows you to run:**
-- Web Storm 2018;
+- JetBrains WebStorm 2018;
 - Intellij 2018 (Other versions may work too);
+- JetBrains WebStorm 2023.x.x (Windows XP x64 only for now)
+- JetBrains IntelliJ 2023.x.x (Windows XP x64 only for now)
 - Adobe Photoshop CC 2018;
 - Filezilla (latest);
-- Visual Studio Code 1.81.1;
+- Visual Studio Code up to 1.83.1;
 - Chrome up to version 122!;
 - Opera up to version 105;
 - Firefox up to version 116 (with bugs and need workarounds);
-- Microsoft Edge up version 115;
-- Brave up version 117;
-- Yandex latest version;
-- Thorium browser up 109;
-- Supermium up version 117;
-- Seamonkey up version 2.53.10;
-- Thunderbird up version 70x;
-- Maxthon up version 7.1.6;
-- Vivaldi up latest version;
+- Microsoft Edge up to version 115;
+- Brave up to version 117;
+- Yandex Browser latest version;
+- Thorium browser up to 109;
+- Supermium up to version 117;
+- Seamonkey up to version 2.53.10;
+- Thunderbird up to version 115;
+- Maxthon up to version 7.1.6;
+- Vivaldi up to the latest version;
 - JDK 1.8 (only Windows XP x64 for now);
 - Java Alternative JDK or OpenJDK until version 21 (maybe others versions works). You can download from: https://bell-sw.com/pages/downloads/#/java-11-lts;
 - Maxthon 6;
@@ -73,13 +75,13 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Performance Test;
 - Adobe Reader DC (2017);
 - Windows 7 games;
-- Vista native Applications;
+- Windows Vista native Applications;
 - Spotify after Windows XP/Vista end of support, version 1.0.60;
 - Yandex browser (latest);
 - Zoom;
 - Several other applications;
 - Node 10.24;
-- Winrar 6.11 (latest);
+- Winrar 6.24 (latest);
 - Directx 9EX, 10 and 11 games: 
   - Need for Speed Most Wanted 2012;
   - Need for Speed The Run;
@@ -87,22 +89,23 @@ Warning: Always if OCA package require restart, do it. If you install all packag
   - Injustice: Gods among us;
   - Assassign Creed Black Flgs;
   - Crysis 1,2, and 3 (directx 10-11 mode);
+- Kate 23.08.1 (Windows XP x64 only for now)
   
 **Known Limitations:**
 - Open/Save Dialogs from several applications not working fully because are from Vista implementation, called IFileDialog. Working in progress;
 - Running Firefox 56+ you may face page loading problems. To resolve this, from version 55 to 72, you must create an environment variable called MOZ_FORCE_DISABLE_E10S . It will be the key of the user's environment variable, and the value will be 1. For versions from 73 onwards, the value will be the version number, that is, 73.0.0, for example (check the version number).
 - Some places in dialogs or windows keep only in english. Internacionalization is working in progress;
 - New applications installers may not work, like Chrome, Maxthon, Discord, Team viewer, etc crash and application isn't installed. Need 
-use a pre-installed version, copied from other operation system;
-- Some installers like VS Code and Skype genereate a erro "Class is not supported" on shortcut phase creation;
-- Chrome has stability and crash randomy. Extension isn't supported for now. Downloads crash application or has network error, depend of version;
-- Firefox 55 -78 working with some limitations;
-- Firefox 54 32 bits not working on Windows XP x64. Chrome 61+ not working too;
+use a pre-installed version, copied from other operating system;
+- Fixed in version 3.0.4 ~~Some installers like VS Code and Skype genereate a erro "Class is not supported" on shortcut phase creation;~~
+- Fixed in OCA 3.0.3/3.0.4 ~~Chrome has stability and crash randomy. Extension isn't supported for now. Downloads crash application or has network error, depend of version;~~
+- Firefox 55-116 working with some limitations;
+- Firefox since version 54 (32 bit) doesn't work on Windows XP x64. Chrome 61+ does not work either;
 - The packages cannot be integrate with nlite to Windows Iso, because use a tool called "SFXCAB Substitute", not standard Microsoft version;
 - Standard .Net Framework Installers starting 4.6 ins't supported for now. You need a repacked version like did here: https://github.com/abbodi1406/dotNetFx4xW7. And avaliable like here: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251. Other versions are avaliable too, search on forum topics;
 - Palemoon version 27-31 not download anything. Download not start;
 - Opera 39 - 46 may need follow parameters to start: --disable-gpu (to prevent black screen) and --single-process(to prevent eternally first page loading);
-- Qt5 application what use Dwrite crash on startup. Has some glitches like black screen if you delete dwrite (application start and can be used, however)
+- Qt5 application what use Dwrite crash on startup. Has some glitches like black screen if you deleted dwrite (application start and can be used, however)
 
 **Issues Report**
 For help to reproduce issue, is recommend **always** follow this template:
@@ -130,7 +133,7 @@ Firefox Dev 54**
 ![Capturar](https://user-images.githubusercontent.com/5159776/178078132-da504607-a1ca-4f8d-ae25-6a7eb367bdaa.PNG)
 **Avast and Chromium 68**
 ![Avast](https://user-images.githubusercontent.com/5159776/178078208-c13b3448-ee6a-4c56-9d94-d0c62d51949e.PNG)
-**Visual Code 1.70**
+**Visual Studio Code 1.70**
 ![VisualCode1 70](https://user-images.githubusercontent.com/5159776/192194220-9f4f324d-b0d8-4c40-a378-2c25c81eff16.PNG)
 Windows 7 Paint
 ![Windows7 Paint](https://user-images.githubusercontent.com/5159776/192194273-de70c23e-8731-4fb6-96c1-9bee98947269.PNG)
