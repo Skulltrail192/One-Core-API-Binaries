@@ -1,4 +1,8 @@
 **Welcome to One-Core-API binaries!**
+***
+**Language:**    
+**English** | [简体中文](README_CN.md)     
+***
 
 This repositry contains binary releases of the One-Core-API project. These are compatible with Windows Server 2003 SP2, Windows XP SP3 and Windows XP
 x64 SP2.
