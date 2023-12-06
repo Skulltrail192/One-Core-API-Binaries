@@ -55,13 +55,14 @@ This is a package designed to prepare Windows to get ability to be installed in 
 
 **One-Core-API allows you to run:**
 - Web Storm 2018;
-- Intelliji 2018 (Other versions may work too);
+- Intellij 2018 (Other versions may work too);
+- Adobe Photohosp CC 2018;
 - Filezilla (latest);
 - Visual Studio Code 1.81.1;
-- Chrome up to version 109!;
-- Opera up to version 95;
-- Firefox up to version 70~80 (with bugs and need workarounds);
-- Microsoft Edge up version 109;
+- Chrome up to version 122!;
+- Opera up to version 105;
+- Firefox up to version 116 (with bugs and need workarounds);
+- Microsoft Edge up version 115;
 - Brave up version 117;
 - Yandex latest version;
 - Thorium browser up 109;
