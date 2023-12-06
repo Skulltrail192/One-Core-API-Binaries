@@ -26,7 +26,7 @@
 [Strings]
     HelpLink 				= "http://shorthornproject.com"
     URLInfoAbout 			= "http://shorthornproject.com"
-	BASE_VERSION            = "3.0.3"
+	BASE_VERSION            = "3.0.4"
 	SP_TITLE                = "One-Core-API Base"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAB"
@@ -2590,6 +2590,7 @@
 	CopyFiles = Drivers.CoreDriverFiles	
 
 [Drivers.CoreDriverFiles]
+	intelppm.sys, drivers\intelppm.sys
 	ntoskrn8.sys, drivers\ntoskrn8.sys
 
 [MustReplace.System32.files]
@@ -2611,6 +2612,8 @@
 	"WinSxS\wow64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_B8C2A5B7\comctl32.dll"
 	"WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591\gdiplus.dll"
 	"WinSxS\amd64_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_54820B71\gdiplus.dll"
+	"WinSxS\amd64_Microsoft.Windows.WinHTTP_6595b64144ccf1df_5.1.3790.4929_x-ww_32307663\winhttp.dll"
+	"WinSxS\x86_Microsoft.Windows.WinHTTP_6595b64144ccf1df_5.1.3790.4929_x-ww_00269083\winhttp.dll"
 	
 [CopyAlways.WinSxS.Main.files]	
 	"WinSxS\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E\comctl32.dll"
@@ -2619,6 +2622,8 @@
 	"WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591\gdiplus.dll"
 	"WinSxS\amd64_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.3790.3959_x-ww_B45BA3BE\gdiplus.dll"
 	"WinSxS\amd64_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_54820B71\gdiplus.dll"
+	"WinSxS\amd64_Microsoft.Windows.WinHTTP_6595b64144ccf1df_5.1.3790.4929_x-ww_32307663\winhttp.dll"
+	"WinSxS\x86_Microsoft.Windows.WinHTTP_6595b64144ccf1df_5.1.3790.4929_x-ww_00269083\winhttp.dll"	
 	
 [CopyAlways.WinSxS.Manifests.files]	
 	"WinSxS\manifests\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E.cat"
@@ -2629,6 +2634,10 @@
 	"WinSxS\manifests\wow64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_B8C2A5B7.manifest"
 	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591.cat"
 	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591.manifest"	
+	"WinSxS\manifests\amd64_Microsoft.Windows.WinHTTP_6595b64144ccf1df_5.1.3790.4929_x-ww_32307663.manifest"	
+	"WinSxS\manifests\amd64_Microsoft.Windows.WinHTTP_6595b64144ccf1df_5.1.3790.4929_x-ww_32307663.cat"
+	"WinSxS\manifests\x86_Microsoft.Windows.WinHTTP_6595b64144ccf1df_5.1.3790.4929_x-ww_00269083.manifest"
+	"WinSxS\manifests\x86_Microsoft.Windows.WinHTTP_6595b64144ccf1df_5.1.3790.4929_x-ww_00269083.cat"
 	
 [CopyAlways.WinSxS.Policies.files]
 	"WinSxS\Policies\amd64_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_BD997995\6.0.3790.5190.policy"
@@ -2639,6 +2648,10 @@
 	"WinSxS\Policies\amd64_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_AE43B2CC\1.0.6002.24064.policy"	
 	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\1.0.6002.24064.cat"
 	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\1.0.6002.24064.policy"	
+	"WinSxS\Policies\amd64_policy.5.1.Microsoft.Windows.WinHTTP_6595b64144ccf1df_x-ww_DD275069\5.1.3790.4929.cat"	
+	"WinSxS\Policies\amd64_policy.5.1.Microsoft.Windows.WinHTTP_6595b64144ccf1df_x-ww_DD275069\5.1.3790.4929.policy"	
+	"WinSxS\Policies\x86_policy.5.1.Microsoft.Windows.WinHTTP_6595b64144ccf1df_x-ww_7D68AE49\5.1.3790.4929.cat"	
+	"WinSxS\Policies\x86_policy.5.1.Microsoft.Windows.WinHTTP_6595b64144ccf1df_x-ww_7D68AE49\5.1.3790.4929.policy"	
 
 [CopyAlways.System32.Files]
     advapibase.dll,XP64SP2/amd64/advapibase.dll
@@ -2656,16 +2669,18 @@
     shlwapibase.dll,XP64SP2/amd64/shlwapibase.dll	
     shellbase.dll,XP64SP2/amd64/shellbase.dll	
     userbase.dll,XP64SP2/amd64/userbase.dll
+    userenvbase.dll,XP64SP2/amd64/userenvbase.dll
     uxthemebase.dll,XP64SP2/amd64/uxthemebase.dll
     iphlpapibase.dll,XP64SP2/amd64/iphlpapibase.dll
     winstabase.dll,XP64SP2/amd64/winstabase.dll
     ws2_base.dll,XP64SP2/amd64/ws2_base.dll
-    winhttp.dll,XP64SP2/amd64/winhttp.dll	
+    winhttpbase.dll,XP64SP2/amd64/winhttpbase.dll	
 	winsrv.dll, XP64SP2/amd64/winsrv.dll
 	wow64win.dll, XP64SP2/amd64/wow64win.dll
 	win32k.sys, XP64SP2/amd64/win32k.sys	
     advapi32.dll,amd64/advapi32.dll
     bcrypt.dll,amd64/bcrypt.dll
+    cfgmgr32.dll,amd64/cfgmgr32.dll
     comctlext.dll,amd64/comctlext.dll
     comdlg32.dll,amd64/comdlg32.dll
     cryptnew.dll,amd64/cryptnew.dll	
@@ -2679,19 +2694,20 @@
     kernelbase.dll,amd64/kernelbase.dll
     ;mscoree.dll,amd64/mscoree.dll ;comment becuase if copied, must be set HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft.NETFramework\InstallRoot too, however, we don't know Windows drive letter installation. 
     msctfime.ime,amd64/msctfime.ime
-    msvcrt.dll,amd64/msvcrt.dll	
+    msvcrt.dll,amd64/msvcrt.dll
     netapi32.dll,amd64/netapi32.dll
     netfxperf.dll,amd64/netfxperf.dll
     Nlsdl.dll,amd64/Nlsdl.dll
+	NNN4NT5.exe,NNN4NT5.exe
     normaliz.dll,amd64/normaliz.dll
-    nsi.dll,amd64/nsi.dll	
-	ntext.dll,amd64/ntext.dll	
-	ole32.dll,amd64/ole32.dll	
+    nsi.dll,amd64/nsi.dll
+	ntext.dll,amd64/ntext.dll
+	ole32.dll,amd64/ole32.dll
     pdhbase.dll,amd64/pdhbase.dll	
     pdh.dll,amd64/pdh.dll
     powrprof.dll,amd64/powrprof.dll
     propsys.dll,amd64/propsys.dll
-    psapi.dll,amd64/psapi.dll	
+    psapi.dll,amd64/psapi.dll
     rpcrt4.dll,amd64/rpcrt4.dll
     secur32.dll,amd64/secur32.dll
     setupapi.dll,amd64/setupapi.dll
@@ -2699,9 +2715,11 @@
     shlwapi.dll,amd64/shlwapi.dll	
     sspicli.dll,amd64/sspicli.dll	
     user32.dll,amd64/user32.dll
+    userenv.dll,amd64/userenv.dll
     uxtheme.dll,amd64/uxtheme.dll
 	version.dll,amd64/version.dll
     winbrand.dll,amd64/winbrand.dll	
+    winhttp.dll,amd64/winhttp.dll	
     winsta.dll,amd64/winsta.dll		
     winstanew.dll,amd64/winstanew.dll		
     ws2_32.dll,amd64/ws2_32.dll
@@ -3328,13 +3346,15 @@
     shellbase.dll,XP64SP2/i386/wshellbase.dll
     shlwapibase.dll,XP64SP2/i386/wshlwapibase.dll	
     userbase.dll,XP64SP2/i386/wuserbase.dll
+    userenvbase.dll,XP64SP2/i386/wuserenvbase.dll
     uxthemebase.dll,XP64SP2/i386/wuxthemebase.dll
-    winhttp.dll,XP64SP2/i386/wwinhttp.dll	
+    winhttpbase.dll,XP64SP2/i386/wwinhttpbase.dll	
     winstabase.dll,XP64SP2/i386/wwinstabase.dll
     ws2_base.dll,XP64SP2/i386/wws2_base.dll
     advapi32.dll,i386/wadvapi32.dll
     bcrypt.dll,i386/wbcrypt.dll
     certupdate.exe
+    cfgmgr32.dll,i386/wcfgmgr32.dll
     comctlext.dll,i386/wcomctlext.dll
     comdlg32.dll,i386/wcomdlg32.dll
     cryptnew.dll,i386/wcryptnew.dll
@@ -3352,7 +3372,7 @@
     netapi32.dll,i386/wnetapi32.dll
     netfxperf.dll,i386/wnetfxperf.dll
     Nlsdl.dll,i386/wNlsdl.dll
-    NNN4NT5.exe,i386/NNN4NT5.exe
+    NNN4NT5.exe,NNN4NT5.exe
     normaliz.dll,i386/wnormaliz.dll
     nsi.dll,i386/wnsi.dll
 	ntext.dll,i386/wntext.dll	
@@ -3369,9 +3389,11 @@
     shlwapi.dll,i386/wshlwapi.dll
     sspicli.dll,i386/wsspicli.dll
     user32.dll,i386/wuser32.dll
+    userenv.dll,i386/wuserenv.dll
     uxtheme.dll,i386/wuxtheme.dll
 	version.dll,i386/wversion.dll
     winbrand.dll,i386/wwinbrand.dll	
+    winhttp.dll,i386/wwinhttp.dll
     winsta.dll,i386/wwinsta.dll
     winstanew.dll,i386/wwinstanew.dll		
     ws2_32.dll,i386/wws2_32.dll

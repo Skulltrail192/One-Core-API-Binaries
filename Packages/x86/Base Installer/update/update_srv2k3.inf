@@ -25,7 +25,7 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	BASE_VERSION            = "3.0.3"	
+	BASE_VERSION            = "3.0.4"	
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
     SECURITY_UPDATE       	= "Security Update"
@@ -533,6 +533,7 @@
 	CopyFiles = Drivers.CoreDriverFiles	
 
 [Drivers.CoreDriverFiles]
+	intelppm.sys, 2k3SP2\drivers\srvintelppm.sys	
 	ntoskrn8.sys, drivers\ntoskrn8.sys	
 
 [System32.files]
@@ -595,10 +596,12 @@
 	
 [MustReplace.WinSxS.Main.files]	
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winsrv2k3\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
+	WinSxS\x86_Microsoft.Windows.WinHTTP_6595b64144ccf1df_5.1.3790.4929_x-ww_00269083\winhttp.dll, WinSxS\winsrv2k3\x86_Microsoft.Windows.WinHTTP_6595b64144ccf1df_5.1.3790.4929_x-ww_00269083\winhttp.dll
 	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c\gdiplus.dll	
 	
 [CopyAlways.WinSxS.Main.files]	
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winsrv2k3\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
+	WinSxS\x86_Microsoft.Windows.WinHTTP_6595b64144ccf1df_5.1.3790.4929_x-ww_00269083\winhttp.dll, WinSxS\winsrv2k3\x86_Microsoft.Windows.WinHTTP_6595b64144ccf1df_5.1.3790.4929_x-ww_00269083\winhttp.dll
 	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c\gdiplus.dll
 	
 [CopyAlways.WinSxS.Manifests.files]	
@@ -606,12 +609,16 @@
 	"WinSxS\manifests\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.manifest"
 	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c.cat"
 	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24180_x-ww_22f8358c.manifest"
+	"WinSxS\manifests\x86_Microsoft.Windows.WinHTTP_6595b64144ccf1df_5.1.3790.4929_x-ww_00269083.cat"
+	"WinSxS\manifests\x86_Microsoft.Windows.WinHTTP_6595b64144ccf1df_5.1.3790.4929_x-ww_00269083.manifest"
 	
 [CopyAlways.WinSxS.Policies.files]
 	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.policy"
 	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.cat"	
 	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24180.cat"
 	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24180.policy"
+	"WinSxS\Policies\x86_policy.5.1.Microsoft.Windows.WinHTTP_6595b64144ccf1df_x-ww_7D68AE49\5.1.3790.4929.cat"
+	"WinSxS\Policies\x86_policy.5.1.Microsoft.Windows.WinHTTP_6595b64144ccf1df_x-ww_7D68AE49\5.1.3790.4929.policy"
 	
 [CopyAlways.System32.Files]
     advapibase.dll,2k3SP2\srvadvapibase.dll
@@ -619,6 +626,7 @@
 	basesrv.dll,2k3SP2\srvbasesrv.dll
 	comdlgbase.dll,2k3SP2\srvcomdlgbase.dll
 	crypt32.dll,2k3SP2\srvcrypt32.dll
+	esent.dll,2k3SP2\srvesent.dll
     gdibase.dll,2k3SP2\srvgdibase.dll	
 	halacpi.dll,2k3SP2\srvhalacpi.dll
 	halaacpi.dll,2k3SP2\srvhalaacpi.dll
@@ -635,22 +643,23 @@
     shellbase.dll,2k3SP2\srvshellbase.dll
 	shlwapibase.dll,2k3SP2\srvshlwapibase.dll
     userbase.dll,2k3SP2\srvuserbase.dll
+    userenvbase.dll,2k3SP2\srvuserenvbase.dll
     uxthemebase.dll,2k3SP2\srvuxthemebase.dll
     ws2_base.dll,2k3SP2\srvws2_base.dll
 	winsrv.dll, 2k3SP2\srvwinsrv.dll
-	winhttp.dll, 2k3SP2\srvwinhttp.dll
+	winhttpbase.dll, 2k3SP2\srvwinhttpbase.dll
 	winstabase.dll, 2k3SP2\srvwinstabase.dll		
 	win32k.sys, 2k3SP2\srvwin32k.sys
     advapi32.dll	
     bcrypt.dll
     certupdate.exe
+    cfgmgr32.dll
     comctlext.dll
     comdlg32.dll
 	cryptex.dll
 	cryptnew.dll
 	d3dkmt.dll
-	devcon.exe
-	esent.dll
+	devcon.exe	
 	fileextd.dll
     pdhbase.dll
     gdi32.dll
@@ -682,10 +691,12 @@
     sspicli.dll
 	updatehal.exe
     user32.dll
+    userenv.dll
     uxtheme.dll
 	version.dll	
     wevtapibase.dll
     winbrand.dll
+    winhttp.dll
     winsta.dll
     winstanew.dll
     ws2_32.dll
@@ -1014,6 +1025,7 @@
     2k3SP2\srvsetupapibase.dll = 1
     2k3SP2\srvshellbase.dll = 1
     2k3SP2\srvuserbase.dll = 1
+    2k3SP2\srvuserenvbase.dll = 1
     2k3SP2\srvuxthemebase.dll = 1
     2k3SP2\srvws2_base.dll = 1
     2k3SP2\srvntkrnlmp.exe=1
@@ -1022,10 +1034,12 @@
     2k3SP2\srvntoskrnl.exe=1
     2k3SP2\srvntkrnlpa.exe=1
 	2k3SP2\srvwinstabase.dll=1	
+	2k3SP2\srvwinhttpbase.dll=1	
 	2k3SP2\srvwin32k.sys=1	
     advapi32.dll = 1
     bcrypt.dll = 1
     certupdate.exe =1
+    cfgmgr32.dll =1
     comctlext.dll =1
     comdlg32.dll =1
 	cryptnew.dll = 1
@@ -1064,14 +1078,16 @@
     shlwapi.dll = 1
     sspicli.dll = 1
     user32.dll = 1
+    userenv.dll = 1
 	version.dll = 1	
 	updatehal.exe = 1
     uxtheme.dll = 1
 	;wevtold.dll = 1
-    wevtapibase.dll = 1	
+	wevtapibase.dll = 1
+    winbrand.dll = 1	
+    winhttp.dll = 1    	
     winsta.dll = 1	
     winstanew.dll = 1	
-    winbrand.dll = 1	
     ws2_32.dll = 1
 	drivers\ntoskrn8.sys = 1
 	;mui\0409\mscorees.dll = 1

@@ -25,7 +25,7 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	BASE_VERSION            = "3.0.3"	
+	BASE_VERSION            = "3.0.4"	
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
     SECURITY_UPDATE       	= "Security Update"
@@ -532,6 +532,7 @@
 	CopyFiles = Drivers.CoreDriverFiles
 
 [Drivers.CoreDriverFiles]
+	intelppm.sys, XPSP3\drivers\xpspintelppm.sys	
 	ntoskrn8.sys, drivers\ntoskrn8.sys	
 
 [System32.files]
@@ -618,6 +619,7 @@
 	basesrv.dll,XPSP3\xpspbasesrv.dll
 	comdlgbase.dll,XPSP3\xpspcomdlgbase.dll
 	crypt32.dll,XPSP3\xpspcrypt32.dll
+	esent.dll,XPSP3\xpspesent.dll
     gdibase.dll,XPSP3\xpspgdibase.dll	
 	halacpi.dll,XPSP3\xpsphalacpi.dll
 	halaacpi.dll,XPSP3\xpsphalaacpi.dll
@@ -633,22 +635,23 @@
     shellbase.dll,XPSP3\xpspshellbase.dll
 	shlwapibase.dll,XPSP3\xpspshlwapibase.dll
     userbase.dll,XPSP3\xpspuserbase.dll
+    userenvbase.dll,XPSP3\xpspuserenvbase.dll
     uxthemebase.dll,XPSP3\xpspuxthemebase.dll
     ws2_base.dll,XPSP3\xpspws2_base.dll
 	winsrv.dll, XPSP3\xpspwinsrv.dll
-	winhttp.dll, XPSP3\xpspwinhttp.dll
+	winhttpbase.dll, XPSP3\xpspwinhttpbase.dll
 	winstabase.dll, XPSP3\xpspwinstabase.dll		
 	win32k.sys, XPSP3\xpspwin32k.sys
     advapi32.dll	
     bcrypt.dll
     certupdate.exe
+    cfgmgr32.dll
     comctlext.dll
     comdlg32.dll
 	cryptex.dll
 	cryptnew.dll
 	d3dkmt.dll
 	devcon.exe
-	esent.dll
 	fileextd.dll
     pdhbase.dll
     gdi32.dll
@@ -680,10 +683,12 @@
     sspicli.dll
 	updatehal.exe
     user32.dll
+    userenv.dll
     uxtheme.dll
 	version.dll	
     wevtapibase.dll
     winbrand.dll
+    winhttp.dll
     winsta.dll
     winstanew.dll
     ws2_32.dll
@@ -1012,6 +1017,7 @@
     XPSP3\xpspsetupapibase.dll = 1
     XPSP3\xpspshellbase.dll = 1
     XPSP3\xpspuserbase.dll = 1
+    XPSP3\xpspuserenvbase.dll = 1
     XPSP3\xpspuxthemebase.dll = 1
     XPSP3\xpspws2_base.dll = 1
     XPSP3\xpspntkrnlmp.exe=1
@@ -1024,6 +1030,7 @@
     advapi32.dll = 1
     bcrypt.dll = 1
     certupdate.exe =1
+    cfgmgr32.dll =1
     comctlext.dll =1
     comdlg32.dll =1
 	cryptnew.dll = 1
@@ -1062,14 +1069,16 @@
     shlwapi.dll = 1
     sspicli.dll = 1
     user32.dll = 1
+    userenv.dll = 1
 	version.dll = 1	
 	updatehal.exe = 1
     uxtheme.dll = 1
 	;wevtold.dll = 1
+	winhttp.dll = 1
+	winbrand.dll = 1
     wevtapibase.dll = 1	
     winsta.dll = 1	
-    winstanew.dll = 1	
-    winbrand.dll = 1	
+    winstanew.dll = 1    	
     ws2_32.dll = 1
 	drivers\ntoskrn8.sys = 1
 	;mui\0409\mscorees.dll = 1

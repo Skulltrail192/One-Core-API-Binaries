@@ -34,7 +34,7 @@
     Display_String="%LatestBrandingUpdateFail%"
 	
 [Strings]
-	D3DR_VERSION            = "3.0.3"
+	D3DR_VERSION            = "3.0.4"
 	SP_TITLE                = "One-Core-API D3D Runtime"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAD3DR"
@@ -68,14 +68,15 @@
 	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSION%"
 	HKLM,"SYSTEM\CurrentControlSet\Services\FontCache","Description",0x00000000,"%FNTCACHESVC_DESCRIPTION%"
 	HKLM,"SYSTEM\CurrentControlSet\Services\FontCache","DisplayName",0x00000000,"%FNTCACHESVC_DISPLAY_NAME%"
-	HKLM,"SYSTEM\CurrentControlSet\Services\FontCache","ErrorControl",0x00010001,1
-	HKLM,"SYSTEM\CurrentControlSet\Services\FontCache","ImagePath",0x00020000,"%SystemRoot%\system32\svchost.exe -k netsvcs"
+	HKLM,"SYSTEM\CurrentControlSet\Services\FontCache","ImagePath",0x00020000,"%SystemRoot%\system32\svchost.exe -k LocalService"
 	HKLM,"SYSTEM\CurrentControlSet\Services\FontCache","ObjectName",0x00000000,"NT AUTHORITY\LocalService"
-	HKLM,"SYSTEM\CurrentControlSet\Services\FontCache","Start",0x00010001,2
-	HKLM,"SYSTEM\CurrentControlSet\Services\FontCache","Type",0x00010001,20	
-	HKLM,"SYSTEM\CurrentControlSet\Services\FontCache\Parameters", "ServiceDll", 0x00010001, "%SystemRoot%\system32\FntCache.dll"
+	HKLM,"SYSTEM\CurrentControlSet\services\FontCache","ErrorControl",0x10001,01,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\services\FontCache","Start",0x10001,02,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\services\FontCache","Type",0x10001,20,00,00,00
+	HKLM,"SYSTEM\CurrentControlSet\services\FontCache","Group",0x0,"AudioGroup"	
+	HKLM,"SYSTEM\CurrentControlSet\services\FontCache\Parameters","ServiceDll",0x20000,"%%SystemRoot%%\system32\FntCache.dll"
 	HKLM,"SYSTEM\CurrentControlSet\Services\FontCache\Parameters", "ServiceDllUnloadOnStop", 0x00010001, 1	
-	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\svchost", "netsvcs", 0x00010008, "FontCache"	
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\svchost", "LocalService", 0x00010008, "FontCache"	
 	
 [ProductInstall.DontDelayUntilReboot]
     CopyFiles=MustReplace.System32.files
@@ -107,7 +108,7 @@
 	d3d10_1.dll
 	d3d10core.dll
 	d3d11.dll
-	d3d12.dll
+	;d3d12.dll
 	dwrite.dll
 	dxdiag.exe
 	dxdiagn.dll	
@@ -129,7 +130,7 @@
 	d3d10_1.dll = 1
 	d3d10core.dll = 1
 	d3d11.dll = 1
-	d3d12.dll = 1
+	;d3d12.dll = 1
 	dwrite.dll = 1
 	dxdiag.exe = 1
 	dxdiagn.dll = 1		

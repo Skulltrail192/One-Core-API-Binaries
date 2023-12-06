@@ -29,7 +29,7 @@
     Display_String="%LatestUpdateFail%"		
 	
 [Strings]
-	OCAAD_VERSION           = "3.0.3"
+	OCAAD_VERSION           = "3.0.4"
 	SP_TITLE                = "One-Core-API Additional Dlls"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAAD"
@@ -2746,13 +2746,140 @@
 	HKCR,"CLSID\{4C1FC63A-695C-47E8-A339-1A194BE3D0B8}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
 	HKCR,"CLSID\{4C1FC63A-695C-47E8-A339-1A194BE3D0B8}",,0x0,"UIAnimationManager"
 	HKCR,"CLSID\{1D6322AD-AA85-4EF5-A828-86D71067D145}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
-	HKCR,"CLSID\{1D6322AD-AA85-4EF5-A828-86D71067D145}",,0x0,"UIAnimationTransitionLibrary"	
+	HKCR,"CLSID\{1D6322AD-AA85-4EF5-A828-86D71067D145}",,0x0,"UIAnimationTransitionLibrary"
+	
+	;Tablet PC applications support
+	HKCR,"AppID\wisptis.EXE","AppID",0x0,"{7F429620-16D1-471E-A81A-114992148034}"
+	HKCR,"AppID\{7F429620-16D1-471E-A81A-114992148034}",,0x0,"wisptis"
+	HKCR,"CLSID\{A5B020FD-E04B-4e67-B65A-E7DEED25B2CF}\LocalServer32",,0x20000,"%%SystemRoot%%\System32\wisptis.exe"
+	HKCR,"CLSID\{A5B020FD-E04B-4e67-B65A-E7DEED25B2CF}\ProgID",,0x0,"Wisptis.TabletManager.1"
+	HKCR,"CLSID\{A5B020FD-E04B-4e67-B65A-E7DEED25B2CF}\VersionIndependentProgID",,0x0,"Wisptis.TabletManager"
+	HKCR,"TypeLib\{773F1B9A-35B9-4E95-83A0-A210F2DE3B37}\1.0",,0x0,"wisptis 1.0 Type Library"
+	HKCR,"TypeLib\{773F1B9A-35B9-4E95-83A0-A210F2DE3B37}\1.0\0\win32",,0x20000,"%%SystemRoot%%\System32\wisptis.exe"
+	HKCR,"Wisptis.TabletManager",,0x0,"TabletManager Class"
+	HKCR,"Wisptis.TabletManager.1",,0x0,"TabletManager Class"
+	HKCR,"Wisptis.TabletManager.1\CLSID",,0x0,"{A5B020FD-E04B-4e67-B65A-E7DEED25B2CF}"
+	HKCR,"Wisptis.TabletManager\CLSID",,0x0,"{A5B020FD-E04B-4e67-B65A-E7DEED25B2CF}"
+	HKCR,"Wisptis.TabletManager\CurVer",,0x0,"Wisptis.TabletManager.1"
+	HKLM,"SOFTWARE\Classes\AppID\wisptis.EXE","AppID",0x0,"{7F429620-16D1-471E-A81A-114992148034}"
+	HKLM,"SOFTWARE\Classes\AppID\{7F429620-16D1-471E-A81A-114992148034}",,0x0,"wisptis"
+	HKLM,"SOFTWARE\Classes\CLSID\{A5B020FD-E04B-4e67-B65A-E7DEED25B2CF}\LocalServer32",,0x20000,"%%SystemRoot%%\System32\wisptis.exe"
+	HKLM,"SOFTWARE\Classes\CLSID\{A5B020FD-E04B-4e67-B65A-E7DEED25B2CF}\ProgID",,0x0,"Wisptis.TabletManager.1"
+	HKLM,"SOFTWARE\Classes\CLSID\{A5B020FD-E04B-4e67-B65A-E7DEED25B2CF}\VersionIndependentProgID",,0x0,"Wisptis.TabletManager"
+	HKLM,"SOFTWARE\Classes\TypeLib\{773F1B9A-35B9-4E95-83A0-A210F2DE3B37}\1.0",,0x0,"wisptis 1.0 Type Library"
+	HKLM,"SOFTWARE\Classes\TypeLib\{773F1B9A-35B9-4E95-83A0-A210F2DE3B37}\1.0\0\win32",,0x20000,"%%SystemRoot%%\System32\wisptis.exe"
+	HKLM,"SOFTWARE\Classes\Wisptis.TabletManager",,0x0,"TabletManager Class"
+	HKLM,"SOFTWARE\Classes\Wisptis.TabletManager.1",,0x0,"TabletManager Class"
+	HKLM,"SOFTWARE\Classes\Wisptis.TabletManager.1\CLSID",,0x0,"{A5B020FD-E04B-4e67-B65A-E7DEED25B2CF}"
+	HKLM,"SOFTWARE\Classes\Wisptis.TabletManager\CLSID",,0x0,"{A5B020FD-E04B-4e67-B65A-E7DEED25B2CF}"
+	HKLM,"SOFTWARE\Classes\Wisptis.TabletManager\CurVer",,0x0,"Wisptis.TabletManager.1"
+	;inkdiv.dll, inkobj.dll tpcps.dll and rtscom.dll
+	HKCR,"CLSID\{8854F6A0-4683-4AE7-9191-752FE64612C3}",,0x0,"InkDivider Class"
+	HKCR,"CLSID\{8854F6A0-4683-4AE7-9191-752FE64612C3}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\Inkdiv.dll"
+	HKCR,"CLSID\{8854F6A0-4683-4AE7-9191-752FE64612C3}\ProgID",,0x0,"msinkdiv.InkDivider.1"
+	HKCR,"CLSID\{8854F6A0-4683-4AE7-9191-752FE64612C3}\VersionIndependentProgID",,0x0,"msinkdiv.InkDivider"
+	HKCR,"Interface\{1BB5DDC2-31CC-4135-AB82-2C66C9F00C41}",,0x0,"IInkDivisionUnits"
+	HKCR,"Interface\{2DBEC0A7-74C7-4B38-81EB-AA8EF0C24900}",,0x0,"IInkDivisionResult"
+	HKCR,"Interface\{5DE00405-F9A4-4651-B0C5-C317DEFD58B9}",,0x0,"IInkDivider"
+	HKCR,"Interface\{85AEE342-48B0-4244-9DD5-1ED435410FAB}",,0x0,"IInkDivisionUnit"
+	HKCR,"msinkdiv.InkDivider",,0x0,"InkDivider Class"
+	HKCR,"msinkdiv.InkDivider.1",,0x0,"InkDivider Class"
+	HKCR,"msinkdiv.InkDivider.1\CLSID",,0x0,"{8854F6A0-4683-4AE7-9191-752FE64612C3}"
+	HKCR,"msinkdiv.InkDivider\CLSID",,0x0,"{8854F6A0-4683-4AE7-9191-752FE64612C3}"
+	HKCR,"msinkdiv.InkDivider\CurVer",,0x0,"msinkdiv.InkDivider.1"
+	HKCR,"TypeLib\{56D04F5D-964F-4DBF-8D23-B97989E53418}\1.5",,0x0,"Microsoft InkDivider Type Library, version 1.5"
+	HKCR,"TypeLib\{56D04F5D-964F-4DBF-8D23-B97989E53418}\1.5\0\win32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\Inkdiv.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{8854F6A0-4683-4AE7-9191-752FE64612C3}",,0x0,"InkDivider Class"
+	HKLM,"SOFTWARE\Classes\CLSID\{8854F6A0-4683-4AE7-9191-752FE64612C3}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\Inkdiv.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{8854F6A0-4683-4AE7-9191-752FE64612C3}\ProgID",,0x0,"msinkdiv.InkDivider.1"
+	HKLM,"SOFTWARE\Classes\CLSID\{8854F6A0-4683-4AE7-9191-752FE64612C3}\VersionIndependentProgID",,0x0,"msinkdiv.InkDivider"
+	HKLM,"SOFTWARE\Classes\Interface\{1BB5DDC2-31CC-4135-AB82-2C66C9F00C41}",,0x0,"IInkDivisionUnits"
+	HKLM,"SOFTWARE\Classes\Interface\{2DBEC0A7-74C7-4B38-81EB-AA8EF0C24900}",,0x0,"IInkDivisionResult"
+	HKLM,"SOFTWARE\Classes\Interface\{5DE00405-F9A4-4651-B0C5-C317DEFD58B9}",,0x0,"IInkDivider"
+	HKLM,"SOFTWARE\Classes\Interface\{85AEE342-48B0-4244-9DD5-1ED435410FAB}",,0x0,"IInkDivisionUnit"
+	HKLM,"SOFTWARE\Classes\msinkdiv.InkDivider",,0x0,"InkDivider Class"
+	HKLM,"SOFTWARE\Classes\msinkdiv.InkDivider.1",,0x0,"InkDivider Class"
+	HKLM,"SOFTWARE\Classes\msinkdiv.InkDivider.1\CLSID",,0x0,"{8854F6A0-4683-4AE7-9191-752FE64612C3}"
+	HKLM,"SOFTWARE\Classes\msinkdiv.InkDivider\CLSID",,0x0,"{8854F6A0-4683-4AE7-9191-752FE64612C3}"
+	HKLM,"SOFTWARE\Classes\msinkdiv.InkDivider\CurVer",,0x0,"msinkdiv.InkDivider.1"
+	HKLM,"SOFTWARE\Classes\TypeLib\{56D04F5D-964F-4DBF-8D23-B97989E53418}\1.5",,0x0,"Microsoft InkDivider Type Library, version 1.5"
+	HKLM,"SOFTWARE\Classes\TypeLib\{56D04F5D-964F-4DBF-8D23-B97989E53418}\1.5\0\win32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\Inkdiv.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{ECD32AEA-746F-4dcb-BF68-082757FAFF18}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\rtscom.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{EA30C654-C62C-441f-AC00-95F9A196782C}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\rtscom.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{E810CEE7-6E51-4cb0-AA3A-0B985B70DAF7}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\rtscom.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{E26B366D-F998-43ce-836F-CB6D904432B0}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\rtscom.dll"
+	HKCR,"CLSID\{ECD32AEA-746F-4dcb-BF68-082757FAFF18}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\rtscom.dll"
+	HKCR,"CLSID\{EA30C654-C62C-441f-AC00-95F9A196782C}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\rtscom.dll"
+	HKCR,"CLSID\{E810CEE7-6E51-4cb0-AA3A-0B985B70DAF7}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\rtscom.dll"
+	HKCR,"CLSID\{E26B366D-F998-43ce-836F-CB6D904432B0}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\rtscom.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{9E358D23-02B2-4CCD-9FEE-6B75EE8DD5CA}\InProcServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\tpcps.dll"
+	HKCR,"CLSID\{9E358D23-02B2-4CCD-9FEE-6B75EE8DD5CA}\InProcServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\tpcps.dll"
+	HKCR,"CLSID\{04a1e553-fe36-4fde-865e-344194e69424}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{04a1e553-fe36-4fde-865e-344194e69424}\ToolboxBitmap32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll, 212"
+	HKCR,"CLSID\{13DE4A42-8D21-4C8E-BF9C-8F69CB068FCA}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{176D323D-E591-4535-9A09-26F698E5AC5D}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{242025BB-8546-48B6-B9B0-F4406C54ACFC}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{3336B8BF-45AF-429f-85CB-8C435FBF21E4}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{3EE60F5C-9BAD-4CD8-8E21-AD2D001D06EB}",,0x0,"InkObject Class"
+	HKCR,"CLSID\{3EE60F5C-9BAD-4CD8-8E21-AD2D001D06EB}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{3EE60F5C-9BAD-4CD8-8E21-AD2D001D06EB}\ProgID",,0x0,"TpcCom.InkObject.1"
+	HKCR,"CLSID\{3EE60F5C-9BAD-4CD8-8E21-AD2D001D06EB}\VersionIndependentProgID",,0x0,"TpcCom.InkObject"
+	HKCR,"CLSID\{43B07326-AAE0-4B62-A83D-5FD768B7353C}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{43FB1553-AD74-4ee8-88E4-3E6DAAC915DB}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{524B13ED-2E57-40B8-B801-5FA35122EB5C}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{632A2D3D-86AF-411A-8654-7511B51B3D5F}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{639F5AF5-BCED-4369-AC34-360B16D955FD}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{65d00646-cde3-4a88-9163-6769f0f1a97d}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{6E4FCB12-510A-4d40-9304-1DA10AE9147C}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{786CDB70-1628-44A0-853C-5D340A499137}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{836FA1B6-1190-4005-B434-7ED921BE2026}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{8770D941-A63A-4671-A375-2855A18EBA73}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{937C1A34-151D-4610-9CA6-A8CC9BDB5D83}",,0x0,"InkObject Class"
+	HKCR,"CLSID\{937C1A34-151D-4610-9CA6-A8CC9BDB5D83}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{937C1A34-151D-4610-9CA6-A8CC9BDB5D83}\ProgID",,0x0,"msinkaut.InkObject.1"
+	HKCR,"CLSID\{937C1A34-151D-4610-9CA6-A8CC9BDB5D83}\VersionIndependentProgID",,0x0,"msinkaut.InkObject"
+	HKCR,"CLSID\{99E89F48-A745-416d-A4E0-ECF53C65DFA0}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{9C1CC6E4-D7EB-4EEb-9091-15A7C8791ED9}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{9DE85094-F71F-44f1-8471-15A2FA76FCF3}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{9FD4E808-F6E6-4e65-98D3-AA39054C1255}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{AAC46A37-9229-4fc0-8CCE-4497569BF4D1}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{AC82FF6D-E524-4c0f-8D0B-0C74C1ECAAEA}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{BD4F77B3-70B0-4464-83A5-785F205B823B}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{C52FF1FD-EB6C-42CF-9140-83DEFECA7E29}",,0x0,"InkObjectXP Class"
+	HKCR,"CLSID\{C52FF1FD-EB6C-42CF-9140-83DEFECA7E29}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{C52FF1FD-EB6C-42CF-9140-83DEFECA7E29}\ProgID",,0x0,"TpcCom.InkObjectXP.1"
+	HKCR,"CLSID\{C52FF1FD-EB6C-42CF-9140-83DEFECA7E29}\VersionIndependentProgID",,0x0,"TpcCom.InkObjectXP"
+	HKCR,"CLSID\{D8BF32A2-05A5-44c3-B3AA-5E80AC7D2576}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{DE815B00-9460-4F6E-9471-892ED2275EA5}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{DECBDC16-E824-436e-872D-14E8C7BF7D8B}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{E3D5D93C-1663-4A78-A1A7-22375DFEBAEE}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{E9A6AB1B-0C9C-44AC-966E-560C2771D1E8}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{EFB4A0CB-A01F-451C-B6B7-56F02F77D76F}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"CLSID\{F0291081-E87C-4E07-97DA-A0A03761E586}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKCR,"Interface\{B9C4A0C1-16ED-4DC2-B34A-4E830326587E}",,0x0,"IInkObject"
+	HKCR,"msinkaut.InkObject",,0x0,"InkObject Class"
+	HKCR,"msinkaut.InkObject.1",,0x0,"InkObject Class"
+	HKCR,"msinkaut.InkObject.1\CLSID",,0x0,"{937C1A34-151D-4610-9CA6-A8CC9BDB5D83}"
+	HKCR,"msinkaut.InkObject\CLSID",,0x0,"{937C1A34-151D-4610-9CA6-A8CC9BDB5D83}"
+	HKCR,"TpcCom.InkObject",,0x0,"InkObject Class"
+	HKCR,"TpcCom.InkObject.1",,0x0,"InkObject Class"
+	HKCR,"TpcCom.InkObject.1\CLSID",,0x0,"{3EE60F5C-9BAD-4CD8-8E21-AD2D001D06EB}"
+	HKCR,"TpcCom.InkObject\CLSID",,0x0,"{3EE60F5C-9BAD-4CD8-8E21-AD2D001D06EB}"
+	HKCR,"TpcCom.InkObjectXP",,0x0,"InkObjectXP Class"
+	HKCR,"TpcCom.InkObjectXP.1",,0x0,"InkObjectXP Class"
+	HKCR,"TpcCom.InkObjectXP.1\CLSID",,0x0,"{C52FF1FD-EB6C-42CF-9140-83DEFECA7E29}"
+	HKCR,"TpcCom.InkObjectXP\CLSID",,0x0,"{C52FF1FD-EB6C-42CF-9140-83DEFECA7E29}"
+	HKCR,"TypeLib\{7D868ACD-1A5D-4A47-A247-F39741353012}\1.0\0\win32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{04a1e553-fe36-4fde-865e-344194e69424}\InprocServer32",,0x20000,"%%ProgramFiles%%\Common Files\Microsoft Shared\Ink\InkObj.dll"	
 	
 [Add.Reg.Uninstall]
 
 	
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files
+    CopyFiles                  = Program_files.web_server_extensions.Files
+    CopyFiles                  = Program_files.web_server_extensions.1033.Files
+    CopyFiles                  = Program_files.ink.Files
 	
 [ProductInstall.DontDelayUntilReboot]
     CopyFiles=MustReplace.System32.files	
@@ -2764,14 +2891,36 @@
     AddReg=Product.Add.Reg	
 	
 [ProcessesToRun]
-    "regsvr32.exe /s mmdevapi.dll"	
+    "regsvr32.exe /s mmdevapi.dll"
+
+[ProcessesToRunAfterCopying]
+	"regsvr32 /s ""%Systemdrive%\Program Files\Common Files\Microsoft Shared\ink\InkDiv.dll""
+	"regsvr32 /s ""%Systemdrive%\Program Files\Common Files\Microsoft Shared\ink\InkObj.dll""
+	"regsvr32 /s ""%Systemdrive%\Program Files\Common Files\Microsoft Shared\ink\rtscom.dll""
+	"regsvr32 /s ""%Systemdrive%\Program Files\Common Files\Microsoft Shared\ink\tpcps.dll""	
 	
 [ProductInstall.ReplaceFilesIfExist]
     CopyFiles=System32.files
 
 [DestinationDirs]
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+	Program_files.web_server_extensions.Files=65620,"microsoft shared\web server extensions\40\bin"
+	Program_files.web_server_extensions.1033.Files=65620,"microsoft shared\web server extensions\40\bin\1033"
+	Program_files.ink.Files=65620,"microsoft shared\ink"
 	MustReplace.System32.files=11       ; %windir%\system32 (don't delay until reboot)
+	
+[Program_files.web_server_extensions.Files] 
+    fp4autl.dll,Web\fp4autl.dll
+    FP4AWEC.dll,Web\FP4AWEC.dll
+	
+[Program_files.web_server_extensions.1033.Files] 
+    FPEXT.msg,Web\FPEXT.msg
+	
+[Program_files.ink.Files]
+    InkDiv.dll,Ink\InkDiv.dll	
+    InkObj.dll,Ink\InkObj.dll	
+    rtscom.dll,Ink\rtscom.dll	
+    tpcps.dll,Ink\tpcps.dll	
 	
 [MustReplace.System32.files]	
 	"credui.dll"
@@ -2779,10 +2928,11 @@
 
 [CopyAlways.System32.Files]
 	"avrt.dll"
+	"bcryptprimitives.dll"
 	"bluetoothapis.dll"
 	"cabiext.dll"
 	;"cardgames.dll" - Cause error with sfxcab when build hotfix		
-	;"combase.dll"	- Cause error with .net 4.5 application
+	"combase.dll"
 	"connect.dll"
 	"credui.dll"
 	"cryptbase.dll"
@@ -2824,6 +2974,7 @@
 	"npmshtml.dll"
 	"onex.dll"
 	"opcservices.dll"	
+	"pidgenx.dll"
 	"photometadatahandler.dll"
 	"pkgmgr.exe"
 	"prntvpt.dll"		
@@ -2850,6 +3001,7 @@
 	"UIAutomationCore.dll"
 	"UIRibbon.dll"
 	"UIRibbonRes.dll"
+	"usp10.dll"
 	"wdi.dll"
 	"wdscore.dll"
 	"wer.dll"
@@ -2863,6 +3015,7 @@
 	"windowscodecsext.dll"
 	"winsvc.dll"
 	"winusb.dll"
+	"wisptis.exe"
 	"wlanapi.dll"
 	"wlanui.dll"
 	"wlanutil.dll"
@@ -2881,10 +3034,11 @@
 
 [SourceDisksFiles]
 	"avrt.dll" = 1
+	"bcryptprimitives.dll" = 1
 	"bluetoothapis.dll" = 1
 	"cabiext.dll" = 1
 	;"cardgames.dll" = 1 - Cause error with sfxcab when build hotfix		
-	;"combase.dll" = 1	- Cause error with .net 4.5 application
+	"combase.dll" = 1	- Cause error with .net 4.5 application
 	"credui.dll" = 1
 	"connect.dll" = 1
 	"cryptbase.dll" = 1
@@ -2926,6 +3080,7 @@
 	"npmshtml.dll" = 1
 	"onex.dll" = 1
 	"opcservices.dll" = 1	
+	"pidgenx.dll" = 1
 	"photometadatahandler.dll" = 1
 	"pkgmgr.exe" = 1
 	"prntvpt.dll" = 1		
@@ -2965,6 +3120,7 @@
 	"windowscodecsext.dll" = 1
 	"winsvc.dll" = 1
 	"winusb.dll" = 1
+	"wisptis.exe" = 1
 	"wlanapi.dll" = 1
 	"wlanui.dll" = 1
 	"wlanutil.dll" = 1
