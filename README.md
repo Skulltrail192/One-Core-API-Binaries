@@ -56,7 +56,7 @@ This is a package designed to prepare Windows to get ability to be installed in 
 **One-Core-API allows you to run:**
 - Web Storm 2018;
 - Intellij 2018 (Other versions may work too);
-- Adobe Photohosp CC 2018;
+- Adobe Photoshop CC 2018;
 - Filezilla (latest);
 - Visual Studio Code 1.81.1;
 - Chrome up to version 122!;
