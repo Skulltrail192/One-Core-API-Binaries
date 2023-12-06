@@ -1,7 +1,7 @@
 **欢迎使用One-Core-API二进制文件！**
 ***
 **语言:**    
-[English](README.md) | **简体中文**   
+[English](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md)
 ***
 
 该存储库包含One-Core-API项目的二进制发布版本。这些版本兼容于Windows Server 2003 SP2、Windows XP SP3和Windows XP x64 SP2。
@@ -54,23 +54,26 @@
 ![Sysprep](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/615ada04-a036-43c4-ac54-824cade0b5c2)
 
 **One-Core-API允许您运行：**  
-- Web Storm 2018；
-- Intelliji 2018（其他版本也可能可用）；
+- JetBrains WebStorm 2018；
+- JetBrains Intellij 2018（其他版本也可能可用；
+- JetBrains WebStorm 2023.x.x（目前仅适用于 Windows XP x64）
+- JetBrains IntelliJ 2023.x.x （目前仅适用于 Windows XP x64）
+- Adobe Photoshop CC 2018;
 - Filezilla（最新版本）；
 - Visual Studio Code 1.81.1；
 - Chrome版本最高到109！；
 - Opera版本最高到95；
-- Firefox版本70〜80（存在一些问题，需要解决方案）；
+- Firefox版本70〜116（存在一些问题，需要解决方案；
 - Microsoft Edge版本109以上；
 - Brave版本117以上；
 - Yandex最新版本；
 - Thorium浏览器版本109以上；
 - Supermium版本117以上；
 - Seamonkey版本2.53.10以上；
-- Thunderbird版本70x以上；
+- Thunderbird版本116x以上；
 - Maxthon版本7.1.6以上；
 - Vivaldi最新版本；
-- JDK 1.8（目前仅适用于Windows XP x64）；
+- JDK 1.8（目前仅适用于Windows XP x64；
 - Java Alternative JDK或OpenJDK直到版本21（其他版本可能也有效）。您可以从以下网址下载：https://bell-sw.com/pages/downloads/#/java-11-lts；
 - Maxthon 6；
 - Epic Browser 94；
@@ -86,7 +89,7 @@
 - Zoom；
 - 或者其他应用程序；
 - Node 10.24；
-- Winrar 6.11（最新版本）；
+- Winrar 6.24（最新版本）；
 - Directx 9EX、10和11游戏：
   - Need for Speed Most Wanted 2012;
   - Need for Speed The Run;
@@ -94,6 +97,7 @@
   - Injustice: Gods among us;
   - Assassign Creed Black Flgs;
   - Crysis 1,2, and 3 (directx 10-11 mode);
+- Kate 23.08.1 (目前仅适用于 Windows XP x64)
 
 **已知限制：**  
 - 多个应用程序的打开/保存对话框因为使用了Vista实现的IFileDialog而无法完全工作。正在进行中的工作；
