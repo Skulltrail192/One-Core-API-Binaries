@@ -5,6 +5,12 @@ x64 SP2.
 
 **Official Discord Server**: https://discord.gg/eRcGuFtn6p
 
+**NOTE**:
+-Windows XP Unofficial SP4 and maybe Integral Edition are not supported!
+
+**Language Support**
+Language support for almost Windows parts for: Portuguese-Brazil (my language), Portuguese (Portugual), Turkish, Chinese (Traditional and Simplified), French, Italian, Hungarian, Ukranian (partially), Spanish, Polish, Russian and Korean;
+
 **Folders in this repository:**
 - Documents: Project documentation, known bugs, sfxcab usage (for making installers), etc.
 - Packages\x86 and Packages\x64: Binary releases categorized by package. You can download and install/update the packages directly from here (i.e. by going to Packages\x86\Base installer\update and runnning update.exe).
@@ -15,23 +21,15 @@ x64 SP2.
 
 **The One-Core-API Binaries project consists of the following packages:**
 Warning: Always if OCA package require restart, do it. If you install all packages and restart only on last, Windows will be corrupted.  
-- **Base**: Main package of One-Core-API and is required by all other packages, except App Compat, Modern Setup (x86 only) and Driver Update, and contains all wrappers used in this project (like kernelbase and ntext);
+- **Base**: Main package of One-Core-API and is required by all other packages, except App Compat and Driver Update, and contains all wrappers used in this project (like kernelbase and ntext);
 - **Additional Dlls**: Several new dlls introduced in later versions of Windows.
-- **API-SET**: Contains UCRT dlls based on wine.
 - **D3d**: D3D runtime (Mainly DX10 and DX11, based on WineD3D);
 - **App Compat**: Application compatbility settings, backported from later versions of Windows.
 - **Driver Update**: Bring updated acpi driver what support ACPI 2.0, new drivers like Storachi (for AHCI driver controllers), NVME (for NVME M.2 driver controllers) and USBXHCI (USB 3.0); 
 - **Branding**: New branding system introduced on Windows Vista, required to D3D and Modern Setup packages;
-- **Modern Setup**: bring support to turn Windows XP/2003 installation installable using Windows Vista or above Setup engines on newers computers. This package is only if you install Windows on VM or real computer and want install to other computer, using a tool called SYSPREP. Don't need install if you don't want do it;
 
 **Installation order of packages:**
 - **Common order**: Base-> Additional Dlls -> API-SET -> Branding -> D3d -> Modern Setup -> Driver Update -> App Compat;
-
-- **Modern Setup**:
-  - **With others packages together**: Branding -> Modern Setup -> Base-> API-SET -> D3d -> Driver Update -> App Compat-> Additional Dlls;
-  - **Without other packages together, only for install on newer computer(Also Recommended install Driver Update too)**:
-    - **x86**: Branding -> Modern Setup;
-    - **x64**: Base -> Branding -> Modern Setup;
 
 - **Standalone packages (don't require other packages together, only if you want)**
   - **App Compat only:** This package can be installed without any other packages; 
@@ -99,6 +97,7 @@ This is a package designed to prepare Windows to get ability to be installed in 
   
 **Known Limitations:**
 - Open/Save Dialogs from several applications not working fully because are from Vista implementation, called IFileDialog. Working in progress;
+- Running Firefox 56+ you may face page loading problems. To resolve this, from version 55 to 72, you must create an environment variable called MOZ_FORCE_DISABLE_E10S . It will be the key of the user's environment variable, and the value will be 1. For versions from 73 onwards, the value will be the version number, that is, 73.0.0, for example (check the version number).
 - Some places in dialogs or windows keep only in english. Internacionalization is working in progress;
 - New applications installers may not work, like Chrome, Maxthon, Discord, Team viewer, etc crash and application isn't installed. Need 
 use a pre-installed version, copied from other operation system;
