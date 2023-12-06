@@ -67,7 +67,7 @@
 - Maxthon аж до 7.1.6;
 - Vivaldi аж до останньої версії;
 - JDK 1.8 (Поки що тільки для Windows XP x64);
-- Java Alternative JDK or OpenJDK until version 21 (можливо, інші версії працюють). Ви можете завантажити з сайту https://bell-sw.com/pages/downloads/#/java-11-lts;
+- Java Alternative JDK чи OpenJDK до версії 21 (можливо, інші версії працюють). Ви можете завантажити з сайту https://bell-sw.com/pages/downloads/#/java-11-lts;
 - Maxthon 6;
 - Epic Browser 94;
 - Python 3.6;
