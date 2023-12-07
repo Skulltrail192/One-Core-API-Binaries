@@ -55,15 +55,15 @@
 
 **One-Core-API允许您运行：**  
 - JetBrains WebStorm 2018；
-- JetBrains Intellij 2018（其他版本也可能可用；
-- JetBrains WebStorm 2023.x.x（目前仅适用于 Windows XP x64）
-- JetBrains IntelliJ 2023.x.x （目前仅适用于 Windows XP x64）
+- JetBrains Intellij 2018（其他版本也可能可用)；
+- JetBrains WebStorm 2023.x.x（目前仅适用于Windows XP x64）
+- JetBrains IntelliJ 2023.x.x （目前仅适用于Windows XP x64）
 - Adobe Photoshop CC 2018;
 - Filezilla（最新版本）；
 - Visual Studio Code 1.81.1；
 - Chrome版本最高到109！；
 - Opera版本最高到95；
-- Firefox版本70〜116（存在一些问题，需要解决方案；
+- Firefox版本最高116（存在一些问题，需要解决方案；
 - Microsoft Edge版本109以上；
 - Brave版本117以上；
 - Yandex最新版本；
@@ -73,7 +73,7 @@
 - Thunderbird版本116x以上；
 - Maxthon版本7.1.6以上；
 - Vivaldi最新版本；
-- JDK 1.8（目前仅适用于Windows XP x64；
+- JDK 1.8（目前仅适用于Windows XP x64)；
 - Java Alternative JDK或OpenJDK直到版本21（其他版本可能也有效）。您可以从以下网址下载：https://bell-sw.com/pages/downloads/#/java-11-lts；
 - Maxthon 6；
 - Epic Browser 94；
@@ -97,7 +97,7 @@
   - Injustice: Gods among us;
   - Assassign Creed Black Flgs;
   - Crysis 1,2, and 3 (directx 10-11 mode);
-- Kate 23.08.1 (目前仅适用于 Windows XP x64)
+- Kate 23.08.1 (目前仅适用于Windows XP x64)
 
 **已知限制：**  
 - 多个应用程序的打开/保存对话框因为使用了Vista实现的IFileDialog而无法完全工作。正在进行中的工作；
@@ -108,15 +108,13 @@
 - Chrome随机稳定性问题和崩溃。当前不支持扩展。下载可能会崩溃应用程序或出现网络错误，具体取决于版本；
 - Firefox 55-78存在一些限制；
 - Firefox 54 32位版本在Windows XP x64上无法运行。Chrome 61+也不起作用；
-- 无法将这些包集成到Windows Iso中，因为使用了一个称为“SFXCAB替代”的工具，而不是标准的Microsoft版本；
+- 无法将这些包集成到Windows Iso中，因为使用了一个称为“SFXCAB Substitute”的工具，而不是标准的Microsoft版本；
 - 标准的.NET Framework安装程序从4.6开始目前不受支持。您需要像这里做的一样重新打包版本：https://github.com/abbodi1406/dotNetFx4xW7  
   也可以在此处找到其他版本：https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251  
   也有其他版本，请在论坛主题中搜索；
 - Palemoon版本27-31无法下载任何内容。下载不起作用；
 - Opera 39-46可能需要遵循以下参数才能启动：--disable-gpu（以防止黑屏）和--single-process（以防止永远加载首页）；
-- 使用Dwrite的Qt5应用程序在启动时崩溃。存在一些问题，例如删除dwrite后出现的黑屏（应用程序可以启动并且可以使用，但是
-
-会有黑屏等）。
+- 使用Dwrite的Qt5应用程序在启动时崩溃。存在一些问题，例如删除dwrite后出现的黑屏（应用程序可以启动并且可以使用，但是会有黑屏等）。
 
 **问题报告**  
 要帮助重现问题，强烈建议**始终**遵循此模板：
