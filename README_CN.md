@@ -33,7 +33,7 @@
 
 **包的安装顺序：**  
 - **常规顺序**：Base-> Additional Dlls -> API-SET -> Branding -> D3d -> Modern Setup -> Driver Update -> App Compat；
-- **独立包（不需要其他包一起安装，除非您需要）**
+- **仅Base包（不需要其他包一起安装，除非您需要）**
   - **仅App Compat（应用程序兼容性）**：此包可以单独安装；
   - **仅Driver Update（驱动程序更新）**：此包可以单独安装；
   - **AppCompat first（首先安装AppCompat）**：此包可以单独安装。
@@ -138,11 +138,11 @@ Firefox Dev 54**
 ![image_2022_04_08T14_03_12_014Z](https://user-images.githubusercontent.com/5159776/178077897-676267bd-31c2-451d-8d81-951c0223bac4.png)
 **Visual Code 1.22**
 ![image_2022_04_07T03_54_26_696Z](https://user-images.githubusercontent.com/5159776/178077980-31788372-84e3-43b9-8bd3-d3204a375197.png)
-**Chedot (chrome fork) 86
+**Chedot (chrome fork) 86**
 ![image_2022_04_07T22_34_04_707Z](https://user-images.githubusercontent.com/5159776/178078013-9ccc115e-f6f6-44d0-937f-1a73fa5c6dee.png)
 **Java 11**
 ![Capturar](https://user-images.githubusercontent.com/5159776/178078132-da504607-a1ca-4f8d-ae25-6a7eb367bdaa.PNG)
-**Avast and Chromium 68**
+**Avast和Chromium 68**
 ![Avast](https://user-images.githubusercontent.com/5159776/178078208-c13b3448-ee6a-4c56-9d94-d0c62d51949e.PNG)
 **Visual Studio Code 1.70**
 ![VisualCode1 70](https://user-images.githubusercontent.com/5159776/192194220-9f4f324d-b0d8-4c40-a378-2c25c81eff16.PNG)
