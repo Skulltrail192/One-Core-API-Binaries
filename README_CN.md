@@ -87,16 +87,16 @@
 - Spotify在Windows XP/Vista结束支持后，版本1.0.60；
 - Yandex浏览器（最新版本）；
 - Zoom；
-- 或者其他应用程序；
+- 其他应用程序；
 - Node 10.24；
 - Winrar 6.24（最新版本）；
 - Directx 9EX、10和11游戏：
-  - Need for Speed Most Wanted 2012;
-  - Need for Speed The Run;
-  - Street Figther V;
-  - Injustice: Gods among us;
-  - Assassign Creed Black Flgs;
-  - Crysis 1,2, and 3 (directx 10-11 mode);
+  - 极品飞车17：最高通缉(Need for Speed Most Wanted 2012);
+  - 极品飞车16：亡命天涯(Need for Speed The Run);
+  - 街头霸王5(Street Figther V);
+  - 不义联盟：人间之神(njustice: Gods among us);
+  - 刺客信条4：黑旗(Assassin's Creed IV Black Flag);
+  - 孤岛危机1,2,和3 (directx 10-11模式);
 - Kate 23.08.1 (目前仅适用于Windows XP x64)
 
 **已知限制：**  
