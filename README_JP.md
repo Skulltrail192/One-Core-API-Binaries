@@ -102,7 +102,7 @@
 - OCA 3.0.3/3.0.4 で修正されました ~~Chrome には安定性があり、ランダムにクラッシュします。 現時点では拡張機能はサポートされていません。 バージョンによっては、アプリケーションのダウンロードがクラッシュするか、ネットワーク エラーが発生します;~~
 - Firefox 55-116 はいくつかの制限付きで動作します。
 - バージョン 54 (32 ビット) 以降の Firefox は、Windows XP x64 では動作しません。 Chrome 61 以降も動作しません。
-- 標準の Microsoft バージョンではなく、「SFXCAB Substitute」と呼ばれるツールを使用するため、パッケージを nlite から Windows Iso に統合することはできません。
+- 標準の Microsoft バージョンではなく、「SFXCAB Substitute」と呼ばれるツールを使用するため、パッケージを nlite を利用し WindowsのIso に統合することはできません。
 - 4.6 以降の標準 .Net Framework インストーラーは、現時点ではサポートされていません。 このような再パックされたバージョンが必要です: https://github.com/abbodi1406/dotNetFx4xW7。 そして、ここで利用可能です: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251. 他のバージョンも入手可能です。フォーラムのトピックを検索してください。
 - Palemoon バージョン 27 ～ 31 はダウンロードできない。ダウンロードが開始されません；
 - Opera 39 ～ 46 を起動するには、次のパラメータが必要な場合があります: --disable-gpu (黒い画面を防ぐため) および --single-process (永遠に最初のページが読み込まれるのを防ぐため)。
