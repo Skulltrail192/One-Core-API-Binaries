@@ -3,6 +3,7 @@
 **言語：**
 [英語](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md)  | [日本語](README_JP.md)
 ***
+***この日本語訳は機械翻訳をベースに誤訳などをできる限り修正したものです 間違いがある可能性があります***
 
 このリポジトリには、One-Core-API プロジェクトのバイナリ リリースが含まれています。 これらは、Windows Server 2003 SP2、Windows XP SP3、および Windows XP x64 SP2 と互換性があります。
 
