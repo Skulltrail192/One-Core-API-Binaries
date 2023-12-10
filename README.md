@@ -87,7 +87,7 @@ Warning: Always if OCA package require restart, do it. If you install all packag
   - Need for Speed The Run;
   - Street Figther V;
   - Injustice: Gods among us;
-  - Assassign Creed Black Flgs;
+  - Assassign Creed Black Flag;
   - Crysis 1,2, and 3 (directx 10-11 mode);
 - Kate 23.08.1 (Windows XP x64 only for now)
   
