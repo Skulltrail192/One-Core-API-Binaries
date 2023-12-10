@@ -29,7 +29,7 @@
 - **D3d（D3D）**：D3D运行时（主要是基于WineD3D的DX10和DX11）；
 - **App Compat（应用程序兼容性）**：应用程序兼容性设置，从Windows后期版本向后兼容。
 - **Driver Update（驱动程序更新）**：带来更新的acpi驱动器，支持ACPI 2.0，新驱动器如Storachi（适用于AHCI驱动器控制器），NVME（适用于NVME M.2驱动器控制器）和USBXHCI（USB 3.0）；
-- **Branding（品牌化）**：引入了Windows Vista上的新品牌系统，D3D和Modern Setup包都需要此包。
+- **Branding（品牌）**：引入了Windows Vista上的新品牌系统，D3D和Modern Setup包都需要此包。
 
 **包的安装顺序：**  
 - **常规顺序**：Base-> Additional Dlls -> API-SET -> Branding -> D3d -> Modern Setup -> Driver Update -> App Compat；
@@ -63,7 +63,7 @@
 - Visual Studio Code 1.81.1；
 - Chrome版本最高到109！；
 - Opera版本最高到95；
-- Firefox版本最高116（存在一些问题，需要解决方案；
+- Firefox版本最高116（存在一些问题，需要解决方案)；
 - Microsoft Edge版本109以上；
 - Brave版本117以上；
 - Yandex最新版本；
@@ -101,7 +101,7 @@
 
 **已知限制：**  
 - 多个应用程序的打开/保存对话框因为使用了Vista实现的IFileDialog而无法完全工作。正在进行中的工作；
-- 运行Firefox 56+可能会遇到页面加载问题。要解决此问题，从版本55到72，您必须创建一个名为MOZ_FORCE_DISABLE_E10S的环境变量。它将是用户环境变量的键，值为1。对于73版本及更高版本，值将是版本号，例如73.0.0（请检查版本号）；
+- 运行Firefox 56+可能会遇到页面加载问题。要解决此问题，从版本55到72，您必须创建一个名为MOZ_FORCE_DISABLE_E10S的环境变量。它将是环境变量的键，值为1。对于73版本及更高版本，值将是版本号，例如73.0.0（请检查版本号）；
 - 对话框或窗口中的某些地方仅保留英文。国际化工作正在进行中；
 - 新应用程序安装程序可能不起作用，例如Chrome、Maxthon、Discord、TeamViewer等崩溃并且应用程序未安装。需要使用从其他操作系统复制的预安装版本；
 - 一些安装程序如VS Code和Skype在创建快捷方式阶段会生成“类不受支持”的错误；
@@ -126,3 +126,25 @@
   例如：已安装Windows XP Service Pack 3与POSReady 2009更新，并带有此程序列表：Adobe、Office等；
     
 （如果需要对特定部分进行翻译或有其他问题，请告诉我！）  
+
+XP/Server 2003:上运行的应用程序的一些屏幕截图
+**Chrome 58**
+[image_2022_04_07T03_35_23_052Z](https://user-images.githubusercontent.com/5159776/178077754-de45d085-7e32-4080-b577-29f67a777076.png)
+**Advanced Chrome 64**
+![image_2022_04_07T03_42_36_918Z](https://user-images.githubusercontent.com/5159776/178077817-e58fd872-f0fb-431d-aaad-c4a15510ed87.png)
+**Basilisk**
+![image_2022_04_08T21_38_17_976Z](https://user-images.githubusercontent.com/5159776/178077859-079bfca4-bdb6-402e-8991-b88e7dfe387c.png)
+Firefox Dev 54**
+![image_2022_04_08T14_03_12_014Z](https://user-images.githubusercontent.com/5159776/178077897-676267bd-31c2-451d-8d81-951c0223bac4.png)
+**Visual Code 1.22**
+![image_2022_04_07T03_54_26_696Z](https://user-images.githubusercontent.com/5159776/178077980-31788372-84e3-43b9-8bd3-d3204a375197.png)
+**Chedot (chrome fork) 86
+![image_2022_04_07T22_34_04_707Z](https://user-images.githubusercontent.com/5159776/178078013-9ccc115e-f6f6-44d0-937f-1a73fa5c6dee.png)
+**Java 11**
+![Capturar](https://user-images.githubusercontent.com/5159776/178078132-da504607-a1ca-4f8d-ae25-6a7eb367bdaa.PNG)
+**Avast and Chromium 68**
+![Avast](https://user-images.githubusercontent.com/5159776/178078208-c13b3448-ee6a-4c56-9d94-d0c62d51949e.PNG)
+**Visual Studio Code 1.70**
+![VisualCode1 70](https://user-images.githubusercontent.com/5159776/192194220-9f4f324d-b0d8-4c40-a378-2c25c81eff16.PNG)
+**Windows 7画画(小畫家)**
+![Windows7画画](https://user-images.githubusercontent.com/5159776/192194273-de70c23e-8731-4fb6-96c1-9bee98947269.PNG)
