@@ -9,7 +9,7 @@
 **官方Discord服务器**: https://discord.gg/eRcGuFtn6p  
 
 **注意**：  
-- 不支持Windows XP的非官方SP4以及Integral Edition（可能）！
+- 可能不支持Windows XP的非官方SP4以及Integral Edition!
 
 **语言支持**：  
 几乎所有Windows的语言：葡萄牙语-巴西（我的语言），葡萄牙语（葡萄牙），土耳其语，中文（繁体和简体），法语，意大利语，匈牙利语，乌克兰语（部分支持），西班牙语，波兰语，俄语和韩语；
