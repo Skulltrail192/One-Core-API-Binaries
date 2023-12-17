@@ -2,7 +2,7 @@
 
 ***
 **Language:**    
-[English](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md)
+[English](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md) | [日本語](README_JP.md)
 ***
 
 Цей репозиторій містить бінарні версії проєкту One-Core-API. Вони сумісні з Windows Server 2003 SP2, Windows XP SP3 і Windows XP x64 SP2.
