@@ -9,7 +9,7 @@
 **官方Discord服务器**: https://discord.gg/eRcGuFtn6p  
 
 **注意**：  
-- 不支持Windows XP的非官方SP4以及Integral Edition（可能）！
+- 可能不支持Windows XP的非官方SP4以及Integral Edition!
 
 **语言支持**：  
 几乎所有Windows的语言：葡萄牙语-巴西（我的语言），葡萄牙语（葡萄牙），土耳其语，中文（繁体和简体），法语，意大利语，匈牙利语，乌克兰语（部分支持），西班牙语，波兰语，俄语和韩语；
@@ -60,22 +60,21 @@
 - JetBrains IntelliJ 2023.x.x （目前仅适用于Windows XP x64）
 - Adobe Photoshop CC 2018;
 - Filezilla（最新版本）；
-- Visual Studio Code 1.81.1；
-- Chrome版本最高到109！；
-- Opera版本最高到95；
+- Visual Studio Code 1.83.1；
+- Chrome版本到122以上！；
+- Opera版本最高到105；
 - Firefox版本最高116（存在一些问题，需要解决方案)；
-- Microsoft Edge版本109以上；
+- Microsoft Edge版本115以上；
 - Brave版本117以上；
 - Yandex最新版本；
 - Thorium浏览器版本109以上；
 - Supermium版本117以上；
 - Seamonkey版本2.53.10以上；
 - Thunderbird版本116x以上；
-- Maxthon版本7.1.6以上；
+- 傲游浏览器版本7.1.6以上；
 - Vivaldi最新版本；
 - JDK 1.8（目前仅适用于Windows XP x64)；
 - Java Alternative JDK或OpenJDK直到版本21（其他版本可能也有效）。您可以从以下网址下载：https://bell-sw.com/pages/downloads/#/java-11-lts；
-- Maxthon 6；
 - Epic Browser 94；
 - Python 3.6；
 - .Net Framework最高到4.8；
@@ -104,8 +103,8 @@
 - 运行Firefox 56+可能会遇到页面加载问题。要解决此问题，从版本55到72，您必须创建一个名为MOZ_FORCE_DISABLE_E10S的环境变量。它将是环境变量的键，值为1。对于73版本及更高版本，值将是版本号，例如73.0.0（请检查版本号）；
 - 对话框或窗口中的某些地方仅保留英文。国际化工作正在进行中；
 - 新应用程序安装程序可能不起作用，例如Chrome、Maxthon、Discord、TeamViewer等崩溃并且应用程序未安装。需要使用从其他操作系统复制的预安装版本；
-- 一些安装程序如VS Code和Skype在创建快捷方式阶段会生成“类不受支持”的错误；
-- Chrome随机稳定性问题和崩溃。当前不支持扩展。下载可能会崩溃应用程序或出现网络错误，具体取决于版本；
+- 3.0.4版本已修复 ~~一些安装程序如VS Code和Skype在创建快捷方式阶段会生成“类不受支持”的错误；~~
+- 3.0.3/3.0.4版本已修复 ~~版本已修复Chrome随机稳定性问题和崩溃。当前不支持扩展。下载可能会崩溃应用程序或出现网络错误，具体取决于版本；~~
 - Firefox 55-78存在一些限制；
 - Firefox 54 32位版本在Windows XP x64上无法运行。Chrome 61+也不起作用；
 - 无法将这些包集成到Windows Iso中，因为使用了一个称为“SFXCAB Substitute”的工具，而不是标准的Microsoft版本；

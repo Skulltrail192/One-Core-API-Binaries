@@ -67,7 +67,6 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Vivaldi up to the latest version;
 - JDK 1.8 (only Windows XP x64 for now);
 - Java Alternative JDK or OpenJDK until version 21 (maybe others versions works). You can download from: https://bell-sw.com/pages/downloads/#/java-11-lts;
-- Maxthon 6;
 - Epic Browser 94;
 - Python 3.6;
 - .Net Framework up to 4.8;
