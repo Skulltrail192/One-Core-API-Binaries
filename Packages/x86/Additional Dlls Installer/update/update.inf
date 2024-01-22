@@ -1,9 +1,9 @@
 [Version]
 	LanguageType 		  = %LANGTYPEVALUE%
-	MaxNtBuildToUpdate        = 2600
-	MaxNtMajorVersionToUpdate = 5
-	MaxNtMinorVersionToUpdate = 1
-	MaxNtServicePackVersion   = 768
+	MaxNtBuildToUpdate        = 9600
+	MaxNtMajorVersionToUpdate = 6
+	MaxNtMinorVersionToUpdate = 3
+	MaxNtServicePackVersion   = 1024
 	MinNtServicePackVersion   = 256
 	NtBuildToUpdate           = 2600
 	NtMajorVersionToUpdate    = 5
@@ -29,7 +29,7 @@
     Display_String="%LatestUpdateFail%"		
 	
 [Strings]
-	OCAAD_VERSION           = "3.0.4"
+	OCAAD_VERSION           = "3.0.5"
 	SP_TITLE                = "One-Core-API Additional Dlls"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAAD"
@@ -2891,14 +2891,14 @@
     AddReg=Product.Add.Reg	
 	
 [ProcessesToRun]
-    "regsvr32.exe /s mmdevapi.dll"	
-	
+    "regsvr32.exe /s mmdevapi.dll"
+
 [ProcessesToRunAfterCopying]
 	"regsvr32 /s ""%Systemdrive%\Program Files\Common Files\Microsoft Shared\ink\InkDiv.dll""
 	"regsvr32 /s ""%Systemdrive%\Program Files\Common Files\Microsoft Shared\ink\InkObj.dll""
 	"regsvr32 /s ""%Systemdrive%\Program Files\Common Files\Microsoft Shared\ink\rtscom.dll""
-	"regsvr32 /s ""%Systemdrive%\Program Files\Common Files\Microsoft Shared\ink\tpcps.dll""
-
+	"regsvr32 /s ""%Systemdrive%\Program Files\Common Files\Microsoft Shared\ink\tpcps.dll""	
+	
 [ProductInstall.ReplaceFilesIfExist]
     CopyFiles=System32.files
 
@@ -2906,7 +2906,7 @@
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
 	Program_files.web_server_extensions.Files=65620,"microsoft shared\web server extensions\40\bin"
 	Program_files.web_server_extensions.1033.Files=65620,"microsoft shared\web server extensions\40\bin\1033"
-	Program_files.ink.Files=65620,"microsoft shared\Ink"
+	Program_files.ink.Files=65620,"microsoft shared\ink"
 	MustReplace.System32.files=11       ; %windir%\system32 (don't delay until reboot)
 	
 [Program_files.web_server_extensions.Files] 
@@ -2917,9 +2917,9 @@
     FPEXT.msg,Web\FPEXT.msg
 	
 [Program_files.ink.Files]
-    InkDiv.dll,Ink\InkDiv.dll
-    InkObj.dll,Ink\InkObj.dll
-    rtscom.dll,Ink\rtscom.dll
+    InkDiv.dll,Ink\InkDiv.dll	
+    InkObj.dll,Ink\InkObj.dll	
+    rtscom.dll,Ink\rtscom.dll	
     tpcps.dll,Ink\tpcps.dll	
 	
 [MustReplace.System32.files]	
@@ -2930,6 +2930,7 @@
 	"avrt.dll"
 	"bcryptprimitives.dll"
 	"bluetoothapis.dll"
+	"browcli.dll"
 	"cabiext.dll"
 	;"cardgames.dll" - Cause error with sfxcab when build hotfix		
 	"combase.dll"
@@ -2940,6 +2941,7 @@
 	"dbghelp.dll"
 	"dbgeng.dll"
 	"dpx.dll"
+	"dsrole.dll"
 	"dui70.dll"
 	"duser.dll"
 	"dusex.dll"
@@ -2957,6 +2959,7 @@
 	"httpapi.dll"
 	"httpnew.dll"
 	"ktmw32.dll"
+	"logoncli.dll"
 	"lsalookup.dll"
 	"mf.dll"
 	"mfplat.dll"
@@ -2970,6 +2973,9 @@
 	"mspatcha.dll"
 	"ncrypt.dll"	
 	"ndfapi.dll"
+	"netbios.dll"
+	"netjoin.dll"
+	"netutils.dll"
 	"ninput.dll"
 	"npmshtml.dll"
 	"onex.dll"
@@ -2982,6 +2988,7 @@
 	"pwrshplugin.dll"		
 	"RstrtMgr.dll"
 	"rtworkq.dll"
+	"samcli.dll"
 	"sas.dll"
 	"sddlbase.dll"
 	"secbase.dll"
@@ -3016,9 +3023,11 @@
 	"winsvc.dll"
 	"winusb.dll"
 	"wisptis.exe"
+	"wkscli.dll"
 	"wlanapi.dll"
 	"wlanui.dll"
 	"wlanutil.dll"
+	"wldp.dll"
 	"wmphoto.dll"
 	"WMDRMSDK.DLL"
 	"wpc.dll"
@@ -3036,6 +3045,7 @@
 	"avrt.dll" = 1
 	"bcryptprimitives.dll" = 1
 	"bluetoothapis.dll" = 1
+	"browcli.dll" = 1
 	"cabiext.dll" = 1
 	;"cardgames.dll" = 1 - Cause error with sfxcab when build hotfix		
 	"combase.dll" = 1	- Cause error with .net 4.5 application
@@ -3046,6 +3056,7 @@
 	"dbghelp.dll" = 1
 	"dbgeng.dll" = 1
 	"dpx.dll" = 1
+	"dsrole.dll" = 1
 	"dui70.dll" = 1
 	"duser.dll" = 1
 	"dusex.dll" = 1
@@ -3063,6 +3074,7 @@
 	"httpapi.dll" = 1
 	"httpnew.dll" = 1
 	"ktmw32.dll" = 1
+	"logoncli.dll" = 1
 	"lsalookup.dll" = 1
 	"mf.dll" = 1
 	"mfplat.dll" = 1
@@ -3076,6 +3088,9 @@
 	"mspatcha.dll" = 1
 	"ncrypt.dll" = 1	
 	"ndfapi.dll" = 1
+	"netbios.dll" = 1
+	"netjoin.dll" = 1
+	"netutils.dll" = 1
 	"ninput.dll" = 1
 	"npmshtml.dll" = 1
 	"onex.dll" = 1
@@ -3088,6 +3103,7 @@
 	"pwrshplugin.dll" = 1		
 	"RstrtMgr.dll" = 1
 	"rtworkq.dll" = 1
+	"samcli.dll" = 1
 	"sas.dll" = 1
 	"sddlbase.dll" = 1
 	"secbase.dll" = 1
@@ -3121,9 +3137,11 @@
 	"winsvc.dll" = 1
 	"winusb.dll" = 1
 	"wisptis.exe" = 1
+	"wkscli.dll" = 1
 	"wlanapi.dll" = 1
 	"wlanui.dll" = 1
 	"wlanutil.dll" = 1
+	"wldp.dll" = 1
 	"wmphoto.dll" = 1
 	"WMDRMSDK.DLL" = 1
 	"wpc.dll" = 1

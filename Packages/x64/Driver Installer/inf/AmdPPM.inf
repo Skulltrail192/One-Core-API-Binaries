@@ -1,0 +1,445 @@
+;
+;---------------------------------------------
+; AmdPPM.inf 
+; AMD Processor Power Management Driver
+; version 1.0.0.0
+; Copyright © AMD, Inc. 2007
+;---------------------------------------------
+;
+[Version]
+Signature="$WINDOWS NT$"
+Class=Processor
+ClassGuid={50127DC3-0F36-415e-A6CC-4CB3BE910B65}
+Provider=%AMD%
+LayoutFile=layout.inf
+DriverVer=08/10/2007, 1.0.0.0
+CatalogFile=AmdPPM.cat
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+[SourceDisksNames]
+1 = %DiskDesc%,,, 
+
+[SourceDisksFiles]
+AmdPPM.sys = 1
+AmdPPM64.sys = 1
+
+[ControlFlags]
+;
+; Exclude all devices from Select Device list
+;
+ExcludeFromSelect = *
+
+[ClassInstall32]
+AddReg=Processor_Class_Addreg
+
+[Processor_Class_Addreg]
+HKR,,,0,%ProcessorClassName%
+HKR,,NoInstallClass,,1
+HKR,,Icon,,"-28"
+
+[Manufacturer]
+%AMD%=AmdPPM,NT.6.0,NTAMD64.6.0,NTx86.5.1,NTAMD64.5.1
+
+[AmdPPM]			; Empty section, so this INF does not support
+				; Win9x/NT4/Win2000
+
+[AmdPPM.NT.6.0]			; Empty section, so this INF does not support
+				; 32-bit NT6.0 or later
+
+[AmdPPM.NTAMD64.6.0]		; Empty sections, this INF does not support
+				; 64-bit NT6.0 or later
+
+
+[AmdPPM.NTx86.5.1]
+%AmdPPM.DeviceDesc% = AmdPPM_Inst,ACPI\AuthenticAMD_-_x86
+
+[AmdPPM.NTAMD64.5.1]
+%AmdPPM.DeviceDesc% = AmdPPM_Inst64,ACPI\AuthenticAMD_-_AMD64
+
+[AmdPPM_Inst]
+Copyfiles = @AmdPPM.sys
+
+[AmdPPM_Inst.Services]
+AddService = AmdPPM,%SPSVCINST_ASSOCSERVICE%,AmdPPM_Service_Inst,AmdPPM_EventLog_Inst
+
+[AmdPPM_Service_Inst]
+DisplayName    = %AmdPPM.SvcDesc%
+ServiceType    = %SERVICE_KERNEL_DRIVER%
+StartType      = %SERVICE_SYSTEM_START%
+ErrorControl   = %SERVICE_ERROR_NORMAL%
+ServiceBinary  = %12%\AmdPPM.sys
+LoadOrderGroup = Extended Base
+AddReg         = AmdPPM_Inst_AddReg
+
+[AmdPPM_Inst_AddReg]
+HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\Throttle",PerfEnablePackageIdle,0x00010001,0x00
+
+[AmdPPM_EventLog_Inst]
+AddReg = AmdPPM_EventLog_AddReg
+
+[AmdPPM_EventLog_AddReg]
+HKR,,EventMessageFile,0x00020000,"%%SystemRoot%%\System32\IoLogMsg.dll;%%SystemRoot%%\System32\drivers\AmdPPM.sys"
+HKR,,TypesSupported,0x00010001,7
+
+[AmdPPM_Inst64]
+Copyfiles = @AmdPPM64.sys
+
+[AmdPPM_Inst64.Services]
+AddService = AmdPPM64,%SPSVCINST_ASSOCSERVICE%,AmdPPM64_Service_Inst,AmdPPM64_EventLog_Inst
+
+[AmdPPM64_Service_Inst]
+DisplayName    = %AmdPPM.SvcDesc%
+ServiceType    = %SERVICE_KERNEL_DRIVER%
+StartType      = %SERVICE_SYSTEM_START%
+ErrorControl   = %SERVICE_ERROR_NORMAL%
+ServiceBinary  = %12%\AmdPPM64.sys
+LoadOrderGroup = Extended Base
+AddReg         = AmdPPM_Inst_AddReg
+
+[AmdPPM64_EventLog_Inst]
+AddReg = AmdPPM64_EventLog_AddReg
+
+[AmdPPM64_EventLog_AddReg]
+HKR,,EventMessageFile,0x00020000,"%%SystemRoot%%\System32\IoLogMsg.dll;%%SystemRoot%%\System32\drivers\AmdPPM64.sys"
+HKR,,TypesSupported,0x00010001,7
+
+[strings]
+AMD                = "Advanced Micro Devices"
+ProcessorClassName = "Processors"
+AmdPPM.DeviceDesc  = "AMD Processor"
+AmdPPM.SvcDesc     = "AMD HwPState Processor Driver"
+DiskDesc           = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;-------------------------------------------------------------------------------
+; Localizable Strings
+
+
+;Arabic
+;
+[Strings.0001]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "„⁄«·Ã« "
+AmdPPM.DeviceDesc   = "AMD Processor"
+AmdPPM.SvcDesc         = "AMD HwPState Processor Driver"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+
+;Brazilian
+;
+[Strings.0416]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "Processadores"
+AmdPPM.DeviceDesc   = "AMD Processor"
+AmdPPM.SvcDesc         = "AMD HwPState Processor Driver"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Chinese (Simplified)
+;
+[Strings.0804]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "¥¶¿Ì∆˜"
+AmdPPM.DeviceDesc   = "AMD Processor"
+AmdPPM.SvcDesc         = "AMD HwPState Processor Driver"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Chinese (Traditional)
+;
+[Strings.0404]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "≥B≤zæπ"
+AmdPPM.DeviceDesc   = "AMD Processor"
+AmdPPM.SvcDesc         = "AMD HwPState Processor Driver"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Czech
+;
+[Strings.0005]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "Procesory"
+AmdPPM.DeviceDesc   = "Procesor AMD"
+AmdPPM.SvcDesc         = "OvladaË procesoru HwPState AMD"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Danish
+;
+[Strings.0006]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "Processorer"
+AmdPPM.DeviceDesc   = "AMD processor"
+AmdPPM.SvcDesc         = "Driver til AMD HwPState processor"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Dutch
+;
+[Strings.0013]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "Processors"
+AmdPPM.DeviceDesc   = "AMD processor"
+AmdPPM.SvcDesc         = "Stuurprogramma voor AMD HwPState processor"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Finnish
+;
+[Strings.000b]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "Suorittimet"
+AmdPPM.DeviceDesc   = "AMD Processor"
+AmdPPM.SvcDesc         = "AMD HwPState Processor Driver"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;French
+;
+[Strings.000c]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "Processeurs"
+AmdPPM.DeviceDesc   = "Processeur AMD"
+AmdPPM.SvcDesc         = "Pilote de processeur AMD HwPState"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;German
+;
+[Strings.0007]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "Prozessoren"
+AmdPPM.DeviceDesc   = "AMD Prozessor"
+AmdPPM.SvcDesc         = "AMD HwPState Prozessortreiber"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Greek
+;
+[Strings.0008]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "≈ÂÓÂÒ„·ÛÙ›Ú"
+AmdPPM.DeviceDesc   = "AMD Processor"
+AmdPPM.SvcDesc         = "AMD HwPState Processor Driver"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Hebrew
+;
+[Strings.000d]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "ÓÚ·„ÈÌ"
+AmdPPM.DeviceDesc   = "AMD Processor"
+AmdPPM.SvcDesc         = "AMD HwPState Processor Driver"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Hungarian
+;
+[Strings.000e]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "Processzorok"
+AmdPPM.DeviceDesc   = "AMD processzor"
+AmdPPM.SvcDesc         = "AMD HwPState processzor-illesztıprogram"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Italian
+;
+[Strings.0010]
+AMD                   = "Periferiche Advanced Micro"
+ProcessorClassName    = "Processori"
+AmdPPM.DeviceDesc   = "Processore AMD"
+AmdPPM.SvcDesc         = "Driver del processore AMD HwPState"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Japanese
+;
+[Strings.0011]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "ÉvÉçÉZÉbÉT"
+AmdPPM.DeviceDesc   = "AMD Processor"
+AmdPPM.SvcDesc         = "AMD HwPState Processor Driver"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Korean
+;
+[Strings.0012]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "«¡∑Œººº≠"
+AmdPPM.DeviceDesc   = "AMD Processor"
+AmdPPM.SvcDesc         = "AMD HwPState Processor Driver"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Norwegian
+;
+[Strings.0014]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "Prosessorer"
+AmdPPM.DeviceDesc   = "AMD prosessor"
+AmdPPM.SvcDesc         = "AMD HwPState prosessordriver"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Polish
+;
+[Strings.0015]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "Procesory"
+AmdPPM.DeviceDesc   = "Procesor AMD"
+AmdPPM.SvcDesc         = "Sterownik procesora AMD HwPState"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Portuguese
+;
+[Strings.0016]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "Processadores"
+AmdPPM.DeviceDesc   = "Processador AMD"
+AmdPPM.SvcDesc         = "Controlador de processador AMD HwPState"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Russian
+;
+[Strings.0019]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "œÓˆÂÒÒÓ˚"
+AmdPPM.DeviceDesc   = "AMD ÔÓˆÂÒÒÓ"
+AmdPPM.SvcDesc         = "ƒ‡È‚Â AMD HwPState ÔÓˆÂÒÒÓ‡"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Spanish
+;
+[Strings.000a]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "Procesadores"
+AmdPPM.DeviceDesc   = "Procesador AMD"
+AmdPPM.SvcDesc         = "Controlador de procesador AMD HwPState"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Swedish
+;
+[Strings.001d]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "Processorer"
+AmdPPM.DeviceDesc   = "AMD processor"
+AmdPPM.SvcDesc         = "AMD HwPState processordrivrutin"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1
+
+;Turkish
+;
+[Strings.001f]
+AMD                   = "Advanced Micro Devices"
+ProcessorClassName    = "›˛lemci"
+AmdPPM.DeviceDesc   = "AMD ›˛lemci"
+AmdPPM.SvcDesc         = "AMD HwPState ›˛lemci S¸r¸c¸s¸"
+DiskDesc              = "AMD Processor Driver Disk"
+
+SPSVCINST_ASSOCSERVICE= 0x00000002
+SERVICE_KERNEL_DRIVER = 1
+SERVICE_SYSTEM_START  = 1
+SERVICE_ERROR_NORMAL  = 1

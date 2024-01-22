@@ -1,10 +1,10 @@
 [Version]
 	LanguageType 		  = %LANGTYPEVALUE%
-	MaxNtBuildToUpdate        = 3790
-	MaxNtMajorVersionToUpdate = 5
-	MaxNtMinorVersionToUpdate = 2
+	MaxNtBuildToUpdate        = 9600
+	MaxNtMajorVersionToUpdate = 6
+	MaxNtMinorVersionToUpdate = 3
 	MaxNtServicePackVersion   = 512
-	MinNtServicePackVersion   = 256
+	MinNtServicePackVersion   = 512
 	NtBuildToUpdate           = 3790
 	NtMajorVersionToUpdate    = 5
 	NtMinorVersionToUpdate    = 2
@@ -25,7 +25,7 @@
 [Strings]
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	APPC_VERSION            = "3.0.4"
+	APPC_VERSION            = "3.0.5"
 	SP_TITLE                = "One-Core-API App Compat"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAAC"

@@ -4321,6 +4321,7 @@ amdide.sys
 amdk6.sys
 amdk7.sys
 amdk8.sys
+AmdPPM.sys
 arc.sys
 arp1394.sys
 atapi.sys

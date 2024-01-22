@@ -7,8 +7,8 @@
     MaxNtBuildToUpdate        = 3790
     MaxNtMajorVersionToUpdate = 5
     MaxNtMinorVersionToUpdate = 2
-    MinNtServicePackVersion   = 256
-    MaxNtServicePackVersion   = 768
+    MinNtServicePackVersion   = 512
+    MaxNtServicePackVersion   = 1024
 	
 [Configuration]
     noPNPfiles=1
@@ -25,7 +25,7 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	BASE_VERSION            = "3.0.4"	
+	BASE_VERSION            = "3.0.5"	
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
     SECURITY_UPDATE       	= "Security Update"
@@ -513,6 +513,7 @@
 [ProcessesToRunAfterCopying]
 	"certupdate.exe" /Y /C /Q
 	"cmd /C SCHTASKS /CREATE /SC MONTHLY /TN ""Root Certificate Update"" /TR ""C:\Windows\System32\certupdate.exe /Y /C /Q""  /ru system"
+	"cmd /C netsh interface ipv6 install"
 
 [DestinationDirs]
 	Drivers.CoreDriverFiles = 12 ; %windir%\system32\drivers
@@ -1126,11 +1127,5 @@
 
 [PreRequisite.Uninstall]
 
-[ProcessesToRunBeforeUninstall]
-	"SCHTASKS /DELETE /TN ""Root Certificate Update"" /f"
-	
-[ProcessesToRunAfterCopyingUninstall]	
-	"SCHTASKS /DELETE /TN ""Root Certificate Update"" /f"
-	
 [ProcessesToRunAfterUninstall]
-	"SCHTASKS /DELETE /TN ""Root Certificate Update"" /f"
+	"cmd /C schtasks /delete /tn ""Root Certificate Update"" /f"

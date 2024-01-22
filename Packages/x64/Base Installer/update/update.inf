@@ -4,7 +4,7 @@
 	MaxNtMajorVersionToUpdate = 5
 	MaxNtMinorVersionToUpdate = 2
 	MaxNtServicePackVersion   = 512
-	MinNtServicePackVersion   = 256
+	MinNtServicePackVersion   = 512
 	ThisServicePackVersion    = 512
 	NtBuildToUpdate           = 3790
 	NtMajorVersionToUpdate    = 5
@@ -13,27 +13,33 @@
 	MachineType				  = 64
 
 [Configuration]
-    InstallationType     = Hotfix
-    InstallLogFileName   = %SP_SHORT_TITLE%.log
-    EventLogKeyName      = NtServicePack
-    EventLogDllName      = spmsg.dll
-    NoPNPFiles           = 1
-    UnInstallLogFileName = %SP_SHORT_TITLE%Uninst.log
-    UnInstallDirName     = $NtUninstall%SP_SHORT_TITLE%$
+    noPNPfiles=1
+    InstallationType        = Hotfix
+    InstallLogFileName      = %SP_SHORT_TITLE%.log
+    UnInstallLogFileName    = %SP_SHORT_TITLE%Uninst.log
+    UnInstallDirName        = $NtUninstall%SP_SHORT_TITLE%$
+    EventLogKeyName         = NtServicePack
+    EventLogDllName         = spmsg.dll	
     ServiceFileInUseDetect    = 1
     AppFileinUseDetect        = 3
 
 [Strings]
-    HelpLink 				= "http://shorthornproject.com"
-    URLInfoAbout 			= "http://shorthornproject.com"
-	BASE_VERSION            = "3.0.4"
-	SP_TITLE                = "One-Core-API Base"
-	LANGTYPEVALUE           = 0x0
-	SP_SHORT_TITLE          = "OCAB"
-	SERVICE_PACK_NUMBER     = 3
-	;COMMENT                 = "One-Core-API Base [See Q100000 for more information]"
-	SERVICEPACKSOURCEFILES  = "One-Core-API Base Source Files"
-	PARENT_DISPLAY_NAME     = "One-Core-API"
+    SERVICE_PACK_NUMBER     = 3
+    HelpLink = "http://shorthornproject.com"
+    URLInfoAbout = "http://shorthornproject.com"
+	BASE_VERSION            = "3.0.5"	
+    UPDATE                	= "Update"
+    HOTFIX                	= "Hotfix"
+    SECURITY_UPDATE       	= "Security Update"
+    LangTypeValue           = 0x0
+    ServicePackSourceFiles  = "One-Core-API Base Source Files"
+    SP_SHORT_TITLE          = "OCAB"
+    SP_TITLE                = "One-Core-API Base"
+    PARENT_DISPLAY_NAME     = "One-Core-API"
+    LOC_UPDATE="Update"
+    LOC_CRITICALUPDATE="Critical Update"
+    LOC_HOTFIX="Hotfix"
+    LOC_SECURITY_UPDATE="Security Update"
 	
 [Product.Add.Reg]
 	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed",0x10001,1
@@ -2560,8 +2566,9 @@
     "Syswow64/regsvr32.exe /s Syswow64/propsys.dll"
 
 [ProcessesToRunAfterCopying]
-	"C:\Windows\Syswow64\certupdate.exe" /Y /C /Q
-	"cmd /C SCHTASKS /CREATE /SC MONTHLY /TN ""Root Certificate Update"" /TR ""C:\Windows\Syswow64\certupdate.exe /Y /C /Q""  /ru system"
+	"certupdate.exe" /Y /C /Q
+	"cmd /C SCHTASKS /CREATE /SC MONTHLY /TN ""Root Certificate Update"" /TR ""%systemroot%\System32\certupdate.exe /Y /C /Q""  /ru system"
+	"cmd /C netsh interface ipv6 install"
 	
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg
@@ -2672,12 +2679,14 @@
     userenvbase.dll,XP64SP2/amd64/userenvbase.dll
     uxthemebase.dll,XP64SP2/amd64/uxthemebase.dll
     iphlpapibase.dll,XP64SP2/amd64/iphlpapibase.dll
-    winstabase.dll,XP64SP2/amd64/winstabase.dll
-    ws2_base.dll,XP64SP2/amd64/ws2_base.dll
+	win32k.sys, XP64SP2/amd64/win32k.sys
+    winstabase.dll,XP64SP2/amd64/winstabase.dll   
     winhttpbase.dll,XP64SP2/amd64/winhttpbase.dll	
 	winsrv.dll, XP64SP2/amd64/winsrv.dll
-	wow64win.dll, XP64SP2/amd64/wow64win.dll
-	win32k.sys, XP64SP2/amd64/win32k.sys	
+	wow64win.dll, XP64SP2/amd64/wow64win.dll	
+	ws2_base.dll,XP64SP2/amd64/ws2_base.dll
+	xpsp2res.dll,XP64SP2/amd64/xpsp2res.dll
+	certupdate.exe
     advapi32.dll,amd64/advapi32.dll
     bcrypt.dll,amd64/bcrypt.dll
     cfgmgr32.dll,amd64/cfgmgr32.dll
@@ -2722,7 +2731,7 @@
     winhttp.dll,amd64/winhttp.dll	
     winsta.dll,amd64/winsta.dll		
     winstanew.dll,amd64/winstanew.dll		
-    ws2_32.dll,amd64/ws2_32.dll
+    ws2_32.dll,amd64/ws2_32.dll   
 	;mui/0409/mscorees.dll,amd64/mui/0409/mscorees.dll
 	
 [CopyAlways.System32.APISET.Files]
@@ -2983,7 +2992,8 @@
    ext-ms-win-gdi-draw-l1-1-1.dll,api-sets\amd64\ext-ms-win-gdi-draw-l1-1-1.dll
    ext-ms-win-gdi-font-l1-1-0.dll,api-sets\amd64\ext-ms-win-gdi-font-l1-1-0.dll
    ext-ms-win-gdi-font-l1-1-1.dll,api-sets\amd64\ext-ms-win-gdi-font-l1-1-1.dll
-   ext-ms-win-gdi-render-l1-1-0.dll,api-sets\amd64\ext-ms-win-gdi-render-l1-1-0.dll
+   ext-ms-win-gdi-path-l1-1-0.dll,api-sets\amd64\ext-ms-win-gdi-path-l1-1-0.dll
+   ext-ms-win-gdi-render-l1-1-0.dll,api-sets\amd64\ext-ms-win-gdi-render-l1-1-0.dll   
    ext-ms-win-kernel32-package-current-l1-1-0.dll,api-sets\amd64\ext-ms-win-kernel32-package-current-l1-1-0.dll
    ext-ms-win-kernel32-package-l1-1-1.dll,api-sets\amd64\ext-ms-win-kernel32-package-l1-1-1.dll
    ext-ms-win-ntuser-dialogbox-l1-1-0.dll,api-sets\amd64\ext-ms-win-ntuser-dialogbox-l1-1-0.dll
@@ -3285,6 +3295,7 @@
    ext-ms-win-gdi-draw-l1-1-1.dll,api-sets\i386\ext-ms-win-gdi-draw-l1-1-1.dll
    ext-ms-win-gdi-font-l1-1-0.dll,api-sets\i386\ext-ms-win-gdi-font-l1-1-0.dll
    ext-ms-win-gdi-font-l1-1-1.dll,api-sets\i386\ext-ms-win-gdi-font-l1-1-1.dll
+   ext-ms-win-gdi-path-l1-1-0.dll,api-sets\i386\ext-ms-win-gdi-path-l1-1-0.dll
    ext-ms-win-gdi-render-l1-1-0.dll,api-sets\i386\ext-ms-win-gdi-render-l1-1-0.dll
    ext-ms-win-kernel32-package-current-l1-1-0.dll,api-sets\i386\ext-ms-win-kernel32-package-current-l1-1-0.dll
    ext-ms-win-kernel32-package-l1-1-1.dll,api-sets\i386\ext-ms-win-kernel32-package-l1-1-1.dll
@@ -3351,9 +3362,9 @@
     winhttpbase.dll,XP64SP2/i386/wwinhttpbase.dll	
     winstabase.dll,XP64SP2/i386/wwinstabase.dll
     ws2_base.dll,XP64SP2/i386/wws2_base.dll
+	xpsp2res.dll,XP64SP2/i386/wxpsp2res.dll
     advapi32.dll,i386/wadvapi32.dll
-    bcrypt.dll,i386/wbcrypt.dll
-    certupdate.exe
+    bcrypt.dll,i386/wbcrypt.dll    
     cfgmgr32.dll,i386/wcfgmgr32.dll
     comctlext.dll,i386/wcomctlext.dll
     comdlg32.dll,i386/wcomdlg32.dll
@@ -3416,130 +3427,144 @@
     1=%ServicePackSourceFiles%
 
 [SourceDisksFiles]
-    XP64SP2/amd64/advapibase.dll = 1
-    XP64SP2/amd64/comdlgbase.dll = 1	
-    XP64SP2/amd64/crypt32.dll = 1	
-    XP64SP2/amd64/gdibase.dll = 1	
-    XP64SP2/amd64/kernel32.dll = 1	
-    XP64SP2/amd64/netapibase.dll = 1	
-    XP64SP2/amd64/ntdll.dll = 1	
-    XP64SP2/amd64/olebase.dll = 1	
-    XP64SP2/amd64/oleacc.dll = 1	
-    XP64SP2/amd64/powrprofbase.dll = 1
-    XP64SP2/amd64/rpcrtbase.dll = 1
-    XP64SP2/amd64/securbase.dll = 1
-    XP64SP2/amd64/setupapibase.dll = 1
-    XP64SP2/amd64/shellbase.dll = 1
-    XP64SP2/amd64/userbase.dll = 1
-    XP64SP2/amd64/uxthemebase.dll = 1
-    XP64SP2/amd64/winstabase.dll = 1
-    XP64SP2/amd64/ws2_base.dll = 1
-    XP64SP2/i386/wadvapibase.dll = 1
-    XP64SP2/i386/wcomdlgbase.dll = 1		
-    XP64SP2/i386/wcrypt32.dll = 1		
-    XP64SP2/i386/wgdibase.dll = 1	
-    XP64SP2/i386/wkernel32.dll = 1
-    XP64SP2/i386/wnetapibase.dll = 1	
-    XP64SP2/i386/wntdll.dll = 1	
-    XP64SP2/i386/wolebase.dll = 1		
-    XP64SP2/i386/woleacc.dll = 1		
-    XP64SP2/i386/wpowrprofbase.dll = 1
-    XP64SP2/i386/wrpcrtbase.dll = 1
-    XP64SP2/i386/wsecurbase.dll = 1
-    XP64SP2/i386/wsetupapibase.dll = 1
-    XP64SP2/i386/wshellbase.dll = 1
-    XP64SP2/i386/wuserbase.dll = 1
-    XP64SP2/i386/wuxthemebase.dll = 1
-    XP64SP2/i386/wwinstabase.dll = 1
-    XP64SP2/i386/wws2_base.dll = 1	
-    XP64SP2/amd64/ntkrnlmp.exe=1
-    XP64SP2/amd64/ntoskrnl.exe=1
-    XP64SP2/amd64/win32k.sys=1
-	XP64SP2/amd64/winsrv.dll=1
-	XP64SP2/amd64/wow64win.dll=1
-    amd64/advapi32.dll = 1
-    amd64/bcrypt.dll = 1
-    amd64/comctlext.dll =1
-    amd64/comdlg32.dll =1
-    amd64/cryptnew.dll =1
-    amd64/cryptex.dll =1
-    amd64/fileextd.dll =1		
-    amd64/gdi32.dll = 1
-    amd64/gdiplusnew.dll = 1
-    amd64/iphlpapi.dll = 1
-    amd64/iphlpapibase.dll = 1
-    amd64/idndl.dll = 1
-    amd64/kernelbase.dll = 1
-    ;amd64/mscoree.dll = 1
-	amd64/msctfime.ime = 1
-    amd64/msvcrt.dll = 1
-    amd64/netapi32.dll = 1
-    amd64/netfxperf.dll = 1
-    amd64/Nlsdl.dll = 1
-    amd64/normaliz.dll = 1
-    amd64/nsi.dll = 1
-    amd64/ntext.dll =1
-    amd64/ole32.dll =1	
-    amd64/pdh.dll = 1
-    amd64/pdhbase.dll = 1
-    amd64/powrprof.dll = 1
-    amd64/propsys.dll = 1	
-    amd64/psapi.dll = 1	
-    amd64/rpcrt4.dll = 1
-    amd64/secur32.dll = 1
-    amd64/setupapi.dll = 1
-    amd64/shell32.dll = 1
-    amd64/shlwapi.dll = 1
-    amd64/sspicli.dll = 1
-    amd64/user32.dll = 1
-    amd64/uxtheme.dll = 1
-	; amd64/wevtold.dll = 1
-    amd64/winbrand.dll = 1	
-    amd64/ws2_32.dll = 1
-	;amd64/mui/0409/mscorees.dll = 1
-    i386/NNN4NT5.exe = 1
-    i386/wadvapi32.dll = 1
-    i386/wbcrypt.dll = 1
-    i386/wcomctlext.dll =1
-    i386/wcomdgl32.dll =1
-    i386/wcryptnew.dll =1
-    i386/wcryptex.dll =1
-    i386/wfileextd.dll =1		
-    i386/wgdi32.dll = 1
-    i386/wgdiplusnew.dll = 1
-    i386/wiphlpapi.dll = 1
-    i386/wiphlpapibase.dll = 1
-    i386/widndl.dll = 1
-	i386/wiertutil.dll = 1
-    i386/wkernelbase.dll = 1
-    ;i386/wmscoree.dll = 1
-	i386/wmsctfime.ime = 1	
-    i386/wmsvcrt.dll = 1
-    i386/wnetapi32.dll = 1
-    i386/wnetfxperf.dll = 1
-    i386/wNlsdl.dll = 1
-    i386/wnormaliz.dll = 1
-    i386/wnsi.dll =1
-    i386/wntext.dll =1
-    i386/wole32.dll =1
-    i386/wpsapi.dll = 1
-    i386/wpdh.dll = 1
-    i386/wpdhbase.dll = 1
-    i386/wpowrprof.dll = 1
-    i386/wpropsys.dll = 1	
-    i386/wrpcrt4.dll = 1
-    i386/wsecur32.dll = 1
-    i386/wsetupapi.dll = 1
-    i386/wshell32.dll = 1
-    i386/wshlwapi.dll = 1
-    i386/wsspicli.dll = 1
-    i386/wuser32.dll = 1
-    i386/wuxtheme.dll = 1
-    i386/wversion.dll = 1
-	; i386/wwevtold.dll = 1
-    i386/wwinbrand.dll = 1	
-    i386/wws2_32.dll = 1
-	i386/mui/0409/wmscorees.dll = 1
+	XP64SP2/amd64/advapibase.dll = 1
+	XP64SP2/amd64/comdlgbase.dll = 1		
+	XP64SP2/amd64/crypt32.dll = 1		
+	XP64SP2/amd64/gdibase.dll = 1
+	XP64SP2/amd64/kernel32.dll = 1 	
+	XP64SP2/amd64/netapibase.dll = 1	
+	XP64SP2/amd64/olebase.dll = 1	
+	XP64SP2/amd64/oleacc.dll = 1	
+	XP64SP2/amd64/powrprofbase.dll = 1
+	XP64SP2/amd64/rpcrtbase.dll = 1
+	XP64SP2/amd64/securbase.dll = 1
+	XP64SP2/amd64/setupapibase.dll = 1
+	XP64SP2/amd64/shlwapibase.dll = 1	
+	XP64SP2/amd64/shellbase.dll = 1	
+	XP64SP2/amd64/userbase.dll = 1
+	XP64SP2/amd64/userenvbase.dll = 1
+	XP64SP2/amd64/uxthemebase.dll = 1
+	XP64SP2/amd64/iphlpapibase.dll = 1
+	XP64SP2/amd64/win32k.sys
+	XP64SP2/amd64/winstabase.dll = 1   
+	XP64SP2/amd64/winhttpbase.dll = 1	
+	XP64SP2/amd64/winsrv.dll = 1
+	XP64SP2/amd64/wow64win.dll = 1	
+	XP64SP2/amd64/ws2_base.dll = 1
+	XP64SP2/amd64/xpsp2res.dll = 1
+	amd64/advapi32.dll = 1
+	amd64/bcrypt.dll = 1
+	amd64/cfgmgr32.dll = 1
+	amd64/comctlext.dll = 1
+	amd64/comdlg32.dll = 1
+	amd64/cryptnew.dll = 1	
+	amd64/cryptex.dll = 1	
+	amd64/d3dkmt.dll = 1	
+	amd64/fileextd.dll = 1		
+	amd64/gdi32.dll = 1
+	amd64/gdiplusnew.dll = 1
+	amd64/iphlpapi.dll = 1
+	amd64/idndl.dll = 1
+	amd64/kernelbase.dll = 1
+	;amd64/mscoree.dll = 1 ;comment becuase if copied, must be set HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft.NETFramework\InstallRoot too, however, we don't know Windows drive letter installation.  
+	amd64/msctfime.ime
+	amd64/msvcrt.dll = 1
+	amd64/netapi32.dll = 1
+	amd64/netfxperf.dll = 1
+	amd64/Nlsdl.dll = 1
+	NNN4NT5.exe
+	amd64/normaliz.dll = 1
+	amd64/nsi.dll = 1
+	amd64/ntext.dll = 1
+	amd64/ole32.dll = 1
+	amd64/pdhbase.dll = 1	
+	amd64/pdh.dll = 1
+	amd64/powrprof.dll = 1
+	amd64/propsys.dll = 1
+	amd64/psapi.dll = 1
+	amd64/rpcrt4.dll = 1
+	amd64/secur32.dll = 1
+	amd64/setupapi.dll = 1
+	amd64/shell32.dll = 1	
+	amd64/shlwapi.dll = 1	
+	amd64/sspicli.dll = 1	
+	amd64/user32.dll = 1
+	amd64/userenv.dll = 1
+	amd64/uxtheme.dll = 1
+	amd64/version.dll = 1
+	amd64/winbrand.dll = 1	
+	amd64/winhttp.dll = 1	
+	amd64/winsta.dll = 1		
+	amd64/winstanew.dll = 1		
+	amd64/ws2_32.dll = 1 
+	XP64SP2/i386/wadvapibase.dll = 1
+	XP64SP2/i386/wcomdlgbase.dll = 1		
+	XP64SP2/i386/wcrypt32.dll = 1		
+	XP64SP2/i386/wgdibase.dll = 1	
+	XP64SP2/i386/wiphlpapibase.dll = 1
+	XP64SP2/i386/wkernel32.dll = 1
+	XP64SP2/i386/wnetapibase.dll = 1	
+	XP64SP2/i386/wolebase.dll = 1	
+	XP64SP2/i386/woleacc.dll = 1	
+	XP64SP2/i386/wpowrprofbase.dll = 1
+	XP64SP2/i386/wrpcrtbase.dll = 1
+	XP64SP2/i386/wsecurbase.dll = 1
+	XP64SP2/i386/wsetupapibase.dll = 1
+	XP64SP2/i386/wshellbase.dll = 1
+	XP64SP2/i386/wshlwapibase.dll = 1	
+	XP64SP2/i386/wuserbase.dll = 1
+	XP64SP2/i386/wuserenvbase.dll = 1
+	XP64SP2/i386/wuxthemebase.dll = 1
+	XP64SP2/i386/wwinhttpbase.dll = 1	
+	XP64SP2/i386/wwinstabase.dll = 1
+	XP64SP2/i386/wws2_base.dll = 1
+	XP64SP2/i386/wxpsp2res.dll = 1
+	i386/wadvapi32.dll = 1
+	i386/wbcrypt.dll = 1
+	certupdate.exe = 1
+	i386/wcfgmgr32.dll = 1
+	i386/wcomctlext.dll = 1
+	i386/wcomdlg32.dll = 1
+	i386/wcryptnew.dll = 1
+	i386/wcryptex.dll = 1
+	i386/wd3dkmt.dll = 1
+	i386/wfileextd.dll = 1
+	i386/wgdi32.dll = 1
+	i386/wgdiplusnew.dll = 1
+	i386/wiphlpapi.dll = 1
+	i386/widndl.dll = 1
+	i386/wkernelbase.dll = 1	
+	 we don't know Windows drive letter installation. 
+	i386/wmsctfime.ime
+	i386/wmsvcrt.dll = 1
+	i386/wnetapi32.dll = 1
+	i386/wnetfxperf.dll = 1
+	i386/wNlsdl.dll = 1
+	NNN4NT5.exe = 1
+	i386/wnormaliz.dll = 1
+	i386/wnsi.dll = 1
+	i386/wntext.dll = 1	
+	i386/wole32.dll = 1	
+	i386/wpdhbase.dll = 1	
+	i386/wpdh.dll = 1
+	i386/wpowrprof.dll = 1
+	i386/wpropsys.dll = 1	
+	i386/wpsapi.dll = 1	
+	i386/wrpcrt4.dll = 1
+	i386/wsecur32.dll = 1
+	i386/wsetupapi.dll = 1
+	i386/wshell32.dll = 1
+	i386/wshlwapi.dll = 1
+	i386/wsspicli.dll = 1
+	i386/wuser32.dll = 1
+	i386/wuserenv.dll = 1
+	i386/wuxtheme.dll = 1
+	i386/wversion.dll = 1
+	i386/wwinbrand.dll = 1	
+	i386/wwinhttp.dll = 1
+	i386/wwinsta.dll = 1
+	i386/wwinstanew.dll = 1		
+	i386/wws2_32.dll = 1
 	drivers\ntoskrn8.sys = 1
 	"WinSxS\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E\comctl32.dll" = 1	
 	"WinSxS\wow64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_B8C2A5B7\comctl32.dll" = 1	
@@ -3588,3 +3613,6 @@
 [Add.Reg.Uninstall]
 
 [PreRequisite.Uninstall]	
+
+[ProcessesToRunAfterUninstall]
+	"cmd /C schtasks /delete /tn ""Root Certificate Update"" /f"

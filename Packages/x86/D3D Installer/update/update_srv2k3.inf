@@ -3,8 +3,8 @@
 	MaxNtBuildToUpdate        = 3790
 	MaxNtMajorVersionToUpdate = 5
 	MaxNtMinorVersionToUpdate = 2
-	MaxNtServicePackVersion   = 768
-	MinNtServicePackVersion   = 256
+	MaxNtServicePackVersion   = 1024
+	MinNtServicePackVersion   = 512
 	NtBuildToUpdate           = 3790
 	NtMajorVersionToUpdate    = 5
 	NtMinorVersionToUpdate    = 2
@@ -34,7 +34,7 @@
     Display_String="%LatestBrandingUpdateFail%"
 	
 [Strings]
-	D3DR_VERSION            = "3.0.4"
+	D3DR_VERSION            = "3.0.5"
 	SP_TITLE                = "One-Core-API D3D Runtime"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAD3DR"

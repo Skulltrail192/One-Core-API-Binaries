@@ -1,10 +1,10 @@
 [Version]
 	LanguageType 		  = %LANGTYPEVALUE%
-	MaxNtBuildToUpdate        = 3790
-	MaxNtMajorVersionToUpdate = 5
-	MaxNtMinorVersionToUpdate = 2
+	MaxNtBuildToUpdate        = 9600
+	MaxNtMajorVersionToUpdate = 6
+	MaxNtMinorVersionToUpdate = 3
 	MaxNtServicePackVersion   = 512
-	MinNtServicePackVersion   = 256
+	MinNtServicePackVersion   = 512
 	NtBuildToUpdate           = 3790
 	NtMajorVersionToUpdate    = 5
 	NtMinorVersionToUpdate    = 2
@@ -23,7 +23,9 @@
     AppFileinUseDetect        = 3
 	
 [Strings]
-	OCAAD_VERSION           = "3.0.4"
+    HelpLink = "http://shorthornproject.com"
+    URLInfoAbout = "http://shorthornproject.com"
+	OCAAD_VERSION           = "3.0.5"
 	SP_TITLE                = "One-Core-API Additional Dlls"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAAD"
@@ -5398,6 +5400,7 @@
 	avrt.dll,amd64/avrt.dll
 	bcryptprimitives.dll,amd64/bcryptprimitives.dll
 	bluetoothapis.dll,amd64/bluetoothapis.dll
+	browcli.dll,amd64/browcli.dll
 	cabiext.dll,amd64/cabiext.dll
 	CardGames.dll,amd64/CardGames.dll
 	combase.dll,amd64/combase.dll
@@ -5408,6 +5411,7 @@
 	dbgeng.dll,amd64/dbgeng.dll
 	dbghelp.dll,amd64/dbghelp.dll
 	dpx.dll,amd64/dpx.dll
+	dsrole.dll,amd64/dsrole.dll
 	dui70.dll,amd64/dui70.dll
 	duser.dll,amd64/duser.dll
 	dusex.dll,amd64/dusex.dll
@@ -5424,6 +5428,7 @@
 	httpapi.dll,amd64/httpapi.dll
 	httpnew.dll,amd64/httpnew.dll		
 	ktmw32.dll,amd64/ktmw32.dll
+	logoncli.dll,amd64/logoncli.dll
 	lsalookup.dll,amd64/lsalookup.dll
 	mf.dll,amd64/mf.dll
 	mfplat.dll,amd64/mfplat.dll
@@ -5438,6 +5443,9 @@
 	mtdll.dll,amd64/mtdll.dll
 	ncrypt.dll,amd64/ncrypt.dll
 	ndfapi.dll,amd64/ndfapi.dll
+	netbios.dll,amd64/netbios.dll
+	netjoin.dll,amd64/netjoin.dll
+	netutils.dll,amd64/netutils.dll
 	ninput.dll,amd64/ninput.dll
 	npmshtml.dll,amd64/npmshtml.dll
 	onex.dll,amd64/onex.dll 	
@@ -5450,6 +5458,7 @@
 	pwrshplugin.dll,amd64/pwrshplugin.dll		
 	RstrtMgr.dll,amd64/RstrtMgr.dll
 	rtworkq.dll,amd64/rtworkq.dll
+	samcli.dll,amd64/samcli.dll
 	sas.dll,amd64/sas.dll
 	sddlbase.dll,amd64/sddlbase.dll
 	secbase.dll,amd64/secbase.dll
@@ -5484,9 +5493,11 @@
 	winsvc.dll,amd64/winsvc.dll
 	winusb.dll,amd64/winusb.dll
 	wisptis.exe,amd64/wisptis.exe
+	wkscli.dll,amd64/wkscli.dll
 	wlanapi.dll,amd64/wlanapi.dll
 	wlanui.dll,amd64/wlanui.dll
 	wlanutil.dll,amd64/wlanutil.dll
+	wldp.dll,amd64/wldp.dll
 	wmdrmsdk.dll,amd64/wmdrmsdk.dll	
 	wmphoto.dll,amd64/wmphoto.dll
 	wpc.dll,amd64/wpc.dll	
@@ -5501,6 +5512,7 @@
 	avrt.dll,i386/wavrt.dll
 	bcryptprimitives.dll,i386/wbcryptprimitives.dll
 	bluetoothapis.dll,i386/wbluetoothapis.dll
+	browcli.dll,i386/wbrowcli.dll
 	cabiext.dll,i386/wcabiext.dll
 	CardGames.dll,i386/wCardGames.dll
 	combase.dll,i386/wcombase.dll
@@ -5511,6 +5523,7 @@
 	dbgeng.dll,i386/wdbgeng.dll
 	dbghelp.dll,i386/wdbghelp.dll
 	dpx.dll,i386/wdpx.dll
+	dsrole.dll,i386/wdsrole.dll
 	dui70.dll,i386/wdui70.dll
 	duser.dll,i386/wduser.dll
 	dusex.dll,i386/wdusex.dll
@@ -5527,6 +5540,7 @@
 	httpapi.dll,i386/whttpapi.dll
 	httpnew.dll,i386/whttpnew.dll		
 	ktmw32.dll,i386/wktmw32.dll
+	logoncli.dll,i386/wlogoncli.dll
 	lsalookup.dll,i386/wlsalookup.dll
 	mf.dll,i386/wmf.dll
 	mfplat.dll,i386/wmfplat.dll
@@ -5541,6 +5555,9 @@
 	mtdll.dll,i386/wmtdll.dll
 	ncrypt.dll,i386/wncrypt.dll
 	ndfapi.dll,i386/wndfapi.dll
+	netbios.dll,i386/wnetbios.dll
+	netjoin.dll,i386/wnetjoin.dll
+	netutils.dll,i386/wnetutils.dll
 	ninput.dll,i386/wninput.dll
 	npmshtml.dll,i386/wnpmshtml.dll
 	onex.dll,i386/wonex.dll 	
@@ -5553,6 +5570,7 @@
 	pwrshplugin.dll,i386/wpwrshplugin.dll		
 	RstrtMgr.dll,i386/wRstrtMgr.dll
 	rtworkq.dll,i386/wrtworkq.dll
+	samcli.dll,i386/wsamcli.dll
 	sas.dll,i386/wsas.dll
 	sddlbase.dll,i386/wsddlbase.dll
 	secbase.dll,i386/wsecbase.dll
@@ -5586,9 +5604,11 @@
 	windowscodecsext.dll,i386/wwindowscodecsext.dll
 	winsvc.dll,i386/wwinsvc.dll
 	winusb.dll,i386/wwinusb.dll
+	wkscli.dll,i386/wwkscli.dll
 	wlanapi.dll,i386/wwlanapi.dll
 	wlanui.dll,i386/wwlanui.dll
 	wlanutil.dll,i386/wwlanutil.dll
+	wldp.dll,i386/wwldp.dll
 	wmdrmsdk.dll,i386/wwmdrmsdk.dll	
 	wmphoto.dll,i386/wwmphoto.dll
 	wpc.dll,i386/wwpc.dll	
@@ -5615,6 +5635,7 @@
 	amd64/dbghelp.dll = 1
 	amd64/dbgeng.dll = 1
 	amd64/dpx.dll = 1
+	amd64/dsrole.dll = 1
 	amd64/dui70.dll = 1
 	amd64/dusex.dll = 1
 	amd64/duser.dll = 1
@@ -5631,6 +5652,7 @@
 	amd64/httpapi.dll = 1
 	amd64/httpnew.dll = 1
 	amd64/ktmw32.dll = 1
+	amd64/logoncli.dll = 1
 	amd64/lsalookup.dll = 1
 	amd64/mf.dll = 1
 	amd64/mfplat.dll = 1
@@ -5645,6 +5667,9 @@
 	amd64/mtdll.dll = 1
 	amd64/ncrypt.dll = 1
 	amd64/ndfapi.dll = 1
+	amd64/netbios.dll = 1
+	amd64/netjoin.dll = 1
+	amd64/netutils.dll = 1
 	amd64/ninput.dll = 1
 	amd64/npmshtml.dll = 1
 	amd64/onex.dll = 1
@@ -5656,6 +5681,7 @@
 	amd64/pwrshplugin.dll = 1	
 	amd64/RstrtMgr.dll = 1
 	amd64/rtworkq.dll = 1
+	amd64/samcli.dll = 1
 	amd64/sas.dll = 1
 	amd64/sddlbase.dll = 1
 	amd64/secbase.dll = 1
@@ -5689,9 +5715,11 @@
 	amd64/windowscodecsext.dll = 1
 	amd64/winsvc.dll = 1
 	amd64/winusb.dll = 1
+	amd64/wkscli.dll = 1
 	amd64/wlanapi.dll = 1
 	amd64/wlanui.dll = 1
 	amd64/wlanutil.dll = 1
+	amd64/wldp.dll = 1
 	amd64/WMDRMSDK.DLL = 1
 	amd64/wmphoto.dll = 1
 	amd64/wpc.dll = 1
@@ -5714,6 +5742,7 @@
 	i386/wdbghelp.dll = 1
 	i386/wdbgeng.dll = 1
 	i386/wdpx.dll = 1
+	i386/wdsrole.dll = 1
 	i386/wdui70.dll = 1
 	i386/wdusex.dll = 1
 	i386/wduser.dll = 1
@@ -5730,6 +5759,7 @@
 	i386/whttpapi.dll = 1
 	i386/whttpnew.dll = 1
 	i386/wktmw32.dll = 1
+	i386/wlogoncli.dll = 1
 	i386/wlsalookup.dll = 1
 	i386/wmf.dll = 1
 	i386/wmfplat.dll = 1
@@ -5743,7 +5773,9 @@
 	i386/wmspatcha.dll = 1
 	i386/wmtdll.dll = 1
 	i386/wncrypt.dll = 1
-	i386/wndfapi.dll = 1
+	i386/wnetbios.dll = 1
+	i386/wnetjoin.dll = 1
+	i386/wnetutils.dll = 1
 	i386/wninput.dll = 1
 	i386/wnpmshtml.dll = 1
 	i386/wonex.dll = 1
@@ -5754,7 +5786,7 @@
 	i386/wprntvpt.dll = 1	
 	i386/wpwrshplugin.dll = 1	
 	i386/wRstrtMgr.dll = 1
-	i386/wrtworkq.dll = 1
+	i386/wsamcli.dll = 1
 	i386/wsas.dll = 1
 	i386/wsddlbase.dll = 1
 	i386/wsecbase.dll = 1
@@ -5787,9 +5819,11 @@
 	i386/wwindowscodecsext.dll = 1
 	i386/wwinsvc.dll = 1
 	i386/wwinusb.dll = 1
+	i386/wwkscli.dll = 1
 	i386/wwlanapi.dll = 1
 	i386/wwlanui.dll = 1
 	i386/wwlanutil.dll = 1
+	i386/wwldp.dll = 1
 	i386/wWMDRMSDK.DLL = 1
 	i386/wwmphoto.dll = 1
 	i386/wwpc.dll = 1

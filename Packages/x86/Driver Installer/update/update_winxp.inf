@@ -3,8 +3,8 @@
 	MaxNtBuildToUpdate        = 5001
 	MaxNtMajorVersionToUpdate = 6
 	MaxNtMinorVersionToUpdate = 2
-	MaxNtServicePackVersion   = 768
-	MinNtServicePackVersion   = 256
+	MaxNtServicePackVersion   = 1024
+	MinNtServicePackVersion   = 768
 	NtBuildToUpdate           = 2600
 	NtMajorVersionToUpdate    = 5
 	NtMinorVersionToUpdate    = 1
@@ -25,7 +25,7 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	OCADU_VERSION           = "3.0.4"
+	OCADU_VERSION           = "3.0.5"
 	SP_TITLE                = "One-Core-API Driver Update"
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
@@ -170,22 +170,23 @@
 	
 [Drivers.CoreDriverFiles]
 	acpi.sys, drivers\xpsp3\xpspacpi.sys
+	AmdPPM.sys, drivers\AmdPPM.sys
 	disk.sys, drivers\disk.sys
-	;ksecdd.sys, drivers\xpsp3\xpspksecdd.sys	;commented for now because ksecdd on XP cause Wifi connection empty list 
-	ksecd8.sys, drivers\ksecd8.sys	
-	drmk.sys, drivers\drmk.sys
-	drmkaud.sys, drivers\drmkaud.sys
-	hdaudbus.sys, drivers\hdaudbus.sys
-	HdAudio.sys, drivers\HdAudio.sys	
-	ks.sys, drivers\ks.sys
+	;ksecdd.sys, drivers\srv2k3\srvksecdd.sys	;commented for now because ksecdd on XP cause Wifi connection empty list 
+	;drmk.sys, drivers\drmk.sys
+	;drmkaud.sys, drivers\drmkaud.sys
+	;hdaudbus.sys, drivers\hdaudbus.sys
+	;HdAudio.sys, drivers\HdAudio.sys	
+	;ks.sys, drivers\ks.sys
+	ksecd8.sys, drivers\ksecd8.sys
 	msisadrv.sys, drivers\msisadrv.sys
 	ntoskrn8.sys, drivers\ntoskrn8.sys
     partmgr.sys, drivers\partmgr.sys
-    portcls.sys, drivers\portcls.sys
+    ;portcls.sys, drivers\portcls.sys
 	storahci.sys, drivers\storahci.sys
 	stornvme.sys, drivers\stornvme.sys	
 	storport.sys, drivers\storport.sys
-	stream.sys, drivers\stream.sys
+	;stream.sys, drivers\stream.sys
 	ucx01000.sys, drivers\ucx01000.sys
 	usbd8.sys, drivers\usbd8.sys	
 	usbhub3.sys, drivers\usbhub3.sys	
@@ -193,28 +194,28 @@
 	winusb.sys, drivers\winusb.sys
     wdfldr.sys, drivers\wdfldr.sys	
     wdf01000.sys, drivers\wdf01000.sys	
-	winusb.sys, drivers\winusb.sys	
-	WMALFXGFXDSP.dll, System32\WMALFXGFXDSP.dll	
-	wpprecor.sys, drivers\wpprecor.sys	
+	winusb.sys, drivers\winusb.sys
+	wpprecor.sys, drivers\wpprecor.sys
 
 [CopyAlways.DriverCab.files]
 	acpi.sys, drivers\xpsp3\xpspacpi.sys
+	AmdPPM.sys, drivers\AmdPPM.sys
 	disk.sys, drivers\disk.sys
-	drmk.sys, drivers\drmk.sys
-	drmkaud.sys, drivers\drmkaud.sys
-	hdaudbus.sys, drivers\hdaudbus.sys
-	HdAudio.sys, drivers\HdAudio.sys
-	ks.sys, drivers\ks.sys
-	;ksecdd.sys, drivers\xpsp3\xpspksecdd.sys ;commented for now because ksecdd on XP cause Wifi connection empty list 
+	;drmk.sys, drivers\drmk.sys
+	;drmkaud.sys, drivers\drmkaud.sys
+	;hdaudbus.sys, drivers\hdaudbus.sys
+	;HdAudio.sys, drivers\HdAudio.sys
+	;ks.sys, drivers\ks.sys
+	;ksecdd.sys, drivers\srv2k3\srvksecdd.sys ;commented for now because ksecdd on XP cause Wifi connection empty list 
 	ksecd8.sys, drivers\ksecd8.sys
 	msisadrv.sys, drivers\msisadrv.sys
 	ntoskrn8.sys, drivers\ntoskrn8.sys
     partmgr.sys, drivers\partmgr.sys
-    portcls.sys, drivers\portcls.sys
+    ;portcls.sys, drivers\portcls.sys
 	storahci.sys, drivers\storahci.sys
 	stornvme.sys, drivers\stornvme.sys	
 	storport.sys, drivers\storport.sys
-	stream.sys, drivers\stream.sys
+	;stream.sys, drivers\stream.sys
 	SysFxUI.dll, System32\SysFxUI.dll
 	ucx01000.sys, drivers\ucx01000.sys
 	usbd8.sys, drivers\usbd8.sys	
@@ -223,25 +224,26 @@
 	winusb.sys, drivers\winusb.sys
     wdfldr.sys, drivers\wdfldr.sys	
     wdf01000.sys, drivers\wdf01000.sys	
-	WMALFXGFXDSP.dll, System32\WMALFXGFXDSP.dll
 	winusb.sys, drivers\winusb.sys	
+	;WMALFXGFXDSP.dll, System32\WMALFXGFXDSP.dll
 	wpprecor.sys, drivers\wpprecor.sys	
 	
 [CopyAlways.Inf.files]
+    AmdPPM.inf, inf\AmdPPM.inf
     drvindex.inf, inf\xpsp3\xpspdrvindex.inf
     layout.inf, inf\xpsp3\xpsplayout.inf
-    hdaudbus.inf, inf\hdaudbus.inf
-    hdaudio.inf, inf\hdaudio.inf
+    ;hdaudbus.inf, inf\hdaudbus.inf
+    ;hdaudio.inf, inf\hdaudio.inf    
     machine.inf, inf\machine.inf
     stornvme.inf, inf\stornvme.inf
     storahci.inf, inf\storahci.inf	
     usbhub3.inf, inf\usbhub3.inf	
     usbxhci.inf, inf\usbxhci.inf	
-    wdmaudio.inf, inf\wdmaudio.inf	
+    ;wdmaudio.inf, inf\wdmaudio.inf
 
 [CopyAlways.System32.files]
-	SysFxUI.dll, System32\SysFxUI.dll
-	WMALFXGFXDSP.dll, System32\WMALFXGFXDSP.dll
+	;SysFxUI.dll, System32\SysFxUI.dll
+	;WMALFXGFXDSP.dll, System32\WMALFXGFXDSP.dll
 	winusb.dll, usermode\winusb.dll
 	
 [SourceDisksNames]

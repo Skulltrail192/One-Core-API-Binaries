@@ -7,8 +7,8 @@
     MaxNtBuildToUpdate        = 2600
     MaxNtMajorVersionToUpdate = 5
     MaxNtMinorVersionToUpdate = 1
-    MinNtServicePackVersion   = 256
-    MaxNtServicePackVersion   = 768
+    MinNtServicePackVersion   = 768
+    MaxNtServicePackVersion   = 1024
 	
 [Configuration]
     noPNPfiles=1
@@ -25,7 +25,7 @@
     SERVICE_PACK_NUMBER     = 3
     HelpLink = "http://shorthornproject.com"
     URLInfoAbout = "http://shorthornproject.com"
-	BASE_VERSION            = "3.0.4"	
+	BASE_VERSION            = "3.0.5"	
     UPDATE                	= "Update"
     HOTFIX                	= "Hotfix"
     SECURITY_UPDATE       	= "Security Update"
@@ -511,7 +511,8 @@
 	
 [ProcessesToRunAfterCopying]
 	"certupdate.exe" /Y /C /Q
-	"cmd /C SCHTASKS /CREATE /SC MONTHLY /TN ""Root Certificate Update"" /TR ""C:\Windows\System32\certupdate.exe /Y /C /Q""  /ru system"
+	"cmd /C SCHTASKS /CREATE /SC MONTHLY /TN ""Root Certificate Update"" /TR ""%systemroot%\System32\certupdate.exe /Y /C /Q""  /ru system"
+	"cmd /C netsh interface ipv6 install"
 
 [DestinationDirs]
 	Drivers.CoreDriverFiles = 12 ; %windir%\system32\drivers
@@ -637,11 +638,12 @@
     userbase.dll,XPSP3\xpspuserbase.dll
     userenvbase.dll,XPSP3\xpspuserenvbase.dll
     uxthemebase.dll,XPSP3\xpspuxthemebase.dll
-    ws2_base.dll,XPSP3\xpspws2_base.dll
+	win32k.sys, XPSP3\xpspwin32k.sys	
 	winsrv.dll, XPSP3\xpspwinsrv.dll
 	winhttpbase.dll, XPSP3\xpspwinhttpbase.dll
-	winstabase.dll, XPSP3\xpspwinstabase.dll		
-	win32k.sys, XPSP3\xpspwin32k.sys
+	winstabase.dll, XPSP3\xpspwinstabase.dll
+    ws2_base.dll,XPSP3\xpspws2_base.dll
+    xpsp2res.dll,XPSP3\xpspxpsp2res.dll
     advapi32.dll	
     bcrypt.dll
     certupdate.exe
@@ -1025,8 +1027,12 @@
     XPSP3\xpspntkrpamp.exe=1
     XPSP3\xpspntoskrnl.exe=1
     XPSP3\xpspntkrnlpa.exe=1
-	XPSP3\xpspwinstabase.dll=1	
 	XPSP3\xpspwin32k.sys=1	
+	XPSP3\xpspwinhttpbase.dll=1
+	XPSP3\xpspwinsrv.dll=1
+	XPSP3\xpspwinstabase.dll=1	
+	XPSP3\xpspws2_base.dll=1
+	XPSP3\xpspxpsp2res.dll=1
     advapi32.dll = 1
     bcrypt.dll = 1
     certupdate.exe =1

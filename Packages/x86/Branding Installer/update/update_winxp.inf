@@ -3,8 +3,8 @@
 	MaxNtBuildToUpdate        = 2600
 	MaxNtMajorVersionToUpdate = 5
 	MaxNtMinorVersionToUpdate = 1
-	MaxNtServicePackVersion   = 768
-	MinNtServicePackVersion   = 256
+	MaxNtServicePackVersion   = 1024
+	MinNtServicePackVersion   = 768
 	NtBuildToUpdate           = 2600
 	NtMajorVersionToUpdate    = 5
 	NtMinorVersionToUpdate    = 1
@@ -22,7 +22,7 @@
     AppFileinUseDetect        = 3
 	
 [Strings]
-	BW_VERSION              = "3.0.4"
+	BW_VERSION              = "3.0.5"
 	SP_TITLE                = "One-Core-API Windows Modern Branding"
 	LANGTYPEVALUE           = 0x0
 	SP_SHORT_TITLE          = "OCAWMB"
