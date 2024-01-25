@@ -150,7 +150,7 @@ Some screenshots of Applicaions running on XP/Server 2003:
 **Windows 7 Sticky Notes**
 ![StickyNotes](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/669ba3e4-b831-4a96-ad40-d87e3e9531e2)
 **Windows 7 Paint**
-![Windows7 Paint](https://user-images.githubusercontent.com/5159776/192194273-de70c23e-8731-4fb6-96c1-9bee98947269.PNG)
+![Paint](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/11f354d4-5392-4edd-95c7-13c6faa37362)
 **Windows 7 Wordpad**
 ![Wordpad](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/9dac02c7-7139-47fe-8732-ccd9ef91090b)
 
