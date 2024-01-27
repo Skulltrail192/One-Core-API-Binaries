@@ -33,7 +33,7 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - **Branding**: New branding system introduced on Windows Vista, required to D3D and Modern Setup packages;
 
 **Installation order of packages:**
-- **Common order**: Base-> Additional Dlls -> API-SET -> Branding -> D3d -> Modern Setup -> Driver Update -> App Compat;
+- **Common order**: Base-> Additional Dlls -> Branding -> D3d -> Modern Setup -> Driver Update -> App Compat;
 
 - **Standalone packages (don't require other packages together, only if you want)**
   - **App Compat only:** This package can be installed without any other packages; 
