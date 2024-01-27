@@ -52,6 +52,7 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - JetBrains IntelliJ 2023.x.x (Windows XP x64 only for now)
 - Adobe Photoshop CC 2018;
 - Filezilla (latest);
+- Discord 0.309.0
 - Visual Studio Code up to 1.83.1;
 - Chrome up to version 123;
 - Opera up to version 106;
