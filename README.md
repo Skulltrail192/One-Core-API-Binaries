@@ -84,8 +84,7 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Several other applications;
 - Node 10.24;
 - Telegram Desktop;
-- 
-- Winrar 6.24 (latest);
+- Winrar 7.0 Beta 4 (latest);
 - Directx 9EX, 10 and 11 games: 
   - Need for Speed Most Wanted 2012;
   - Need for Speed The Run;
@@ -96,20 +95,14 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Kate 23.08.1 (Windows XP x64 only for now)
   
 **Known Limitations:**
-- Open/Save Dialogs from several applications not working fully because are from Vista implementation, called IFileDialog. Working in progress;
 - Running Firefox 56+ you may face page loading problems. To resolve this, from version 55 to 72, you must create an environment variable called MOZ_FORCE_DISABLE_E10S . It will be the key of the user's environment variable, and the value will be 1. For versions from 73 onwards, the value will be the version number, that is, 73.0.0, for example (check the version number).
-- Some places in dialogs or windows keep only in english. Internacionalization is working in progress;
+- Some places in dialogs or windows keep only in english. Internacionalization is working in progress. Some issues with installed mui packs;
 - New applications installers may not work, like Chrome, Maxthon, Discord, Team viewer, etc crash and application isn't installed. Need 
 use a pre-installed version, copied from other operating system;
-- Fixed in version 3.0.4 ~~Some installers like VS Code and Skype genereate a erro "Class is not supported" on shortcut phase creation;~~
-- Fixed in OCA 3.0.3/3.0.4 ~~Chrome has stability and crash randomy. Extension isn't supported for now. Downloads crash application or has network error, depend of version;~~
-- Firefox 55-116 working with some limitations;
-- Firefox since version 54 (32 bit) doesn't work on Windows XP x64. Chrome 61+ does not work either;
 - The packages cannot be integrate with nlite to Windows Iso, because use a tool called "SFXCAB Substitute", not standard Microsoft version;
 - Standard .Net Framework Installers starting 4.6 ins't supported for now. You need a repacked version like did here: https://github.com/abbodi1406/dotNetFx4xW7. And avaliable like here: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251. Other versions are avaliable too, search on forum topics;
-- Palemoon version 27-31 not download anything. Download not start;
-- Opera 39 - 46 may need follow parameters to start: --disable-gpu (to prevent black screen) and --single-process(to prevent eternally first page loading);
-- Qt5 application what use Dwrite crash on startup. Has some glitches like black screen if you deleted dwrite (application start and can be used, however)
+- New versions of palemon may face side by side configuration error issue.;
+- Opera 39 - 50 may need follow parameters to start: --disable-gpu (to prevent black screen) and --single-process(to prevent eternally first page loading);
 
 **Issues Report**
 For help to reproduce issue, is recommend **always** follow this template:
