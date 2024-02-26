@@ -77,6 +77,7 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Geekbench 4.2;
 - Performance Test;
 - Adobe Reader DC (2018);
+- Foxit PDF Reader (2023);
 - Windows 7 games;
 - Windows 7 Paint;
 - Windows 7 Wordpad;
