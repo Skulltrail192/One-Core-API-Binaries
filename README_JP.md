@@ -5,8 +5,7 @@
 ***
 ***この日本語訳は機械翻訳をベースに誤訳などをできる限り修正したものです 間違いがある可能性があります***
 
-このリポジトリには、One-Core-API プロジェクトのバイナリ リリースが含まれています。これらは、Windows Server 2003 SP2、Windows XP SP3、および Windows XP
-x64 SP2 と互換性があります。
+このリポジトリには、One-Core-API プロジェクトのバイナリ リリースが含まれています。これらは、Windows Server 2003 SP2、Windows XP SP3、および Windows XP x64 SP2 と互換性があります。
 
 **公式 Discord サーバー**: https://discord.gg/eRcGuFtn6p
 
