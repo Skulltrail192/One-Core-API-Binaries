@@ -104,7 +104,7 @@ Windows のほとんどの部分で、ポルトガル語 (ブラジル) (私の�
 - ダイアログやウィンドウの一部が英語のみで表示されます。国際化は現在進行中です。インストールされた mui パックに関する問題:
 - Chrome、Maxthon、Discord、Team viewer などの新しいアプリケーションのインストーラーが機能しない場合があります。クラッシュしてアプリケーションがインストールされません。他のオペレーティング システムからコピーされたプリインストール バージョンを使用する必要があります。
 - パッケージは、標準の Microsoft バージョンではなく、「SFXCAB Substitute」というツールを使用しているため、nlite で Windows Iso に統合できません。
-- 4.6 以降の標準 .Net Framework インストーラーは、現時点ではサポートされていません。https://github.com/abbodi1406/dotNetFx4xW7 のように再パックされたバージョンが必要です。また、こちらで入手できます: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251。他のバージョンも入手できます。フォーラムのトピックで検索してください。
+- 4.6 以降の標準 .Net Framework インストーラーは、現時点ではサポートされていません。https://github.com/abbodi1406/dotNetFx4xW7 のように再パックされたバージョンが必要です。また、こちらで入手できます: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251 他のバージョンも入手できます。フォーラムのトピックで検索してください。
 - palemon の新しいバージョンでは、サイド バイ サイド構成エラーの問題が発生する可能性があります。
 - Opera 39 - 50 を起動するには、次のパラメーターが必要になる場合があります: --disable-gpu (黒い画面が表示されないようにするため) および --single-process (最初のページが永遠に読み込まれないようにするため);
 
