@@ -49,22 +49,23 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Allow support for new hardware with new drivers controllers;
 
 **One-Core-API allows you to run:**
-- JetBrains WebStorm 2018;
-- Intellij 2018 (Other versions may work too);
-- JetBrains WebStorm 2023.x.x (Windows XP x64 only for now)
-- JetBrains IntelliJ 2023.x.x (Windows XP x64 only for now)
+- JetBrains Applications until 2021.3;
+- JetBrains WebStorm 2021;
+- Intellij 2021 (Other versions may work too);
 - Adobe Photoshop CC 2018;
 - Filezilla (latest);
 - Discord 0.309.0
+- Visual Studio 2012;
 - Visual Studio Code up to 1.83.1;
-- Chrome up to version 123;
+- Codium up to 1.89.x;
+- Chrome up to version 129;
 - Opera up to version 106;
-- Firefox up to version 122 (with some bugs);
-- Microsoft Edge up to version 122;
-- Brave up to version 1.62.153 (Chromium 121);
+- Firefox up to version 130 beta (with some bugs);
+- Microsoft Edge up to version 128;
+- Brave up to version 1.x (Chromium 129);
 - Yandex Browser latest version;
 - Thorium browser up to 109;
-- Supermium up to version 117;
+- Supermium up to version 124;
 - Seamonkey up to version 2.53.10;
 - Thunderbird up to version 121;
 - Maxthon up to version 7.1.6;
@@ -82,7 +83,7 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Windows 7 Paint;
 - Windows 7 Wordpad;
 - Windows Vista native Applications;
-- Spotify Windows 7 and Windows 10 version;
+- Spotify Windows 7;
 - Yandex browser (latest);
 - Zoom;
 - Several other applications;
