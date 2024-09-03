@@ -54,6 +54,7 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Intellij 2021 (Other versions may work too);
 - Adobe Photoshop CC 2018;
 - Filezilla (latest);
+- LibreOffice 24.0.x (latest);
 - Discord 0.309.0
 - Visual Studio 2012;
 - Visual Studio Code up to 1.83.1;
