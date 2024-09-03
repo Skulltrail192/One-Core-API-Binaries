@@ -91,6 +91,10 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Node 10.24;
 - Telegram Desktop;
 - Winrar 7.0 Beta 4 (latest);
+- Postman;
+- Insominia;
+- Eclise IDE;
+- Dbeaver;
 - Directx 9EX, 10 and 11 games: 
   - Need for Speed Most Wanted 2012;
   - Need for Speed The Run;
