@@ -129,60 +129,60 @@ For help to reproduce issue, is recommend **always** follow this template:
 Some screenshots of Applicaions running on XP/Server 2003:
 
 **Chrome 122**
-![Chrome 122](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/6442a5b0-036b-48e0-a6e8-3624825d3882)
+![Chrome 122 avif](https://github.com/user-attachments/assets/8e924c47-1e1e-4b3f-8af2-ce85a1a7e531)
 
 **Edge 122**
-![Edge122](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/734954f4-2540-4657-9a2d-ce6aed809bf5)
+![Edge122 avif](https://github.com/user-attachments/assets/1304149e-0a49-4d97-afd1-db255f531ae4)
 
 **Opera 106**
-![Opera106](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/db509ccf-4e66-4e2b-ad4b-fd8512495333)
+![Opera106 avif](https://github.com/user-attachments/assets/858f49f3-fd9d-4733-bac3-c6f1bd8615ce)
 
 **Firefox 122**
-![Firefox122](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/db647daf-0960-4ace-ad2f-63469dbf3881)
+![Firefox122 avif](https://github.com/user-attachments/assets/9e2da289-8b9f-47f0-a4dd-6d612a3bcfec)
 
 **Basilisk**
-![image_2022_04_08T21_38_17_976Z](https://user-images.githubusercontent.com/5159776/178077859-079bfca4-bdb6-402e-8991-b88e7dfe387c.png)
+![image_2022_04_08T21_38_17_976Z avif](https://github.com/user-attachments/assets/1c4a8514-b1d9-4bb0-a8b8-748b9b29ed0a)
 
 **Vivaldi**
-![vivaldi](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/86d5895f-977a-414f-b0d5-0e877a658676)
+![vivaldi avif](https://github.com/user-attachments/assets/67f94258-8678-483e-bff3-c540fa70d641)
 
 **Spotify (For Windows 7)**
-![Spotify-Windows7](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/09de7c20-8670-45dc-9471-a6db9349abd0)
+![Spotify-Windows7 avif](https://github.com/user-attachments/assets/8462bad0-2b7a-4317-afac-d4e14e206185)
 
 **Visual Studio Code 1.81**
-![VisualCode](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/b21748b9-25bb-412d-95b3-2219d2efdf42)
+![VisualCode avif](https://github.com/user-attachments/assets/6d940e51-9da0-47e6-b54f-661f6f0aede7)
 
 **Microsoft Chess 3d**
-![Chess3d](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/bd1ad0c6-edde-4ff2-a6e0-074c7379fab6)
+![Chess3d avif](https://github.com/user-attachments/assets/b809078a-90fd-4893-a9f1-bbe620ea8351)
 
 **Telegram 4.14**
-![Telegram-Desktop](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/73e13167-49b8-4282-81cb-969435046dde)
+![Telegram-Desktop avif](https://github.com/user-attachments/assets/59a6ca62-5d33-4cfe-a81a-082acd085ede)
 
 **Libre Office 24 (latest)**
-![LibreOffice](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/11fd191d-270c-428d-8d41-0498e8fafb3b)
-![Writer-LibreOffice](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/e389a39b-febd-45f6-9c6f-25f64e460142)
+![LibreOffice avif](https://github.com/user-attachments/assets/23b1f25d-b50b-4f1e-a772-cfcc6356ab7a)
+![Writer-LibreOffice avif](https://github.com/user-attachments/assets/41a07593-c523-4f27-8a02-96a29f4f7bcb)
 
 **Discord 0.309**
-![Discord-Login](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/8a4c12b5-19fc-454d-b02a-a1db807d3900)
-![Discord](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/eb673541-4e66-4c76-867e-346edbaaa0af)
+![Discord-Login avif](https://github.com/user-attachments/assets/eeabd262-0ac4-4343-8a8a-3de485b3a324)
+![Discord avif](https://github.com/user-attachments/assets/c0c31aa6-db58-44fe-bc93-6a9de9a44ba0)
 
 **Telegram Desktop**
-![Telegram-Desktop](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/d23b9add-629d-45a3-a8e1-c331271bc0d3)
+![Telegram-Desktop avif](https://github.com/user-attachments/assets/59a6ca62-5d33-4cfe-a81a-082acd085ede)
 
 **Zoom meeting**
-![Zoom](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/d002cf1b-c5f4-4c0c-b629-00e031a56765)
+![Zoom meeting avif](https://github.com/user-attachments/assets/792b6ced-ff3f-4317-b8b0-ad8a46c3d076)
 
 **Java 11**
-![Capturar](https://user-images.githubusercontent.com/5159776/178078132-da504607-a1ca-4f8d-ae25-6a7eb367bdaa.PNG)
+![Capturar avif](https://github.com/user-attachments/assets/ce3e549d-127f-4628-a804-c0fc5af31885)
 
 **Avast and Chromium 68**
-![Avast](https://user-images.githubusercontent.com/5159776/178078208-c13b3448-ee6a-4c56-9d94-d0c62d51949e.PNG)
+![Avast avif](https://github.com/user-attachments/assets/b5c7f1e4-2aef-4204-b5f4-4b18d16c8fb2)
 
 **Windows 7 Sticky Notes**
-![StickyNotes](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/669ba3e4-b831-4a96-ad40-d87e3e9531e2)
+![StickyNotes avif](https://github.com/user-attachments/assets/bea5c7bc-3515-4913-9b7d-9a2b117b6822)
 
 **Windows 7 Paint**
-![Paint](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/81728a44-c9e7-41e8-b68b-8ea7b119ebba)
+![Paint avif](https://github.com/user-attachments/assets/f1f9f45b-ba54-4b03-92d3-7bda8d69ceeb)
 
 **Windows 7 Wordpad**
-![Wordpad](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/9dac02c7-7139-47fe-8732-ccd9ef91090b)
+![Wordpad avif](https://github.com/user-attachments/assets/c364d244-4101-4312-8b24-8292ca84f706)
