@@ -9,7 +9,10 @@
 **官方Discord服务器**: https://discord.gg/eRcGuFtn6p  
 
 **注意**：  
-- 可能不支持Windows XP的非官方SP4以及Integral Edition!
+- 该软件使用各个系统中的修改文件，包含仍处于测试或实验阶段的其他文件，并且只有一名开发人员。换句话说，不可能预测所有可能类型的计算机或虚拟机上的所有可能场景。 XP/2003和Vista之间，新的API、新技术以及对现有API的修改都有最大的飞跃，因此NT5很难达到与NT6相同水平的兼容性。保持冷静，谨慎，在说这个软件不好或“垃圾”之前，请尽快报告问题中的缺陷，我们将对其进行分析，并尝试纠正问题。帮助我，抱怨或诽谤该软件对任何人都没有任何好处。
+
+**实验性One-Core-API版本**:
+https://github.com/shorthorn-project/One-Core-API-Binaries-Canary
 
 **语言支持**：  
 几乎所有Windows的语言：葡萄牙语-巴西（我的语言），葡萄牙语（葡萄牙），土耳其语，中文（繁体和简体），法语，意大利语，匈牙利语，乌克兰语（部分支持），西班牙语，波兰语，俄语和韩语；
@@ -54,41 +57,52 @@
 ![Sysprep](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/615ada04-a036-43c4-ac54-824cade0b5c2)
 
 **One-Core-API允许您运行：**  
-- JetBrains WebStorm 2018；
-- JetBrains Intellij 2018（其他版本也可能可用)；
-- JetBrains WebStorm 2023.x.x（目前仅适用于Windows XP x64）
-- JetBrains IntelliJ 2023.x.x （目前仅适用于Windows XP x64）
+- JetBrains Applications until 2021.3;
+- JetBrains WebStorm 2021;
+- Intellij 2021 (Other versions may work too);
 - Adobe Photoshop CC 2018;
-- Filezilla（最新版本）；
-- Visual Studio Code 1.83.1；
-- Chrome版本到122以上！；
-- Opera版本最高到105；
-- Firefox版本最高116（存在一些问题，需要解决方案)；
-- Microsoft Edge版本115以上；
-- Brave版本117以上；
-- Yandex最新版本；
-- Thorium浏览器版本109以上；
-- Supermium版本117以上；
-- Seamonkey版本2.53.10以上；
-- Thunderbird版本116x以上；
-- 傲游浏览器版本7.1.6以上；
-- Vivaldi最新版本；
-- JDK 1.8（目前仅适用于Windows XP x64)；
-- Java Alternative JDK或OpenJDK直到版本21（其他版本可能也有效）。您可以从以下网址下载：https://bell-sw.com/pages/downloads/#/java-11-lts；
-- Epic Browser 94；
-- Python 3.6；
-- .Net Framework最高到4.8；
-- Geekbench 4.2；
-- Performance Test；
-- Adobe Reader DC（2017年版）；
-- Windows 7游戏；
-- Vista原生应用程序；
-- Spotify在Windows XP/Vista结束支持后，版本1.0.60；
-- Yandex浏览器（最新版本）；
-- Zoom；
-- 其他应用程序；
-- Node 10.24；
-- Winrar 6.24（最新版本）；
+- Filezilla (latest);
+- LibreOffice 24.0.x (最新);
+- Discord 0.309.0
+- Visual Studio 2012;
+- Visual Studio Code最新到1.83.1;
+- Codium最新到1.89.x;
+- Chrome最新到version 129;
+- Opera最新到version 106;
+- Firefox最新到130 beta (with some bugs);
+- Microsoft Edge最新到128;
+- Brave最新到1.x (Chromium 129);
+- Yandex Browser最新版本;
+- Thorium browser最新到109;
+- Supermium最新到124;
+- Seamonkey最新到2.53.10;
+- Thunderbird最新到121;
+- 傲游浏览器最新到7.1.6;
+- Vivaldi最新版本;
+- JDK 1.8 (目前仅限于Windows XP x64);
+- Java 替代 JDK 或 OpenJDK 直到版本 21（也许其他版本也可以）。您可以从下载: https://bell-sw.com/pages/downloads/#/java-11-lts;
+- Epic Browser 120;
+- Python 3.6;
+- .Net Framework最新到4.8;
+- Geekbench 4.2;
+- Performance Test;
+- Adobe Reader DC (2018);
+- Foxit PDF Reader (2023);
+- Windows 7游戏;
+- Windows 7画画;
+- Windows 7写字板;
+- Windows Vista应用程序;
+- Spotify Windows 7;
+- Yandex browser (最新);
+- Zoom;
+- 其他几个应用程序;
+- Node 10.24;
+- Telegram Desktop;
+- Winrar 7.0 Beta 4 (最新);
+- Postman;
+- Insominia;
+- Eclise IDE;
+- Dbeaver;
 - Directx 9EX、10和11游戏：
   - 极品飞车17：最高通缉(Need for Speed Most Wanted 2012);
   - 极品飞车16：亡命天涯(Need for Speed The Run);
@@ -99,21 +113,14 @@
 - Kate 23.08.1 (目前仅适用于Windows XP x64)
 
 **已知限制：**  
-- 多个应用程序的打开/保存对话框因为使用了Vista实现的IFileDialog而无法完全工作。正在进行中的工作；
-- 运行Firefox 56+可能会遇到页面加载问题。要解决此问题，从版本55到72，您必须创建一个名为MOZ_FORCE_DISABLE_E10S的环境变量。它将是环境变量的键，值为1。对于73版本及更高版本，值将是版本号，例如73.0.0（请检查版本号）；
-- 对话框或窗口中的某些地方仅保留英文。国际化工作正在进行中；
-- 新应用程序安装程序可能不起作用，例如Chrome、Maxthon、Discord、TeamViewer等崩溃并且应用程序未安装。需要使用从其他操作系统复制的预安装版本；
-- 3.0.4版本已修复 ~~一些安装程序如VS Code和Skype在创建快捷方式阶段会生成“类不受支持”的错误；~~
-- 3.0.3/3.0.4版本已修复 ~~版本已修复Chrome随机稳定性问题和崩溃。当前不支持扩展。下载可能会崩溃应用程序或出现网络错误，具体取决于版本；~~
-- Firefox 55-78存在一些限制；
-- Firefox 54 32位版本在Windows XP x64上无法运行。Chrome 61+也不起作用；
-- 无法将这些包集成到Windows Iso中，因为使用了一个称为“SFXCAB Substitute”的工具，而不是标准的Microsoft版本；
-- 标准的.NET Framework安装程序从4.6开始目前不受支持。您需要像这里做的一样重新打包版本：https://github.com/abbodi1406/dotNetFx4xW7  
-  也可以在此处找到其他版本：https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251  
-  也有其他版本，请在论坛主题中搜索；
-- Palemoon版本27-31无法下载任何内容。下载不起作用；
-- Opera 39-46可能需要遵循以下参数才能启动：--disable-gpu（以防止黑屏）和--single-process（以防止永远加载首页）；
-- 使用Dwrite的Qt5应用程序在启动时崩溃。存在一些问题，例如删除dwrite后出现的黑屏（应用程序可以启动并且可以使用，但是会有黑屏等）。
+- 运行 Firefox 56+ 您可能会遇到页面加载问题。要解决此问题，从版本 55 到 72，您必须创建一个名为 MOZ_FORCE_DISABLE_E10S 的环境变量。它将作为用户环境变量的键，值为1。对于73以上的版本，该值为版本号，例如73.0.0（检查版本号）。
+- 对话框或窗口中的某些地方仅保留英文。国际化进程正在进行中。已安装的 mui 包的一些问题；
+- 新的应用程序安装程序可能无法工作，例如 Chrome、傲游浏览器、Discord、Team Viewer等崩溃且应用程序未安装。需要 
+使用从其他操作系统复制的预安装版本；
+- 该软件包无法使用nlite集成到Windows Iso，因为使用名为“SFXCAB Substitute”的工具，而不是标准Microsoft版本；
+- 目前不支持从4.6开始的标准.Net Framework安装程序。您需要一个重新打包的版本，如下所示：https://github.com/abbodi1406/dotNetFx4xW7。可用如下：https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251。其他版本也可用，搜索论坛主题；
+- 新版本的palemoon可能面临Manifest的错误问题。
+- Opera 39-50可能需要以下参数才能启动：--disable-gpu（防止黑屏）和 --single-process（以防止永远加载第一页）；
 
 **问题报告**  
 要帮助重现问题，强烈建议**始终**遵循此模板：
@@ -123,8 +130,6 @@
   例如：Vmware 10、VirtualBox 6.1.0或Core 2 Duo 8400、2Gb DDR2、IDE/SATA硬盘；
 - Windows版本和配置
   例如：已安装Windows XP Service Pack 3与POSReady 2009更新，并带有此程序列表：Adobe、Office等；
-    
-（如果需要对特定部分进行翻译或有其他问题，请告诉我！）  
 
 XP/Server 2003:上运行的应用程序的一些屏幕截图
 **Chrome 122**
@@ -158,7 +163,7 @@ XP/Server 2003:上运行的应用程序的一些屏幕截图
 ![Chess3d avif](https://github.com/user-attachments/assets/4b8770be-7a28-4c13-9b40-dd7ab779063d)
 
 **Telegram Desktop 4.14**
-![Telegram-Desktop](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/73e13167-49b8-4282-81cb-969435046dde)
+![Telegram-Desktop avif](https://github.com/user-attachments/assets/a9203e1a-147d-4160-a5bd-4c42337ec7c2)
 
 **Libre Office 24 (latest)**
 ![LibreOffice avif](https://github.com/user-attachments/assets/f318b833-7362-47d7-94db-f34f33c3ff29)
