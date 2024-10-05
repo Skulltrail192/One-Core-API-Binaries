@@ -129,60 +129,60 @@ For help to reproduce issue, is recommend **always** follow this template:
 Some screenshots of Applicaions running on XP/Server 2003:
 
 **Chrome 122**
-![Chrome 122 avif](https://github.com/user-attachments/assets/af3f8957-46f4-44d9-b220-4b99b325a62c)
+![Chrome 122 avif](https://github.com/user-attachments/assets/8e924c47-1e1e-4b3f-8af2-ce85a1a7e531)
 
 **Edge 122**
-![Edge122 avif](https://github.com/user-attachments/assets/5fe1f161-f280-43f3-b4a1-42a31de7724f)
+![Edge122 avif](https://github.com/user-attachments/assets/1304149e-0a49-4d97-afd1-db255f531ae4)
 
 **Opera 106**
-![Opera106 avif](https://github.com/user-attachments/assets/4bf39b47-5fff-47fa-a1c7-8ac3d699db90)
+![Opera106 avif](https://github.com/user-attachments/assets/858f49f3-fd9d-4733-bac3-c6f1bd8615ce)
 
 **Firefox 122**
-![Firefox122 avif](https://github.com/user-attachments/assets/75fbd338-450e-4750-8d0b-2ae60af4137f)
+![Firefox122 avif](https://github.com/user-attachments/assets/9e2da289-8b9f-47f0-a4dd-6d612a3bcfec)
 
 **Basilisk**
-![image_2022_04_08T21_38_17_976Z avif](https://github.com/user-attachments/assets/af02d241-8261-4ae4-85f2-a66b5e640508)
+![image_2022_04_08T21_38_17_976Z avif](https://github.com/user-attachments/assets/1c4a8514-b1d9-4bb0-a8b8-748b9b29ed0a)
 
 **Vivaldi**
 ![vivaldi avif](https://github.com/user-attachments/assets/67f94258-8678-483e-bff3-c540fa70d641)
 
 **Spotify (For Windows 7)**
-![Spotify-Windows7 avif](https://github.com/user-attachments/assets/9ad0f15c-2e64-49dd-9aaf-2e60ad7aaefb)
+![Spotify-Windows7 avif](https://github.com/user-attachments/assets/8462bad0-2b7a-4317-afac-d4e14e206185)
 
 **Visual Studio Code 1.81**
-![VisualCode avif](https://github.com/user-attachments/assets/de358b56-f736-4f61-b1d0-6b0d25002ff8)
+![VisualCode avif](https://github.com/user-attachments/assets/6d940e51-9da0-47e6-b54f-661f6f0aede7)
 
 **Microsoft Chess 3d**
-![Chess3d avif](https://github.com/user-attachments/assets/4b8770be-7a28-4c13-9b40-dd7ab779063d)
+![Chess3d avif](https://github.com/user-attachments/assets/b809078a-90fd-4893-a9f1-bbe620ea8351)
 
 **Telegram 4.14**
-![Telegram-Desktop avif](https://github.com/user-attachments/assets/a9203e1a-147d-4160-a5bd-4c42337ec7c2)
+![Telegram-Desktop avif](https://github.com/user-attachments/assets/59a6ca62-5d33-4cfe-a81a-082acd085ede)
 
 **Libre Office 24 (latest)**
-![LibreOffice avif](https://github.com/user-attachments/assets/f318b833-7362-47d7-94db-f34f33c3ff29)
-![Writer-LibreOffice avif](https://github.com/user-attachments/assets/2af88351-eaa2-4b46-895c-b5073141a386)
+![LibreOffice avif](https://github.com/user-attachments/assets/23b1f25d-b50b-4f1e-a772-cfcc6356ab7a)
+![Writer-LibreOffice avif](https://github.com/user-attachments/assets/41a07593-c523-4f27-8a02-96a29f4f7bcb)
 
 **Discord 0.309**
-![Discord-Login avif](https://github.com/user-attachments/assets/c8f6b4ff-93b8-4b5a-a7db-e4332a2289c2)
-![Discord avif](https://github.com/user-attachments/assets/bcb4288c-5c85-4e95-a3ca-ad414136bd2f)
+![Discord-Login avif](https://github.com/user-attachments/assets/eeabd262-0ac4-4343-8a8a-3de485b3a324)
+![Discord avif](https://github.com/user-attachments/assets/c0c31aa6-db58-44fe-bc93-6a9de9a44ba0)
 
 **Telegram Desktop**
-![Telegram-Desktop avif](https://github.com/user-attachments/assets/a9203e1a-147d-4160-a5bd-4c42337ec7c2)
+![Telegram-Desktop avif](https://github.com/user-attachments/assets/59a6ca62-5d33-4cfe-a81a-082acd085ede)
 
 **Zoom meeting**
-![Zoom meeting avif](https://github.com/user-attachments/assets/dac5c8be-ca16-4e47-ac4a-b736f66d57aa)
+![Zoom meeting avif](https://github.com/user-attachments/assets/792b6ced-ff3f-4317-b8b0-ad8a46c3d076)
 
 **Java 11**
-![Capturar avif](https://github.com/user-attachments/assets/b12fd34f-9ecf-4506-98a8-bf9fd572ca8b)
+![Capturar avif](https://github.com/user-attachments/assets/ce3e549d-127f-4628-a804-c0fc5af31885)
 
 **Avast and Chromium 68**
-![Avast avif](https://github.com/user-attachments/assets/70aac117-0159-4c73-9d7d-cc65ee8b6265)
+![Avast avif](https://github.com/user-attachments/assets/b5c7f1e4-2aef-4204-b5f4-4b18d16c8fb2)
 
 **Windows 7 Sticky Notes**
-![StickyNotes avif](https://github.com/user-attachments/assets/70566c6e-41c4-49a5-a7d8-e54a03b3e0ad)
+![StickyNotes avif](https://github.com/user-attachments/assets/bea5c7bc-3515-4913-9b7d-9a2b117b6822)
 
 **Windows 7 Paint**
-![Paint avif](https://github.com/user-attachments/assets/ae2a13e1-9b6c-481e-81d0-2caf4a5194c5)
+![Paint avif](https://github.com/user-attachments/assets/f1f9f45b-ba54-4b03-92d3-7bda8d69ceeb)
 
 **Windows 7 Wordpad**
-![Wordpad avif](https://github.com/user-attachments/assets/1eb8246f-0b29-4a6b-b2b3-fd8e33e4cd4a)
+![Wordpad avif](https://github.com/user-attachments/assets/c364d244-4101-4312-8b24-8292ca84f706)
