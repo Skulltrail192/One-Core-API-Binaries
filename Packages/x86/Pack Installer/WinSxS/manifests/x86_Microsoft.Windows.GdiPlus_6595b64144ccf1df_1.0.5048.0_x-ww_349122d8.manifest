@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+	<assemblyIdentity name="Microsoft.Windows.GdiPlus" version="1.0.5048.0" processorArchitecture="x86" publicKeyToken="6595b64144ccf1df" type="win32"/>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-Kernel32" version="6.0.5048.0" processorArchitecture="x86" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-UserOS" version="6.0.5048.0" processorArchitecture="x86" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-COM-Base-QFE" version="6.0.5048.0" processorArchitecture="x86" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-Advapi32" version="6.0.5048.0" processorArchitecture="x86" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<file hash="c62f993be17646ed23895955799841c0938d6c7a" hashalg="SHA1" name="GdiPlus.dll" xmlns:cmiv2="urn:schemas-microsoft-com:asm.v3" cmiv2:sourceName="" cmiv2:importPath="$(build.nttree)\asms\10\msft\windows\gdiplus\"/>
+	<memberships xmlns="urn:schemas-microsoft-com:asm.v3">
+		<categoryMembership>
+			<id name="Microsoft.Windows.Software.System.Multimedia_and_Graphics.Infrastructure" version="6.0.5048.0" processorArchitecture="x86" language="neutral" buildType="release" publicKeyToken="1122334455667788"/>
+		</categoryMembership>
+		<categoryMembership>
+			<id name="Microsoft.Windows.Fusion_Components_All" version="6.0.5048.0" processorArchitecture="x86" language="neutral" buildType="release" publicKeyToken="1122334455667788"/>
+		</categoryMembership>
+	</memberships>
+</assembly>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+	<assemblyIdentity name="Microsoft.Windows.WinHTTP" version="5.1.5048.0" processorArchitecture="amd64" publicKeyToken="6595b64144ccf1df" type="win32"/>
+	<comInterfaceExternalProxyStub iid="{016FE2EC-B2C8-45F8-B23B-39E53A75396B}" name="Oleaut32 PSOAInterface" tlbid="{662901FC-6951-4854-9EB2-D9A2570F2B2E}" proxyStubClsid32="{00020424-0000-0000-C000-000000000046}"/>
+	<comInterfaceExternalProxyStub iid="{F97F4E15-B787-4212-80D1-D380CBBF982E}" name="Oleaut32 PSOAInterface" tlbid="{662901FC-6951-4854-9EB2-D9A2570F2B2E}" proxyStubClsid32="{00020424-0000-0000-C000-000000000046}"/>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="no">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-CoreOS" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" optional="yes" discoverable="no">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-Winsock-Legacy" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="no">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-Network-basic" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="no">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-DHCP-Client" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="no">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-ImageAnalysis" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="no">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-Scripting" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="no">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-Security-Digest" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="no">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-mlang" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-Kernel32" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-shlwapi" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-Advapi32" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-UserOS" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-RPC-Local" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="no" resourceType="manifestResources">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft.Windows.WinHTTP.ManifestResources" version="6.0.5048.0" processorArchitecture="amd64" language="*" buildType="release" publicKeyToken="365143bb27e7ac8b"/>
+		</dependentAssembly>
+	</dependency>
+	<file hash="c8997ba34f1659d9290dd1f43f4795b00e494c99" hashalg="SHA1" name="winhttp.dll" xmlns:cmiv2="urn:schemas-microsoft-com:asm.v3" cmiv2:sourceName="" cmiv2:importPath="$(build.nttree)\asms\51\msft\windows\winhttp\">
+		<comClass clsid="{2087C2F4-2CEF-4953-A8AB-66779B670495}" threadingModel="Apartment" progid="WinHttp.WinHttpRequest.5.1" tlbid="{662901FC-6951-4854-9EB2-D9A2570F2B2E}" description="WinHttpRequest component"/>
+		<typelib tlbid="{662901FC-6951-4854-9EB2-D9A2570F2B2E}" version="5.1" helpdir="" resourceid="1"/>
+	</file>
+	<memberships xmlns="urn:schemas-microsoft-com:asm.v3">
+		<categoryMembership>
+			<id name="Microsoft.Windows.Fusion_Components_All" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="1122334455667788"/>
+		</categoryMembership>
+	</memberships>
+	<configuration xmlns="urn:schemas-microsoft-com:asm.v3" xmlns:auto-ns1="urn:schemas-microsoft-com:asm.v1" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:asmv2="urn:schemas-microsoft-com:asm.v3" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+		<configurationSchema>
+			<!--
+          XSD Schema. Defines schema for application settings. Defines both types and instances of settings.
+          -->
+			<xsd:schema targetNamespace="Microsoft.Windows.WinHTTP" xmlns:auto-ns3="Microsoft.Windows.WinHTTP">
+				<!--
+             XSD simple types.
+             -->
+				<!--
+                XSD Schema Elements. These are the top level settings defined by the application.
+                -->
+				<xsd:element name="WinHttpSettings" type="xsd:hexBinary" wcm:legacyType="REG_BINARY" wcm:handler="regkey('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\Connections')" wcm:default="1800000000000000010000000000000000000000" wcm:scope="allUsers" wcm:subScope="machineSpecific" wcm:displayName="$(resourceString.WinHttpSettingsDisplayName)" wcm:description="$(resourceString.WinHttpSettingsDescription)"/>
+				<xsd:element name="LoginServerRealm" type="xsd:string" wcm:legacyType="REG_SZ" wcm:handler="regkey('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\Passport Test\LoginServerRealm')" wcm:legacyInstallAction="noInstall" wcm:scope="allUsers" wcm:subScope="machineSpecific" wcm:displayName="$(resourceString.LoginServerRealmDisplayName)" wcm:description="$(resourceString.LoginServerRealmDescription)"/>
+				<xsd:element name="LoginServerUrl" type="xsd:string" wcm:legacyType="REG_SZ" wcm:handler="regkey('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\Passport Test\LoginServerUrl')" wcm:legacyInstallAction="noInstall" wcm:scope="allUsers" wcm:subScope="machineSpecific" wcm:displayName="$(resourceString.LoginServerUrlDisplayName)" wcm:description="$(resourceString.LoginServerUrlDescription)"/>
+				<xsd:element name="ConfigVersion" type="xsd:unsignedInt" wcm:legacyType="REG_DWORD" wcm:handler="regkey('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\Passport Test\ConfigVersion')" wcm:default="0" wcm:legacyInstallAction="noInstall" wcm:scope="allUsers" wcm:subScope="machineSpecific" wcm:displayName="$(resourceString.ConfigVersionDisplayName)" wcm:description="$(resourceString.ConfigVersionDescription)"/>
+				<xsd:element name="NexusObj" type="xsd:string" wcm:legacyType="REG_SZ" wcm:handler="regkey('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\WinHttp\Passport Test\NexusObj')" wcm:legacyInstallAction="noInstall" wcm:scope="allUsers" wcm:subScope="machineSpecific" wcm:displayName="$(resourceString.NexusObjDisplayName)" wcm:description="$(resourceString.NexusObjDescription)"/>
+				<xsd:element name="NexusHost" type="xsd:string" wcm:legacyType="REG_SZ" wcm:handler="regkey('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\WinHttp\Passport Test\NexusHost')" wcm:legacyInstallAction="noInstall" wcm:scope="allUsers" wcm:subScope="machineSpecific" wcm:displayName="$(resourceString.NexusHostDisplayName)" wcm:description="$(resourceString.NexusHostDescription)"/>
+			</xsd:schema>
+		</configurationSchema>
+		<!--
+        WCM Metadata. This section contains per instance defaults, and other WCM specific data which can not be expressed in the XSD schema section.
+        -->
+		<metadata/>
+	</configuration>
+</assembly>

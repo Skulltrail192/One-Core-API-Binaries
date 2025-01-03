@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+	<noInheritable/>
+	<assemblyIdentity name="Microsoft.Windows.Common-Controls" version="6.0.5048.0" processorArchitecture="amd64" publicKeyToken="6595b64144ccf1df" type="win32"/>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-Kernel32" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-Ntdll" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-Advapi32" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-UserOS" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-shlwapi" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-shell32" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-uxtheme" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-IMM32" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-COM-Base-QFE" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-OleAccessibiltyCore" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-OLE-Automation" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-Audio-MMECore" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<dependency xmlns="urn:schemas-microsoft-com:asm.v3" discoverable="yes">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft-Windows-DUser" version="6.0.5048.0" processorArchitecture="amd64" language="*" buildType="release" publicKeyToken="365143bb27e7ac8b" versionScope="nonSxS"/>
+		</dependentAssembly>
+	</dependency>
+	<file hash="4f02ff771050b8657e289d75f19163fe2ab02600" hashalg="SHA1" name="comctl32.dll" xmlns:cmiv2="urn:schemas-microsoft-com:asm.v3" cmiv2:sourceName="" cmiv2:importPath="$(build.nttree)\asms\60\msft\windows\common\controls\">
+		<windowClass versioned="yes">ToolbarWindow32</windowClass>
+		<windowClass versioned="yes">ComboBoxEx32</windowClass>
+		<windowClass versioned="yes">msctls_trackbar32</windowClass>
+		<windowClass versioned="yes">msctls_updown32</windowClass>
+		<windowClass versioned="yes">msctls_progress32</windowClass>
+		<windowClass versioned="yes">msctls_hotkey32</windowClass>
+		<windowClass versioned="yes">msctls_statusbar32</windowClass>
+		<windowClass versioned="yes">SysHeader32</windowClass>
+		<windowClass versioned="yes">SysListView32</windowClass>
+		<windowClass versioned="yes">SysTreeView32</windowClass>
+		<windowClass versioned="yes">SysTabControl32</windowClass>
+		<windowClass versioned="yes">SysIPAddress32</windowClass>
+		<windowClass versioned="yes">SysPager</windowClass>
+		<windowClass versioned="yes">NativeFontCtl</windowClass>
+		<windowClass versioned="yes">Button</windowClass>
+		<windowClass versioned="yes">Static</windowClass>
+		<windowClass versioned="yes">Listbox</windowClass>
+		<windowClass versioned="yes">ScrollBar</windowClass>
+		<windowClass versioned="yes">SysLink</windowClass>
+		<windowClass versioned="yes">tooltips_class32</windowClass>
+		<windowClass versioned="yes">ButtonListBox</windowClass>
+		<windowClass versioned="yes">SysAnimate32</windowClass>
+		<windowClass versioned="yes">SysMonthCal32</windowClass>
+		<windowClass versioned="yes">SysDateTimePick32</windowClass>
+		<windowClass versioned="yes">ReBarWindow32</windowClass>
+		<windowClass versioned="yes">Edit</windowClass>
+		<windowClass versioned="yes">Combobox</windowClass>
+		<windowClass versioned="yes">ComboLBox</windowClass>
+	</file>
+	<memberships xmlns="urn:schemas-microsoft-com:asm.v3">
+		<categoryMembership>
+			<id name="Microsoft.Windows.Fusion_Components_All" version="6.0.5048.0" processorArchitecture="amd64" language="neutral" buildType="release" publicKeyToken="1122334455667788"/>
+		</categoryMembership>
+	</memberships>
+</assembly>

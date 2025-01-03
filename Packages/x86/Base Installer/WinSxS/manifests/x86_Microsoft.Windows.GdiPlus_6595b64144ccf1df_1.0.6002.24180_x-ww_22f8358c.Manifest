@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-    <assemblyIdentity type="win32" name="Microsoft.Windows.GdiPlus" version="1.0.6002.24180" processorArchitecture="x86" publicKeyToken="6595b64144ccf1df"/>
-    <file name="GdiPlus.dll" hash="e588c3d071247b25cbae8027a4d2ccaa5869daf7" hashalg="SHA1"/>
-</assembly>
