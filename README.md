@@ -15,11 +15,8 @@ This is software that uses modified files from the respective systems, contains 
 **Experimental One-Core-API versions**:
 https://github.com/shorthorn-project/One-Core-API-Binaries-Canary
 
-**NOTE**:
--Windows XP Unofficial SP4 and maybe Integral Edition are not supported!
-
 **Language Support**
-Language support for almost Windows parts for: Portuguese-Brazil (my language), Portuguese (Portugual), Turkish, Chinese (Traditional and Simplified), French, Italian, Hungarian, Ukranian (partially), Spanish, Polish, Russian and Korean;
+Language support for all Windows XP and Windows Server 2003 supported languages.
 
 **Folders in this repository:**
 - Documents: Project documentation, known bugs, sfxcab usage (for making installers), etc.
@@ -31,20 +28,10 @@ Language support for almost Windows parts for: Portuguese-Brazil (my language), 
 
 **The One-Core-API Binaries project consists of the following packages:**
 Warning: Always if OCA package require restart, do it. If you install all packages and restart only on the last, Windows will be corrupted.  
-- **Base**: Main package of One-Core-API and is required by all other packages, except App Compat and Driver Update, and contains all wrappers used in this project (like kernelbase and ntext);
-- **Additional Dlls**: Several new dlls introduced in later versions of Windows.
-- **D3d**: D3D runtime (Mainly DX10 and DX11, based on WineD3D);
-- **App Compat**: Application compatbility settings, backported from later versions of Windows.
-- **Driver Update**: Bring updated acpi driver what support ACPI 2.0, new drivers like Storachi (for AHCI driver controllers), NVME (for NVME M.2 driver controllers) and USBXHCI (USB 3.0); 
-- **Branding**: New branding system introduced on Windows Vista, required to D3D and Modern Setup packages;
+- **Pack Installer**: Main package of One-Core-API and is required by One-Core-API extras;
 
 **Installation order of packages:**
-- **Common order**: Base-> Additional Dlls -> Branding -> D3d -> Driver Update -> App Compat;
-
-- **Standalone packages (don't require other packages together, only if you want)**
-  - **App Compat only:** This package can be installed without any other packages; 
-  - **Driver Update Only**: This package can be installed without any other packages; 
-  - **AppCompat first**: This package can be installed without any other packages. 
+- **Common order**: just run One-Core-api-Pack.exe for your current platform: x86 or x64;
 
 **Main Features**:
 - Increase memory support for 128 GB for x86 and 2 TB for x64 by default;
@@ -52,26 +39,28 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Allow support for new hardware with new drivers controllers;
 
 **One-Core-API allows you to run:**
-- JetBrains Applications until 2021.3;
-- JetBrains WebStorm 2021;
-- Intellij 2021 (Other versions may work too);
-- Adobe Photoshop CC 2018;
+- JetBrains Applications up to latest releases (2024);
+- Android Studio up to latest;
+- NetBeans up to latest;
+- Eclipse IDE up to latest;
+- Adobe Applications (Photoshop, Illustrator, Dreamweaver, etc) until 2019;
 - Filezilla (latest);
 - LibreOffice 24.0.x (latest);
-- Discord 0.309.0
-- Visual Studio 2012;
-- Visual Studio Code up to 1.83.1;
-- Codium up to 1.89.x;
-- Chrome up to version 129;
-- Opera up to version 106;
-- Firefox up to version 130 beta (with some bugs);
-- Microsoft Edge up to version 128;
-- Brave up to version 1.x (Chromium 129);
-- Yandex Browser latest version;
-- Thorium browser up to 109;
-- Supermium up to version 124;
+- Discord 0.309.0;
+- Legocord (Discord fork) last
+- Visual Studio 2012 and Visual Studio 2013;
+- Visual Studio Code up to latest;
+- Codium up to latest;
+- Chrome up to latest;
+- Opera up to latest
+- Firefox up to latest (however, youtube only works fine until version 130);
+- Microsoft Edge up to latest;
+- Brave up to latest;
+- Yandex Browser up to latest;
+- Thorium browser up to latest;
+- Supermium up to latest;
 - Seamonkey up to version 2.53.10;
-- Thunderbird up to version 121;
+- Thunderbird up to latest;
 - Maxthon up to version 7.1.6;
 - Vivaldi up to the latest version;
 - JDK 1.8 (only Windows XP x64 for now);
@@ -96,7 +85,6 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Winrar 7.0 Beta 4 (latest);
 - Postman;
 - Insominia;
-- Eclise IDE;
 - Dbeaver;
 - Directx 9EX, 10 and 11 games: 
   - Need for Speed Most Wanted 2012;
