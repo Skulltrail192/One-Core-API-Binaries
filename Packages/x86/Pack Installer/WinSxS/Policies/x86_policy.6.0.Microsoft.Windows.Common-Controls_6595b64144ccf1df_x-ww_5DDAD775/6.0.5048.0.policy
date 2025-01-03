@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+	<assemblyIdentity name="policy.6.0.Microsoft.Windows.Common-Controls" version="6.0.5048.0" processorArchitecture="x86" publicKeyToken="6595b64144ccf1df" type="win32-policy"/>
+	<dependency xmlns:cmiv2="urn:schemas-microsoft-com:asm.v3" cmiv2:discoverable="no">
+		<dependentAssembly>
+			<assemblyIdentity name="Microsoft.Windows.Common-Controls" processorArchitecture="x86" type="win32"/>
+			<bindingRedirect oldVersion="6.0.0.0-6.0.5048.0" newVersion="6.0.5048.0"/>
+		</dependentAssembly>
+	</dependency>
+	<memberships xmlns="urn:schemas-microsoft-com:asm.v3">
+		<categoryMembership>
+			<id name="Microsoft.Windows.Fusion_Components_All" version="6.0.5048.0" processorArchitecture="x86" language="neutral" buildType="release" publicKeyToken="1122334455667788"/>
+		</categoryMembership>
+	</memberships>
+</assembly>

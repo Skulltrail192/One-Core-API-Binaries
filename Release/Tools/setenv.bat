@@ -35,6 +35,7 @@ set root=%ProjectDir%\Packages\%arch%
 set output=%ProjectDir%\Output\%arch%
 set api-set=API-SET Installer
 set base=Base Installer
+set pack=Pack Installer
 set compat=App Compat Installer
 set driver-update=Driver Installer
 set d3d=D3D Installer
@@ -44,6 +45,7 @@ set modern=Modern Setup Installer
 
 set api-set-exe=one-core-api-api-set.exe
 set base-exe=one-core-api-base.exe
+set pack-exe=one-core-api-pack.exe
 set compat-exe=one-core-api-app-compat.exe
 set driver-update-exe=one-core-api-driver-update.exe
 set d3d-exe=one-core-api-d3d.exe

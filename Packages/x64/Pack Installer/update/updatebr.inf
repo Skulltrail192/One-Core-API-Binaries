@@ -1,0 +1,18 @@
+[Version]
+Signature="$Windows NT$"
+
+[DefaultBranchesServicePacks.WinNt52]
+1=Srv2k3SP1
+2=Srv2k3SP2
+
+[SourceInfsBranches]
+Srv2k3SP1=update\update_winxp_x64_sp1.inf
+Srv2k3SP2=update\update_winxp_x64_sp2.inf
+
+[SetupFiles.Srv2k3SP2]
+"update\update_winxp_x64_sp2.inf"
+"WinSxs\asms\60\msft\windows\common\controls\comctl32.dll"
+"WinSxs\asms\60\msft\windows\common\controls\controls.cat"
+"WinSxs\asms\60\msft\windows\common\controls\controls.man"
+"WinSxs\asms\60\policy\msft\windows\common\controls\controls.cat"
+"WinSxs\asms\60\policy\msft\windows\common\controls\controls.man"
