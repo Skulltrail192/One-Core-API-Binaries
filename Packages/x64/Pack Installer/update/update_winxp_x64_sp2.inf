@@ -6502,7 +6502,7 @@
     npmshtml.dll,additionaldlls\amd64\npmshtml.dll
 	;For fix Jetbrain applications starting 2023, because the loader cannot resolve that dll on builtin JDK
     nvdaControllerClient64.dll,additionaldlls\amd64\nvdaControllerClient64.dll
-    offreg64.dll,additionaldlls\amd64\offreg64.dll
+    offreg.dll,additionaldlls\amd64\offreg.dll
     onex.dll,additionaldlls\amd64\onex.dll     
     opcservices.dll,additionaldlls\amd64\opcservices.dll     
     pidgenx.dll,additionaldlls\amd64\pidgenx.dll
@@ -6633,7 +6633,7 @@
     netutils.dll,additionaldlls\i386\wnetutils.dll
     ninput.dll,additionaldlls\i386\wninput.dll
     npmshtml.dll,additionaldlls\i386\wnpmshtml.dll
-    offreg32.dll,additionaldlls\i386\woffreg32.dll
+    offreg.dll,additionaldlls\i386\woffreg.dll
     onex.dll,additionaldlls\i386\wonex.dll     
     opcservices.dll,additionaldlls\i386\wopcservices.dll     
     pidgenx.dll,additionaldlls\i386\wpidgenx.dll
@@ -6817,7 +6817,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0C0A\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0C0A\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0C0A\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0C0A\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0C0A\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0C0A\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0C0A\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0C0A\kernel32.dll.mui
@@ -6850,7 +6850,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\040b\crypt32.dll.mui
 	dxdiag.exe.mui,mui\040b\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\040b\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\040b\dwrite.dll.mui	
+	dwrite.dll.mui,mui\040b\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\040b\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\040b\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\040b\kernel32.dll.mui
@@ -6883,7 +6883,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\040c\crypt32.dll.mui
 	dxdiag.exe.mui,mui\040c\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\040c\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\040c\dwrite.dll.mui	
+	dwrite.dll.mui,mui\040c\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\040c\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\040c\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\040c\kernel32.dll.mui
@@ -6916,7 +6916,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\040d\crypt32.dll.mui
 	dxdiag.exe.mui,mui\040d\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\040d\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\040d\dwrite.dll.mui	
+	dwrite.dll.mui,mui\040d\dwrite.dll.mui	
     ;esent.dll.mui,osfiles\%CURRENT_OS%\MUI\040d\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\040d\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\040d\kernel32.dll.mui
@@ -6949,7 +6949,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\040e\crypt32.dll.mui
 	dxdiag.exe.mui,mui\040e\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\040e\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\040e\dwrite.dll.mui	
+	dwrite.dll.mui,mui\040e\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\040e\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\040e\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\040e\kernel32.dll.mui
@@ -6977,7 +6977,7 @@
 [CopyAlways.Mui.041a.Files]
     comdlg32.dll.mui,osfiles\%CURRENT_OS%\MUI\041a\comdlg32.dll.mui
     comdlgbase.dll.mui,osfiles\%CURRENT_OS%\MUI\041a\comdlg32.dll.mui
-    dwrite.dll.dll.dll.mui,mui\041a\dwrite.dll.mui	
+    dwrite.dll.mui,mui\041a\dwrite.dll.mui	
     nusrmgr.cpl.mui,osfiles\%CURRENT_OS%\MUI\041a\nusrmgr.cpl.mui
     setupapi.dll.mui,osfiles\%CURRENT_OS%\MUI\041a\setupapi.dll.mui
     setupapibase.dll.mui,osfiles\%CURRENT_OS%\MUI\041a\setupapi.dll.mui
@@ -6997,7 +6997,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\041b\crypt32.dll.mui
 	dxdiag.exe.mui,mui\041b\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\041b\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\041b\dwrite.dll.mui	
+	dwrite.dll.mui,mui\041b\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\041b\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\041b\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\041b\kernel32.dll.mui
@@ -7030,7 +7030,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\041d\crypt32.dll.mui
 	dxdiag.exe.mui,mui\041d\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\041d\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\041d\dwrite.dll.mui	
+	dwrite.dll.mui,mui\041d\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\041d\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\041d\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\041d\kernel32.dll.mui
@@ -7058,7 +7058,7 @@
 [CopyAlways.Mui.041e.Files]
     comdlg32.dll.mui,osfiles\%CURRENT_OS%\MUI\041e\comdlg32.dll.mui
     comdlgbase.dll.mui,osfiles\%CURRENT_OS%\MUI\041e\comdlg32.dll.mui
-    dwrite.dll.dll.dll.mui,mui\041e\dwrite.dll.mui	
+    dwrite.dll.mui,mui\041e\dwrite.dll.mui	
     nusrmgr.cpl.mui,osfiles\%CURRENT_OS%\MUI\041e\nusrmgr.cpl.mui
     setupapi.dll.mui,osfiles\%CURRENT_OS%\MUI\041e\setupapi.dll.mui
     setupapibase.dll.mui,osfiles\%CURRENT_OS%\MUI\041e\setupapi.dll.mui
@@ -7078,7 +7078,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\041f\crypt32.dll.mui
 	dxdiag.exe.mui,mui\041f\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\041f\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\041f\dwrite.dll.mui	
+	dwrite.dll.mui,mui\041f\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\041f\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\041f\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\041f\kernel32.dll.mui
@@ -7111,7 +7111,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0401\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0401\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0401\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0401\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0401\dwrite.dll.mui	
     ;esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0401\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0401\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0401\kernel32.dll.mui
@@ -7139,7 +7139,7 @@
 [CopyAlways.Mui.0402.Files]
     comdlg32.dll.mui,osfiles\%CURRENT_OS%\MUI\0402\comdlg32.dll.mui
     comdlgbase.dll.mui,osfiles\%CURRENT_OS%\MUI\0402\comdlg32.dll.mui
-    dwrite.dll.dll.dll.mui,mui\0402\dwrite.dll.mui	
+    dwrite.dll.mui,mui\0402\dwrite.dll.mui	
     nusrmgr.cpl.mui,osfiles\%CURRENT_OS%\MUI\0402\nusrmgr.cpl.mui
     setupapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0402\setupapi.dll.mui
     setupapibase.dll.mui,osfiles\%CURRENT_OS%\MUI\0402\setupapi.dll.mui
@@ -7159,7 +7159,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0404\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0404\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0404\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0404\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0404\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0404\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0404\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0404\kernel32.dll.mui
@@ -7192,7 +7192,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0405\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0405\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0405\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0405\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0405\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0405\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0405\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0405\kernel32.dll.mui
@@ -7225,7 +7225,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0406\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0406\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0406\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0406\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0406\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0406\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0406\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0406\kernel32.dll.mui
@@ -7258,7 +7258,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0407\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0407\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0407\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0407\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0407\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0407\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0407\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0407\kernel32.dll.mui
@@ -7291,7 +7291,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0408\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0408\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0408\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0408\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0408\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0408\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0408\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0408\kernel32.dll.mui
@@ -7320,7 +7320,7 @@
     comdlgbase.dll.mui,osfiles\%CURRENT_OS%\MUI\0409\comdlg32.dll.mui
 	dxdiag.exe.mui,mui\0409\dxdiag.exe.mui
 	dxdiagn.dll.mui,mui\0409\dxdiagn.dll.mui
-    dwrite.dll.dll.dll.mui,mui\0409\dwrite.dll.mui
+    dwrite.dll.mui,mui\0409\dwrite.dll.mui
     setupapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0409\setupapi.dll.mui
     shlwapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0409\shlwapi.dll.mui	
 	slayerxp.dll.mui,mui\0409\slayerxp.dll.mui
@@ -7334,7 +7334,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0410\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0410\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0410\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0410\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0410\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0410\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0410\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0410\kernel32.dll.mui
@@ -7367,7 +7367,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0411\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0411\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0411\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0411\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0411\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0411\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0411\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0411\kernel32.dll.mui
@@ -7400,7 +7400,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0412\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0412\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0412\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0412\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0412\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0412\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0412\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0412\kernel32.dll.mui
@@ -7433,7 +7433,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0413\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0413\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0413\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0413\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0413\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0413\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0413\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0413\kernel32.dll.mui
@@ -7466,7 +7466,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0414\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0414\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0414\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0414\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0414\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0414\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0414\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0414\kernel32.dll.mui
@@ -7499,7 +7499,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0415\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0415\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0415\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0415\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0415\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0415\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0415\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0415\kernel32.dll.mui
@@ -7532,7 +7532,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0416\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0416\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0416\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0416\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0416\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0416\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0416\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0416\kernel32.dll.mui
@@ -7560,7 +7560,7 @@
 [CopyAlways.Mui.0418.Files]
     comdlg32.dll.mui,osfiles\%CURRENT_OS%\MUI\0418\comdlg32.dll.mui
     comdlgbase.dll.mui,osfiles\%CURRENT_OS%\MUI\0418\comdlg32.dll.mui
-    dwrite.dll.dll.dll.mui,mui\0418\dwrite.dll.mui	
+    dwrite.dll.mui,mui\0418\dwrite.dll.mui	
     nusrmgr.cpl.mui,osfiles\%CURRENT_OS%\MUI\0418\nusrmgr.cpl.mui
     setupapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0418\setupapi.dll.mui
     setupapibase.dll.mui,osfiles\%CURRENT_OS%\MUI\0418\setupapi.dll.mui
@@ -7580,7 +7580,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0419\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0419\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0419\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0419\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0419\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0419\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0419\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0419\kernel32.dll.mui
@@ -7613,7 +7613,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0424\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0424\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0424\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0424\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0424\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0424\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0424\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0424\kernel32.dll.mui
@@ -7641,7 +7641,7 @@
 [CopyAlways.Mui.0425.Files]
     comdlg32.dll.mui,osfiles\%CURRENT_OS%\MUI\0425\comdlg32.dll.mui
     comdlgbase.dll.mui,osfiles\%CURRENT_OS%\MUI\0425\comdlg32.dll.mui
-    dwrite.dll.dll.dll.mui,mui\0425\dwrite.dll.mui	
+    dwrite.dll.mui,mui\0425\dwrite.dll.mui	
     nusrmgr.cpl.mui,osfiles\%CURRENT_OS%\MUI\0425\nusrmgr.cpl.mui
     setupapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0425\setupapi.dll.mui
     setupapibase.dll.mui,osfiles\%CURRENT_OS%\MUI\0425\setupapi.dll.mui
@@ -7656,7 +7656,7 @@
 [CopyAlways.Mui.0426.Files]
     comdlg32.dll.mui,osfiles\%CURRENT_OS%\MUI\0426\comdlg32.dll.mui
     comdlgbase.dll.mui,osfiles\%CURRENT_OS%\MUI\0426\comdlg32.dll.mui
-    dwrite.dll.dll.dll.mui,mui\0426\dwrite.dll.mui	
+    dwrite.dll.mui,mui\0426\dwrite.dll.mui	
     nusrmgr.cpl.mui,osfiles\%CURRENT_OS%\MUI\0426\nusrmgr.cpl.mui
     setupapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0426\setupapi.dll.mui
     setupapibase.dll.mui,osfiles\%CURRENT_OS%\MUI\0426\setupapi.dll.mui
@@ -7671,7 +7671,7 @@
 [CopyAlways.Mui.0427.Files]
     comdlg32.dll.mui,osfiles\%CURRENT_OS%\MUI\0427\comdlg32.dll.mui
     comdlgbase.dll.mui,osfiles\%CURRENT_OS%\MUI\0427\comdlg32.dll.mui
-    dwrite.dll.dll.dll.mui,mui\0427\dwrite.dll.mui	
+    dwrite.dll.mui,mui\0427\dwrite.dll.mui	
     nusrmgr.cpl.mui,osfiles\%CURRENT_OS%\MUI\0427\nusrmgr.cpl.mui
     setupapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0427\setupapi.dll.mui
     setupapibase.dll.mui,osfiles\%CURRENT_OS%\MUI\0427\setupapi.dll.mui
@@ -7691,7 +7691,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0804\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0804\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0804\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0804\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0804\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0804\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0804\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0804\kernel32.dll.mui
@@ -7724,7 +7724,7 @@
     crypt32.dll.mui,osfiles\%CURRENT_OS%\MUI\0816\crypt32.dll.mui
 	dxdiag.exe.mui,mui\0816\dxdiag.exe.mui	
 	dxdiagn.dll.dll.dll.mui,mui\0816\dxdiagn.dll.mui	
-	dwrite.dll.dll.dll.mui,mui\0816\dwrite.dll.mui	
+	dwrite.dll.mui,mui\0816\dwrite.dll.mui	
     esent.dll.mui,osfiles\%CURRENT_OS%\MUI\0816\esent.dll.mui
     iphlpapi.dll.mui,osfiles\%CURRENT_OS%\MUI\0816\iphlpapi.dll.mui
     kernel32.dll.mui,osfiles\%CURRENT_OS%\MUI\0816\kernel32.dll.mui
