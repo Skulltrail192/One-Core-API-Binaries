@@ -76,8 +76,9 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Windows 7 Paint;
 - Windows 7 Wordpad;
 - Windows Vista native Applications;
-- Spotify Windows 7;
+- Spotify for Windows 7 and for Windows 10;
 - Yandex browser (latest);
+- Line;
 - Zoom;
 - Several other applications;
 - Node 10.24;
@@ -93,6 +94,7 @@ Warning: Always if OCA package require restart, do it. If you install all packag
   - Injustice: Gods among us;
   - Assassign Creed Black Flag;
   - Crysis 1,2, and 3 (directx 10-11 mode);
+  - GTA Trilogy
 - Kate 23.08.1 (Windows XP x64 only for now)
   
 **Known Limitations:**
