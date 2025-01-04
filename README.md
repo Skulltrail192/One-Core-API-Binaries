@@ -64,13 +64,13 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Maxthon up to version 7.1.6;
 - Vivaldi up to the latest version;
 - JDK 1.8 (only Windows XP x64 for now);
-- Java Alternative JDK or OpenJDK until version 21 (maybe others versions works). You can download from: https://bell-sw.com/pages/downloads/#/java-11-lts;
+- Java JDK and alternative JDK or OpenJDK until version 24 (maybe others versions works). You can download from: https://bell-sw.com/pages/downloads/#/java-11-lts;
 - Epic Browser 120;
 - Python 3.6;
 - .Net Framework up to 4.8;
 - Geekbench 4.2;
 - Performance Test;
-- Adobe Reader DC (2018);
+- Adobe Reader DC (2014);
 - Foxit PDF Reader (2023);
 - Windows 7 games;
 - Windows 7 Paint;
@@ -87,6 +87,7 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Postman;
 - Insominia;
 - Dbeaver;
+- TeamViewer 14;
 - Directx 9EX, 10 and 11 games: 
   - Need for Speed Most Wanted 2012;
   - Need for Speed The Run;
@@ -94,15 +95,14 @@ Warning: Always if OCA package require restart, do it. If you install all packag
   - Injustice: Gods among us;
   - Assassign Creed Black Flag;
   - Crysis 1,2, and 3 (directx 10-11 mode);
-  - GTA Trilogy
+  - GTA Trilogy;
+  - GTA V;
 - Kate 23.08.1 (Windows XP x64 only for now)
   
 **Known Limitations:**
-- Running Firefox 56+ you may face page loading problems. To resolve this, from version 55 to 72, you must create an environment variable called MOZ_FORCE_DISABLE_E10S . It will be the key of the user's environment variable, and the value will be 1. For versions from 73 onwards, the value will be the version number, that is, 73.0.0, for example (check the version number).
-- Some places in dialogs or windows keep only in english. Internacionalization is working in progress. Some issues with installed mui packs;
-- New applications installers may not work, like Chrome, Maxthon, Discord, Team viewer, etc crash and application isn't installed. Need 
-use a pre-installed version, copied from other operating system;
-- The packages cannot be integrate with nlite to Windows Iso, because use a tool called "SFXCAB Substitute", not standard Microsoft version;
+- Youtube on Firefox Starting version 131 not work. So, we recommend use version 115 or 128 ESR.
+- Some applications installers may not work, like some electron apps (MS teams), Office 2013 or GIMP 3.0 RC2 etc crash and application isn't installed. Some installers and applications require AVX support by OS, what isn't supported at no. The, use a pre-installed version, copied from other operating system;
+- The packages cannot be integrate with nlite to Windows ISO, because use a tool called "SFXCAB Substitute", not standard Microsoft version;
 - Standard .Net Framework Installers starting 4.6 ins't supported for now. You need a repacked version like did here: https://github.com/abbodi1406/dotNetFx4xW7. And avaliable like here: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251. Other versions are avaliable too, search on forum topics;
 - New versions of palemon may face side by side configuration error issue.;
 - Opera 39 - 50 may need follow parameters to start: --disable-gpu (to prevent black screen) and --single-process(to prevent eternally first page loading);
