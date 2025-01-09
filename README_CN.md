@@ -15,7 +15,7 @@
 https://github.com/shorthorn-project/One-Core-API-Binaries-Canary
 
 **语言支持**：  
-几乎所有Windows的语言：葡萄牙语-巴西（我的语言），葡萄牙语（葡萄牙），土耳其语，中文（繁体和简体），法语，意大利语，匈牙利语，乌克兰语（部分支持），西班牙语，波兰语，俄语和韩语；
+支持所有 Windows XP 和 Windows Server 2003 支持的语言。
 
 **此存储库中的文件夹:**  
 - Documents（文档）：项目文档、已知错误、sfxcab使用（用于制作安装程序）等。
@@ -27,19 +27,10 @@ https://github.com/shorthorn-project/One-Core-API-Binaries-Canary
 
 **One-Core-API二进制项目由以下包组成：**  
 警告：如果OCA包需要重新启动，请执行。如果您安装了所有包并且仅在最后一个包上重新启动，则Windows将损坏。
-- **Base（基础）**：One-Core-API的主要包，是所有其他包（除了App Compat和Driver Update）所必需的，其中包含此项目中使用的所有包装（如kernelbase和ntext）；
-- **Additional Dlls（额外的DLL）**：引入了Windows后期版本的多个新dll。
-- **D3d（D3D）**：D3D运行时（主要是基于WineD3D的DX10和DX11）；
-- **App Compat（应用程序兼容性）**：应用程序兼容性设置，从Windows后期版本向后兼容。
-- **Driver Update（驱动程序更新）**：带来更新的acpi驱动器，支持ACPI 2.0，新驱动器如Storachi（适用于AHCI驱动器控制器），NVME（适用于NVME M.2驱动器控制器）和USBXHCI（USB 3.0）；
-- **Branding（品牌）**：引入了Windows Vista上的新品牌系统，D3D和Modern Setup包都需要此包。
+- **软件包安装程序(Pack Installer)**：One-Core-API的主要包，是所有其他包（除了App Compat和Driver Update）所必需的，其中包含此项目中使用的所有包装（如kernelbase和ntext）；
 
 **包的安装顺序：**  
-- **常规顺序**：Base-> Additional Dlls -> API-SET -> Branding -> D3d -> Modern Setup -> Driver Update -> App Compat；
-- **仅Base包（不需要其他包一起安装，除非您需要）**
-  - **仅App Compat（应用程序兼容性）**：此包可以单独安装；
-  - **仅Driver Update（驱动程序更新）**：此包可以单独安装；
-  - **AppCompat first（首先安装AppCompat）**：此包可以单独安装。
+- **共同的安装顺序**：只需运行当前平台的 One-Core-api-Pack.exe 即可： x86 或 x64；
 
 **主要功能**：  
 - 默认情况下，增加对128GB（x86）和2TB（x64）内存的支持；
@@ -57,42 +48,43 @@ https://github.com/shorthorn-project/One-Core-API-Binaries-Canary
 ![Sysprep](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/615ada04-a036-43c4-ac54-824cade0b5c2)
 
 **One-Core-API允许您运行：**  
-- JetBrains Applications until 2021.3;
-- JetBrains WebStorm 2021;
-- Intellij 2021 (其他版本也可能有效);
-- Adobe Photoshop CC 2018;
+- 最新版本的 JetBrains 应用程序（2024）;
+- Android Studio 最新版本;
+- NetBeans 最新版本;
+- Eclipse IDE 最新版本;
 - Filezilla (最新);
 - LibreOffice 24.0.x (最新);
-- Discord 0.309.0
-- Visual Studio 2012;
-- Visual Studio Code最新到1.83.1;
-- Codium最新到1.89.x;
-- Chrome最新到version 129;
-- Opera最新到version 106;
-- Firefox最新到130 beta (with some bugs);
-- Microsoft Edge最新到128;
-- Brave最新到1.x (Chromium 129);
-- Yandex Browser最新版本;
-- Thorium browser最新到109;
-- Supermium最新到124;
+- Discord 0.309.0；
+- Legocord（Discord 分支）最后
+- Visual Studio 2012 和 Visual Studio 2013；
+- Visual Studio Code 最新版本；
+- Codium 至最新版本；
+- Chrome 浏览器至最新版本
+- 最新版 Opera
+- 火狐浏览器（Firefox）最新版本（不过，Youtube 在 130 版之前都能正常运行）；
+- Microsoft Edge 最新版本；
+- Brave 至最新版本；
+- Yandex 浏览器至最新版本；
+- Thorium 浏览器至最新版本；
+- Supermium 最新版本；
 - Seamonkey最新到2.53.10;
-- Thunderbird最新到121;
+- Thunderbird 最新版本;
 - 傲游浏览器最新到7.1.6;
 - Vivaldi最新版本;
 - JDK 1.8 (目前仅限于Windows XP x64);
-- Java 替代 JDK 或 OpenJDK 直到版本 21（也许其他版本也可以）。您可以从下载: https://bell-sw.com/pages/downloads/#/java-11-lts;
-- Epic Browser 120;
+- Java JDK 和 JDK 替代品或 OpenJDK，直到JDK版本 24（也许其他版本也可以）。您可以从以下网址下载: https://bell-sw.com/pages/downloads/#/java-11-lts;
+- Epic 浏览器 120;
 - Python 3.6;
 - .Net Framework最新到4.8;
 - Geekbench 4.2;
 - Performance Test;
-- Adobe Reader DC (2018);
+- Adobe Reader DC (2014);
 - Foxit PDF Reader (2023);
 - Windows 7游戏;
 - Windows 7画画;
 - Windows 7写字板;
 - Windows Vista应用程序;
-- Spotify Windows 7;
+- Spotify Windows 7和Windows 10;
 - Yandex browser (最新);
 - Zoom;
 - 其他几个应用程序;
@@ -103,6 +95,7 @@ https://github.com/shorthorn-project/One-Core-API-Binaries-Canary
 - Insominia;
 - Eclise IDE;
 - Dbeaver;
+- TeamViewer 14;
 - Directx 9EX、10和11游戏：
   - 极品飞车17：最高通缉(Need for Speed Most Wanted 2012);
   - 极品飞车16：亡命天涯(Need for Speed The Run);
@@ -110,14 +103,14 @@ https://github.com/shorthorn-project/One-Core-API-Binaries-Canary
   - 不义联盟：人间之神(njustice: Gods among us);
   - 刺客信条4：黑旗(Assassin's Creed IV Black Flag);
   - 孤岛危机1,2,和3 (directx 10-11模式);
+  - GTA 三部曲 – 最终版;
+  - GTA V;
 - Kate 23.08.1 (目前仅适用于Windows XP x64)
 
 **已知限制：**  
-- 运行 Firefox 56+ 您可能会遇到页面加载问题。要解决此问题，从版本 55 到 72，您必须创建一个名为 MOZ_FORCE_DISABLE_E10S 的环境变量。它将作为用户环境变量的键，值为1。对于73以上的版本，该值为版本号，例如73.0.0（检查版本号）。
-- 对话框或窗口中的某些地方仅保留英文。国际化进程正在进行中。已安装的 mui 包的一些问题；
-- 新的应用程序安装程序可能无法工作，例如 Chrome、傲游浏览器、Discord、Team Viewer等崩溃且应用程序未安装。需要 
-使用从其他操作系统复制的预安装版本；
-- 该软件包无法使用nlite集成到Windows Iso，因为使用名为“SFXCAB Substitute”的工具，而不是标准Microsoft版本；
+- Youtube 在火狐 131 上无法运行。因此，我们建议使用 115 或 128 ESR 版本
+- 某些应用程序的安装程序可能不起作用，如某些电子应用程序（MS teams）、Office 2013 或 GIMP 3.0 RC2 等会崩溃，应用程序无法安装。有些安装程序和应用程序需要操作系统支持 AVX，而操作系统不支持 AVX。因此，请使用从其他操作系统复制的预装版本。；
+- 这些软件包无法用 nlite 整合到 Windows ISO，因为使用的是名为 “SFXCAB Substitute ” 的工具，而不是标准的微软版本。
 - 目前不支持从4.6开始的标准.Net Framework安装程序。您需要一个重新打包的版本，如下所示：https://github.com/abbodi1406/dotNetFx4xW7。可用如下：https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251。其他版本也可用，搜索论坛主题；
 - 新版本的palemoon可能面临Manifest的错误问题。
 - Opera 39-50可能需要以下参数才能启动：--disable-gpu（防止黑屏）和 --single-process（以防止永远加载第一页）；
