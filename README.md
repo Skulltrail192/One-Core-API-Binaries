@@ -9,6 +9,15 @@ x64 SP2.
 
 **Official Discord Server**: https://discord.gg/eRcGuFtn6p
 
+**Main information and guid to report of issue and mainly, BSOD (Blue Screen of the Death)**
+   
+- PC configuration: Is VM or Real? What is the processor, ram installed. Is AHCI, IDE, NVME or SCSI?
+- Windows Configuration: What is the edition? Is a custom ISO/build? What installed the updates? What is the service pack? What are the installed programs?
+- What is the iso used? Always provide the link;
+- Steps to reproduce the BSOD. Ex: i installed OCA base, with XP Integral Edition with all options installed/seleted. Or: i installed Avast, or some other Antivirus, then i installed OCA base;
+- Please, enable the complete dump of memory and upload to some drive.
+- Take a picture of the BSOD. If restart automatically, press F8 on windows start, and select "Disable automatic restart"
+
 **WARNING**
 This is software that uses modified files from the respective systems, contains other files still in the testing or experimental phase and has only one developer. In other words, it is impossible to predict all possible scenarios on all possible types of computers or virtual machines. Between XP/2003 and Vista there was the biggest leap in new APIs, new technologies and modifications to existing APIs, so it is very difficult to have the same level of compatibility in NT5 as in NT6. Be calm, be prudent and before saying that this software is bad or "crap", report the defect in the issues and as soon as possible, it will be analyzed and I will try to correct the problem. Help me, complaining or defaming the software doesn't do anyone any good.
 
