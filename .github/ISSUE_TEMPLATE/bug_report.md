@@ -1,7 +1,7 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: "[BUG] - (BUG type) - BUG title"
+title: "[BUG] - Insert Correct title here"
 labels: ''
 assignees: Skulltrail192
 
