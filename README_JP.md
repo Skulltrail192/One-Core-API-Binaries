@@ -12,6 +12,9 @@
 **警告**
 これは、それぞれのシステムから変更されたファイルを使用し、まだテストまたは実験段階にある他のファイルを含み、開発者が一人しかいないソフトウェアです。言い換えれば、あらゆる種類のコンピューターや仮想マシンで起こりうるすべてのシナリオを予測することは不可能です。XP/2003からVistaの間に、新しいAPI、新しい技術、既存のAPIへの修正が最も飛躍的に進んだため、NT6と同じレベルの互換性をNT5で持つことは非常に困難です。落ち着いて慎重になり、このソフトウェアが悪い、または「クソ」と言う前に、問題をissuesに報告してください。できるだけ早く分析して、問題を修正するように努めます。助けてください。ソフトウェアに不満を言ったり、中傷したりしても、誰の役にも立ちません。
 
+**One-Core-APIの実験的なバージョン**：
+https://github.com/shorthorn-project/One-Core-API-Binaries-Canary
+
 **注意**:
 -Windows XP 非公式 SP4 およびおそらく Integral Edition はサポートされていません。
 
@@ -49,53 +52,59 @@ Windows のほとんどの部分で、ポルトガル語 (ブラジル) (私の�
 - 新しいドライバーコントローラーを備えた新しいハードウェアをサポートします。
   
 **One-Core-API を使用すると、次のものを実行できます。**
-- JetBrains WebStorm 2018
-- Intellij 2018 (他のバージョンも動作する可能性があります)
-- JetBrains WebStorm 2023.x.x (現時点では Windows XP x64 のみ)
-- JetBrains IntelliJ 2023.x.x (現時点では Windows XP x64 のみ)
+- JetBrains アプリケーション 2021.3 まで
+- JetBrains WebStorm 2021
+- Intellij 2021 (他のバージョンも動作する可能性があります)
 - Adob​​e Photoshop CC 2018
 - Filezilla (最新)
+- LibreOffice 24.0.x (最新)
 - Discord 0.309.0
+- Visual Studio 2012
 - Visual Studio Code 1.83.1 まで
-- Chrome バージョン 123 まで
+- Codium 1.89.x まで
+- Chrome バージョン 129 まで
 - Opera バージョン 106 まで
-- Firefox バージョン 122 まで (一部バグあり)
-- Microsoft Edge バージョン 122 まで
-- Brave バージョン 1.62.153 まで (Chromium 121)
-- Yandex Browser 最新バージョン
-- Thorium ブラウザ 109 まで
-- Supermium バージョン 117 まで
+- Firefox バージョン 130 ベータ版まで (一部バグあり)
+- Microsoft Edge バージョン 128 まで
+- Brave バージョン 1.x (Chromium 129) まで
+- Yandex ブラウザーの最新バージョン
+- Thorium ブラウザー 109 まで
+- Supermium バージョン 124 まで
 - Seamonkey バージョン 2.53.10 まで
 - Thunderbird バージョン 121 まで
 - Maxthon バージョン 7.1.6 まで
 - Vivaldi 最新バージョンまで
 - JDK 1.8 (現時点では Windows XP x64 のみ)
 - Java Alternative JDK または OpenJDK バージョン 21 まで (他のバージョンでも動作する可能性があります)。ダウンロードは次のサイトから行えます: https://bell-sw.com/pages/downloads/#/java-11-lts
--  Epic Browser 120
+- Epic Browser 120
 - Python 3.6
 - .Net Framework バージョン 4.8 まで
 - Geekbench 4.2
-- Performance Test
+- Performance Test;
 - Adob​​e Reader DC (2018)
 - Foxit PDF Reader (2023)
 - Windows 7 ゲーム
 - Windows 7 ペイント
 - Windows 7 ワードパッド
 - Windows Vista ネイティブ アプリケーション
-- Spotify Windows 7 および Windows 10 バージョン
-- Yandex ブラウザー (最新)
-- Zoom
-- その他のアプリケーション
-- Node 10.24
-- Telegram デスクトップ
-- Winrar 7.0 Beta 4 (最新)
-- Directx 9EX、10、11 ゲーム:
-- Need for Speed Most Wanted 2012
-- Need for Speed The Run
-- Street Figther V
-- Injustice: Gods among us
-- Assassign Creed Black Flag
-- Crysis 1、2、3 (directx 10-11 モード)
+- Spotify Windows 7;
+- Yandex ブラウザ (最新);
+- Zoom;
+- その他のアプリケーション;
+- Node 10.24;
+- Telegram Desktop;
+- Winrar 7.0 Beta 4 (最新);
+- Postman;
+- Insominia;
+- Eclise IDE;
+- Dbeaver;
+- Directx 9EX・10・11のゲーム:
+- Need for Speed Most Wanted 2012;
+- Need for Speed The Run;
+- Street Figther V;
+- Injustice: Gods among us;
+- Assassign Creed Black Flag;
+- Crysis 1、2、3 (directx 10-11 モード);
 - Kate 23.08.1 (現時点では Windows XP x64 のみ)
   
 **既知の制限事項:**
