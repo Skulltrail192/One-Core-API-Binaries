@@ -4,57 +4,60 @@
 [English](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md) | [日本語](README_JP.md) | [Português-Brasil](README_BR.md)
 ***
 
-This repositry contains binary releases of the One-Core-API project. These are compatible with Windows Server 2003 SP2, Windows XP SP3 and Windows XP
-x64 SP2.
+**This repositry contains binary releases of the One-Core-API project. These are compatible with Windows Server 2003 SP2, Windows XP SP3 and Windows XP
+x64 SP2.**
 
-**Official Discord Server**: https://discord.gg/eRcGuFtn6p
+<!-- **Official Discord Server**: <h2>https://discord.gg/eRcGuFtn6p</h2> -->
 
-**Main information and guid to report of issue and mainly, BSOD (Blue Screen of the Death)**
+- [Main Features](#main-features)
+  - [Before Using This Software](#before-using-this-software)
+- [Application Compatibility](#application-compatibility)
+- [Known Limitations](#known-limitations)
+- [Before submitting an issue...](#before-submitting-an-issue)
+- [Repository Structure](#repository-structure)
+- [Extra Information and Links](#extra-information-and-links)
+  - [Official Discord Server](#official-discord-server)
+- [Showcase / Proof of Concept](#showcase--proof-of-concept)
+
+
+<!-- **Main information and guid to report of issue and mainly, BSOD (Blue Screen of the Death)**
    
 - PC configuration: Is VM or Real? What is the processor, ram installed. Is AHCI, IDE, NVME or SCSI?
 - Windows Configuration: What is the edition? Is a custom ISO/build? What installed the updates? What is the service pack? What are the installed programs?
 - What is the iso used? Always provide the link;
 - Steps to reproduce the BSOD. Ex: i installed OCA base, with XP Integral Edition with all options installed/seleted. Or: i installed Avast, or some other Antivirus, then i installed OCA base;
 - Please, enable the complete dump of memory and upload to some drive.
-- Take a picture of the BSOD. If restart automatically, press F8 on windows start, and select "Disable automatic restart"
+- Take a picture of the BSOD. If restart automatically, press F8 on windows start, and select "Disable automatic restart" -->
 
-**WARNING**
-This is software that uses modified files from the respective systems, contains other files still in the testing or experimental phase and has only one developer. In other words, it is impossible to predict all possible scenarios on all possible types of computers or virtual machines. Between XP/2003 and Vista there was the biggest leap in new APIs, new technologies and modifications to existing APIs, so it is very difficult to have the same level of compatibility in NT5 as in NT6. Be calm, be prudent and before saying that this software is bad or "crap", report the defect in the issues and as soon as possible, it will be analyzed and I will try to correct the problem. Help me, complaining or defaming the software doesn't do anyone any good.
+<!-- **Folders in this repository:** -->
 
-**Experimental One-Core-API versions**:
-This repository contains the experimental version of One-Core-API with new features:
-https://github.com/shorthorn-project/One-Core-API-Binaries-Canary
-
-**Extended Features for One-Core-API based Systems**:
-https://github.com/shorthorn-project/One-Core-API-Extras
-
-**Tools for new Deployment System for  One-Core-API based Systems**:
-https://github.com/Skulltrail192/One-Core-API-Tools
-
-**Language Support**
-Language support for all Windows XP and Windows Server 2003 supported languages.
-
-**Folders in this repository:**
-- Documents: Project documentation, known bugs, sfxcab usage (for making installers), etc.
-- Packages\x86 and Packages\x64: Binary releases categorized by package. You can download and install/update the packages directly from here (i.e. by going to Packages\x86\Base installer\update and runnning update.exe).
-- Todo: To do tasks
-- Test: Some binaries and documents for testing;
-- Release: Scripts to generate a new binaries release;
-- Output: Binaries output, you can generate using scripts on Release folder;
-
-**The One-Core-API Binaries project consists of the following packages:**
+<!-- **The One-Core-API Binaries project consists of the following packages:**
 Warning: Always if OCA package require restart, do it. If you install all packages and restart only on the last, Windows will be corrupted.  
-- **Pack Installer**: Main package of One-Core-API and is required by One-Core-API extras;
+- **Pack Installer**: Main package of One-Core-API and is required by One-Core-API extras; -->
 
-**Installation order of packages:**
-- **Common order**: just run One-Core-api-Pack.exe for your current platform: x86 or x64;
+<!-- **Installation order of packages:**
+- **Common order**: just run One-Core-api-Pack.exe for your current platform: x86 or x64; -->
 
-**Main Features**:
-- Increase memory support for 128 GB for x86 and 2 TB for x64 by default;
-- Allow support for run newer programs designed for modern Windows OS;
-- Allow support for new hardware with new drivers controllers;
+## Main Features
+- **Increase memory support for 128 GB for x86 and 2 TB for x64 by default;**
+- **Allow support for run newer programs designed for modern Windows OS;**
+- **Allow support for new hardware with new drivers controllers;**
+- **Multi-language support for all Windows XP and Windows Server 2003 supported languages;**
 
-**One-Core-API allows you to run:**
+### Before Using This Software
+> This software utilizes modified files from the respective systems, and also includes files that are still in the testing or experimental phase, and <b>is developed by a single person</b>. Consequently, predicting all possible scenarios across various computer configurations or virtual machines is not feasible. 
+> 
+> <h4>The transition between Windows XP/2003 and Vista marked a significant leap in the development of new APIs, technologies, and modifications to existing APIs. This makes it challenging to achieve the same level of compatibility between NT 5.x and NT 6.x systems.</h4>
+> 
+> I kindly ask you to remain calm and cautious. 
+> Before concluding that the software is flawed or "of poor quality," <b>please report any issues you encounter through the Github Issues or [Discord server](https://discord.gg/eRcGuFtn6p)</b>.
+> 
+> Please note that I cannot guarantee that all issues will be resolved. However, I will analyze them and make every effort to correct them. 
+> 
+> Your help is valuable, and complaints or negative feedback do not contribute to the improvement of the product.
+
+
+## Application Compatibility
 - JetBrains Applications up to latest releases (2024);
 - Android Studio up to latest;
 - NetBeans up to latest;
@@ -115,7 +118,7 @@ Warning: Always if OCA package require restart, do it. If you install all packag
   - GTA V;
 - Kate 23.08.1 (Windows XP x64 only for now)
   
-**Known Limitations:**
+## Known Limitations
 - Youtube on Firefox Starting version 131 not work. So, we recommend use version 115 or 128 ESR.
 - Some applications installers may not work, like some electron apps (MS teams), Office 2013 or GIMP 3.0 RC2 etc crash and application isn't installed. Some installers and applications require AVX support by OS, what isn't supported at no. The, use a pre-installed version, copied from other operating system;
 - The packages cannot be integrate with nlite to Windows ISO, because use a tool called "SFXCAB Substitute", not standard Microsoft version;
@@ -123,15 +126,55 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - New versions of palemon may face side by side configuration error issue.;
 - Opera 39 - 50 may need follow parameters to start: --disable-gpu (to prevent black screen) and --single-process(to prevent eternally first page loading);
 
-**Issues Report**
-For help to reproduce issue, is recommend **always** follow this template:
-- Description whats happened.
-  Ex: Always get BSOD when try load Windows. Windows stuck on Boot Screen. Windows always get a Black screen, etc;
-- VM/PC config
-  Ex: Vmware 10, virtualBox 6.1.0 or Core 2 Duo 8400, 2Gb DDR2, IDE/SATA Hard Disk;
-- Windows Edition and configuration
-  Ex: Windows XP Service Pack 3 with POSReady 2009 updates installed, with this program list: Adobe, office, etc;
+## Before submitting an issue...
 
+**Before reporting an issue, I strongly recommend checking if the problem exists in [One-Core-API-Canary](https://github.com/shorthorn-project/One-Core-API-Binaries-Canary) and carefully reviewing the existing [Issues](https://github.com/Skulltrail192/One-Core-API-Binaries/issues) to see if your problem has already been reported.**
+
+**If the problem *does* exist in Canary and is not already listed in the current Issues, please provide a detailed report of your issue, including the following information:**
+
+**1. System Configuration:**
+*   **Type** (Physical Hardware/VM)
+*   **Windows OS Edition** (e.g., Windows XP Professional Service Pack 3)
+*   **Post-SP Updates:**
+    *  Were any Post-Service Pack updates installed? (Yes/No)
+       *  If yes, specify if they were installed **before** or **after** installing One-Core-API.
+*    **Installed Software:** List any relevant software that might be related to the issue (e.g., Adobe Photoshop CC 2018, Firefox 132, etc.).
+*   **Technical Specifications**:
+    *   **If Physical Hardware:**  Provide details on the processor, RAM (type, amount), hard drive type, and capacity (e.g., IDE disk, 120 GB).
+    *   **If a Virtual Machine:** Specify the virtual machine configuration details (e.g., Oracle VirtualBox 6.1.0, 2 GB RAM, 120 GB disk, AHCI mode).
+*   **Steps to reproduce the error**
+
+
+> **IMPORTANT:** If possible, please also **attach any relevant logs** to the issue. This will greatly assist in identifying a solution faster.
+
+>  It is also advisable to attach a video recording of the problem, if feasible.
+>
+> **Please note that the issue will be closed if the problem is not reproducible.**
+
+## Repository Structure
+- Documents: Project documentation, known bugs, sfxcab usage (for making installers), etc.
+- Packages\x86 and Packages\x64: Binary releases categorized by package. You can download and install/update the packages directly from here (i.e. by going to Packages\x86\Base installer\update and runnning update.exe).
+- Todo: To do tasks
+- Test: Some binaries and documents for testing;
+- Release: Scripts to generate a new binaries release;
+- Output: Binaries output, you can generate using scripts on Release folder;
+
+## Extra Information and Links
+**Extended Features for One-Core-API based Systems:**
+
+<b><a href="https://github.com/shorthorn-project/One-Core-API-Extras" style="font-size: 18px">https://github.com/shorthorn-project/One-Core-API-Extras</a></b>
+
+**Tools for new Deployment System for One-Core-API based Systems:**
+
+<b><a href="https://github.com/Skulltrail192/One-Core-API-Tools" style="font-size: 18px">https://github.com/Skulltrail192/One-Core-API-Tools</a></b>
+
+### Official Discord Server
+
+**If you want to join our Official Discord Server of One-Core-API, you can join here:**
+
+<b><a href="https://discord.gg/eRcGuFtn6p" style="font-size: 25px">https://discord.gg/eRcGuFtn6p</a></n>
+
+## Showcase / Proof of Concept
 Some screenshots of Applicaions running on XP/Server 2003:
 
 **Chrome 122**
