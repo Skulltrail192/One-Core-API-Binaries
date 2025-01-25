@@ -3,6 +3,7 @@
     <img src="Assets/banner.png" width="100%" height="auto" alt="Баннер">
   </a>
 </p>
+<h6 style="text-align: center;">Большое спасибо @pashtetusss777 за баннер</h6>
 
 ***
 **Язык:**
