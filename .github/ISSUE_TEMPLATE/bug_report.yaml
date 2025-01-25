@@ -20,6 +20,7 @@ body:
       options:
           - label: "I have checked if the issue exists in [One-Core-API-Canary](https://github.com/shorthorn-project/One-Core-API-Binaries-Canary)"
           - label: "I have checked the existing [Issues](https://github.com/Skulltrail192/One-Core-API-Binaries/issues)"
+  
   - type: checkboxes
     id: canary_status
     attributes:
@@ -29,6 +30,7 @@ body:
         - label: "The problem exists in the Canary build."
     validations:
       required: true
+
   - type: textarea
     id: problem_description
     attributes:
@@ -47,6 +49,7 @@ body:
         - Virtual Machine
     validations:
       required: true
+
   - type: textarea
     id: windows_os
     attributes:
@@ -55,6 +58,7 @@ body:
       placeholder: e.g. Windows XP Professional Service Pack 3
     validations:
        required: true
+
   - type: dropdown
     id: post_sp_updates
     attributes:
@@ -63,9 +67,10 @@ body:
       options:
         - "Yes"
         - "No"
-      default: "No"
+      default: 1
     validations:
       required: true
+
   - type: dropdown
     id: update_timing
     attributes:
@@ -74,10 +79,10 @@ body:
       options:
         - "Before"
         - "After"
-      defaultIndex: 0
+      default: 0
     validations:
       required: false
-    if: post_sp_updates == 'Yes'
+
   - type: textarea
     id: installed_software
     attributes:
@@ -86,6 +91,7 @@ body:
       placeholder: e.g. Adobe Photoshop CC 2018, Firefox 132
     validations:
       required: false
+
   - type: textarea
     id: hardware_specs
     attributes:
@@ -94,6 +100,7 @@ body:
       placeholder: "e.g. Processor: Intel Core i7, RAM: 16GB DDR4, Hard Drive: 1TB SSD, OR Virtual Machine: Oracle VirtualBox 6.1.0, 2 GB RAM, 120 GB disk, AHCI mode"
     validations:
       required: true
+
   - type: textarea
     id: steps_to_reproduce
     attributes:
@@ -102,6 +109,7 @@ body:
       placeholder: "1. Do this... \n2. Then do that... \n3. And I get this issue..."
     validations:
       required: true
+
   - type: textarea
     id: logs
     attributes:
@@ -110,6 +118,7 @@ body:
       placeholder: Attach logs here or provide a link
     validations:
         required: false
+        
   - type: textarea
     id: video_recording
     attributes:
