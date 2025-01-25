@@ -4,6 +4,8 @@
 [English](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md) | [日本語](README_JP.md)
 ***
 
+<a href="https://github.com/One-Core-API/One-Core-API/releases"><img src="Assets/banner.png" width="100%" height="auto" alt="Banner"></a>
+
 Этот репозиторий содержит бинарные версии проекта One-Core-API. Они совместимы с Windows Server 2003 SP2, Windows XP SP3 и Windows XP x64 SP2.
 
 **Официальный Discord сервер**: https://discord.gg/eRcGuFtn6p

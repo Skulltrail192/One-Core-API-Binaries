@@ -4,6 +4,8 @@
 [English](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md) | [日本語](README_JP.md) | [Português do Brasil](README_BR.md)
 ***
 
+<a href="https://github.com/One-Core-API/One-Core-API/releases"><img src="Assets/banner.png" width="100%" height="auto" alt="Banner"></a>
+
 Este repositório contém os lançamentos dos binários do projeto One-Core-API. Eles são compatíveis com o Windows Server 2003 SP2, Windows XP SP3 e Windows XP
 x64 SP2.
 

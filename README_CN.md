@@ -4,6 +4,8 @@
 [English](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md) | [日本語](README_JP.md)
 ***
 
+<a href="https://github.com/One-Core-API/One-Core-API/releases"><img src="Assets/banner.png" width="100%" height="auto" alt="Banner"></a>
+
 该存储库包含One-Core-API项目的二进制发布版本。这些版本兼容于Windows Server 2003 SP2、Windows XP SP3和Windows XP x64 SP2。
 
 <!-- **官方Discord服务器**: <h2>https://discord.gg/eRcGuFtn6p</h2> -->
@@ -15,8 +17,8 @@
 - [在提交问题之前](#在提交问题之前)
 - [仓库结构](#仓库结构)
 - [更多信息和链接](#更多信息和链接)
-  - [官方Discord服务器](#官方Discord服务器)
-- [展示/概念验证](#展示/概念验证)
+  - [官方Discord服务器](#官方discord服务器)
+- [展示/概念验证](#展示概念验证)
 
 <!-- **报告问题的主要指南，主要是 BSOD（蓝屏死机）**
 
