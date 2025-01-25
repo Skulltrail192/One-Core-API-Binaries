@@ -174,6 +174,7 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 
 ## Showcase / Proof of Concept
 Some screenshots of Applicaions running on XP/Server 2003:
+
 **Minecraft 1.21**
 ![image](https://github.com/user-attachments/assets/cfd05f13-617e-49a0-b416-67906d42840b)
 
