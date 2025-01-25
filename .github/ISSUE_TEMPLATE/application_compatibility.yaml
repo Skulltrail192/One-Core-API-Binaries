@@ -1,0 +1,90 @@
+name: Application Compatibility Report
+description: Report the compatibility of an application with One-Core-API.
+title: "[APPDB] - Application Name"
+labels: ["application-compatibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Please provide a detailed report of your application's compatibility with One-Core-API.**
+
+  - type: input
+    id: one_core_api_version
+    attributes:
+      label: One-Core-API version
+      description: Specify the version of One-Core-API you are using.
+      placeholder: e.g. 3.0.5
+    validations:
+      required: true
+
+  - type: input
+    id: windows_version
+    attributes:
+      label: Windows Version
+      description: Specify the Windows version you are using.
+      placeholder: e.g. Windows Server 2003 Enterprise 64-bit
+    validations:
+      required: true
+
+  - type: input
+    id: application_name
+    attributes:
+      label: Application Name
+      description: Specify the name of the application you tested.
+      placeholder: e.g. Spotify (for Windows 10)
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_works
+    attributes:
+      label: What works
+      description: List features or aspects of the application that function correctly with One-Core-API. Use bullet points.
+      placeholder: |
+         • XXX
+         • YYY
+         • ZZZ
+    validations:
+        required: true
+
+  - type: textarea
+    id: what_doesnt_work
+    attributes:
+      label: What doesn't work
+      description: List features or aspects of the application that do NOT function correctly with One-Core-API. Use bullet points.
+      placeholder: |
+         - XXX
+         - YYY
+         - ZZZ
+    validations:
+        required: true
+
+  - type: textarea
+    id: workarounds
+    attributes:
+      label: Workarounds
+      description:  List any workarounds you have discovered for issues in the "What doesn't work" section. Use bullet points.
+      placeholder: |
+        • XXX
+        • YYY
+        • ZZZ
+    validations:
+        required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Attach Relevant Logs (Optional)
+      description: Please attach any logs related to the problem.
+      placeholder: Attach logs here or provide a link
+    validations:
+        required: false
+
+  - type: textarea
+    id: video_recording
+    attributes:
+      label: Attach Video Recording (Optional)
+      description: Please attach a video recording of the problem if feasible.
+      placeholder: Upload video or provide a link
+    validations:
+        required: false
