@@ -181,9 +181,9 @@ Some screenshots of Applicaions running on XP/Server 2003:
 **Chrome 132**
 ![image](https://github.com/user-attachments/assets/84e83d53-ea8e-47b9-a566-e0986c91b812)
 
+**Edge 134 (Dev Preview)**
+![image](https://github.com/user-attachments/assets/f0b6a47c-dc37-45b0-beaf-c85002e37386)
 
-**Edge 122**
-![Edge122](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/734954f4-2540-4657-9a2d-ce6aed809bf5)
 
 **Opera 106**
 ![Opera106](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/db509ccf-4e66-4e2b-ad4b-fd8512495333)
