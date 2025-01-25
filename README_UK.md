@@ -67,9 +67,9 @@
 - Performance Test;
 - Adobe Reader DC (до 2024);
 - Foxit PDF Reader (2023);
-- Ігри Windows 7;
-- Paint Windows 7;
-- Wordpad Windows 7;
+- Ігри з Windows 7;
+- Paint з Windows 7;
+- Wordpad з Windows 7;
 - Нативні програми з Windows Vista;
 - Spotify для Windows 7 та для Windows 10;
 - Line;
@@ -205,8 +205,8 @@
 **Windows 7 Sticky Notes**
 ![StickyNotes](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/669ba3e4-b831-4a96-ad40-d87e3e9531e2)
 
-**Paint Windows 7**
+**Paint з Windows 7**
 ![Paint](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/81728a44-c9e7-41e8-b68b-8ea7b119ebba)
 
-**Wordpad Windows 7**
+**Wordpad з Windows 7**
 ![Wordpad](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/9dac02c7-7139-47fe-8732-ccd9ef91090b)

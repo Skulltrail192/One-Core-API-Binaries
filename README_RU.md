@@ -67,9 +67,9 @@
 - Performance Test;
 - Adobe Reader DC (до 2024);
 - Foxit PDF Reader (2023);
-- Игры Windows 7;
-- Paint Windows 7;
-- Wordpad Windows 7;
+- Игры из Windows 7;
+- Paint из  Windows 7;
+- Wordpad из Windows 7;
 - Нативные приложения из Windows Vista;
 - Spotify для Windows 7 и для Windows 10;
 - Line;
