@@ -63,7 +63,7 @@ body:
       options:
         - "Yes"
         - "No"
-      default: "No"
+      default: 0
     validations:
       required: true
   - type: dropdown
@@ -74,7 +74,7 @@ body:
       options:
         - "Before"
         - "After"
-      defaultIndex: 0
+      default: 0
     validations:
      required: false
   - type: textarea
