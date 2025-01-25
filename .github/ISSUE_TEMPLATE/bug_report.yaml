@@ -89,7 +89,7 @@ body:
     attributes:
       label: Hardware Specifications
       description: "If Physical Hardware: Processor, RAM (type, amount), hard drive type, and capacity (e.g., IDE disk, 120 GB).  If Virtual Machine: Specify the virtual machine configuration details (e.g., Oracle VirtualBox 6.1.0, 2 GB RAM, 120 GB disk, AHCI mode)."
-      placeholder: e.g. Processor: Intel Core i7, RAM: 16GB DDR4, Hard Drive: 1TB SSD, OR Virtual Machine: Oracle VirtualBox 6.1.0, 2 GB RAM, 120 GB disk, AHCI mode
+      placeholder: "e.g. Processor: Intel Core i7, RAM: 16GB DDR4, Hard Drive: 1TB SSD, OR Virtual Machine: Oracle VirtualBox 6.1.0, 2 GB RAM, 120 GB disk, AHCI mode"
     validations:
       required: true
   - type: textarea
