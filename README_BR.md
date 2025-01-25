@@ -1,4 +1,9 @@
-﻿**Bem-vindo aos binários do One-Core-API!**
+﻿<p align="center">
+  <a href="https://github.com/One-Core-API/One-Core-API/releases">
+    <img src="Assets/banner.png" width="100%" height="auto" alt="Banner">
+  </a>
+</p>
+
 ***
 **Linguagem:**    
 [English](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md) | [日本語](README_JP.md) | [Português do Brasil](README_BR.md)

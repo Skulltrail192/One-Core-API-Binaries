@@ -1,4 +1,9 @@
-**One-Core-API バイナリへようこそ!**
+<p align="center">
+  <a href="https://github.com/One-Core-API/One-Core-API/releases">
+    <img src="Assets/banner.png" width="100%" height="auto" alt="Banner">
+  </a>
+</p>
+
 ***
 **言語：**
 [English](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md) | [日本語](README_JP.md) | [Português-Brasil](README_BR.md)
