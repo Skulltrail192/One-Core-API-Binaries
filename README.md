@@ -178,8 +178,9 @@ Some screenshots of Applicaions running on XP/Server 2003:
 **Minecraft 1.21**
 ![image](https://github.com/user-attachments/assets/cfd05f13-617e-49a0-b416-67906d42840b)
 
-**Chrome 122**
-![Chrome 122](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/6442a5b0-036b-48e0-a6e8-3624825d3882)
+**Chrome 132**
+![image](https://github.com/user-attachments/assets/84e83d53-ea8e-47b9-a566-e0986c91b812)
+
 
 **Edge 122**
 ![Edge122](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/734954f4-2540-4657-9a2d-ce6aed809bf5)
