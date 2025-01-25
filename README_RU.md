@@ -1,9 +1,9 @@
-<p align="center">
+<div align="center">
   <a href="https://github.com/One-Core-API/One-Core-API/releases">
-    <img src="Assets/banner.png" width="100%" height="auto" alt="Баннер">
+    <img src="Assets/banner.png" width="100%" height="auto" alt="Banner">
   </a>
-</p>
-<h6 style="text-align: center;">Большое спасибо @pashtetusss777 за баннер</h6>
+  <h6>Большое спасибо @pashtetusss777 за баннер</h6>
+</div>
 
 ***
 **Язык:**
