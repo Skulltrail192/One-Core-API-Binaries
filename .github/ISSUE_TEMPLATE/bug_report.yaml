@@ -74,9 +74,10 @@ body:
       options:
         - "Before"
         - "After"
-      default: 0
+      defaultIndex: 0
     validations:
-     required: false
+      required: false
+    if: post_sp_updates == 'Yes'
   - type: textarea
     id: installed_software
     attributes:
