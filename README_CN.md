@@ -1,8 +1,8 @@
-<p align="center">
+<div align="center">
   <a href="https://github.com/One-Core-API/One-Core-API/releases">
     <img src="Assets/banner.png" width="100%" height="auto" alt="Banner">
-  </a>
-</p>
+  <h6>衷心感谢 @pashtetusss777 提供的横幅</h6>
+</div>
 
 ***
 **语言:**    
@@ -62,64 +62,57 @@
 
 
 ## 应用程序兼容性
-- 最新版本的 JetBrains 应用程序（2024）;
+- 最新版本的 JetBrains（2024）;
 - Android Studio 最新版本;
 - NetBeans 最新版本;
 - Eclipse IDE 最新版本;
 - Filezilla (最新);
 - LibreOffice 24.0.x (最新);
 - Discord 0.309.0；
-- Legocord（Discord 分支）最后
+- Legocord（Discord 分支）最新;
 - Visual Studio 2012 和 Visual Studio 2013；
-- Visual Studio Code 最新版本；
-- Codium 至最新版本；
-- Chrome 浏览器至最新版本
-- 最新版 Opera
-- 火狐浏览器（Firefox）最新版本（不过，Youtube 在 130 版之前都能正常运行）；
-- Microsoft Edge 最新版本；
-- Brave 至最新版本；
-- Yandex 浏览器至最新版本；
-- Thorium 浏览器至最新版本；
-- Supermium 最新版本；
+- 最新版本的 Visual Studio Code（以及 Codium 等fork）;
+- 最新版本的 Chromium 浏览器（Chrome、Opera、Edge 等）;
+- 基于 Gecko 的浏览器（Firefox、Zen 浏览器）的最新版本（不过，YouTube 只能运行到 Firefox 130 版本）;
 - Seamonkey最新到2.53.10;
 - Thunderbird 最新版本;
 - 傲游浏览器最新到7.1.6;
 - Vivaldi最新版本;
 - JDK 1.8 (目前仅限于Windows XP x64);
-- Java JDK 和 JDK 替代品或 OpenJDK，直到JDK版本 24（也许其他版本也可以）。您可以从以下网址下载: https://bell-sw.com/pages/downloads/#/java-11-lts;
+- Java JDK 和替代 JDK 或 OpenJDK，最高版本为 24（其他版本可能也适用）。您可以从以下网站下载: https://bell-sw.com/pages/downloads/#/java-11-lts;
 - Epic 浏览器 120;
-- Python 3.6;
+- Python 3.6(3.8/3.9 版本也可以使用，只是需要[修改](https://mega.nz/folder/KxExlAiC#L9rAQ5kTCtlHgZUwaxMpgw) 版本);
 - .Net Framework最新到4.8;
+- .NET 6.0
 - Geekbench 4.2;
 - Performance Test;
-- Adobe Reader DC (2014);
+- Adobe Reader DC (2024);
 - Foxit PDF Reader (2023);
 - Windows 7游戏;
 - Windows 7画画;
 - Windows 7写字板;
 - Windows Vista应用程序;
 - Spotify Windows 7和Windows 10;
-- Yandex browser (最新);
 - Zoom;
 - 其他几个应用程序;
 - Node 10.24;
 - Telegram Desktop;
-- Winrar 7.0 Beta 4 (最新);
+- Winrar 7.0 (最新);
 - Postman;
-- Insominia;
+- Insomnia;
 - Eclise IDE;
 - Dbeaver;
 - TeamViewer 14;
 - Directx 9EX、10和11游戏：
   - 极品飞车17：最高通缉(Need for Speed Most Wanted 2012);
   - 极品飞车16：亡命天涯(Need for Speed The Run);
-  - 街头霸王5(Street Figther V);
-  - 不义联盟：人间之神(njustice: Gods among us);
-  - 刺客信条4：黑旗(Assassin's Creed IV Black Flag);
+  - 街头霸王5(Street Fighter V);
+  - 不义联盟：人间之神(Injustice: Gods Among Us);
+  - 刺客信条4：黑旗(Assassin's Creed Black Flag);
   - 孤岛危机1,2,和3 (directx 10-11模式);
   - GTA 三部曲 – 最终版;
   - GTA V;
-- Kate 23.08.1 (目前仅适用于Windows XP x64)
+- Kate 23.08.1
 
 ## 已知限制
 - Youtube 在火狐 131 上无法运行。因此，我们建议使用 115 或 128 ESR 版本
