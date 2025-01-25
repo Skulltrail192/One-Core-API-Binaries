@@ -63,6 +63,7 @@ body:
       options:
         - "Yes"
         - "No"
+      default: "No"
     validations:
       required: true
   - type: dropdown
