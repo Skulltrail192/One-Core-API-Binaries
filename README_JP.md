@@ -1,11 +1,14 @@
-**One-Core-API バイナリへようこそ!**
+<p align="center">
+  <a href="https://github.com/One-Core-API/One-Core-API/releases">
+    <img src="Assets/banner.png" width="100%" height="auto" alt="Banner">
+  </a>
+</p>
+
 ***
 **言語：**
 [English](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md) | [日本語](README_JP.md) | [Português-Brasil](README_BR.md)
 ***
 ***この日本語訳は機械翻訳をベースに誤訳などをできる限り修正したものです 間違いがある可能性があります***
-
-<a href="https://github.com/One-Core-API/One-Core-API/releases"><img src="Assets/banner.png" width="100%" height="auto" alt="Banner"></a>
 
 このリポジトリには、One-Core-API プロジェクトのバイナリ リリースが含まれています。これらは、Windows Server 2003 SP2、Windows XP SP3、および Windows XP x64 SP2 と互換性があります。
 

@@ -1,10 +1,13 @@
-**Welcome to One-Core-API binaries!**
+<p align="center">
+  <a href="https://github.com/One-Core-API/One-Core-API/releases">
+    <img src="Assets/banner.png" width="100%" height="auto" alt="Banner">
+  </a>
+</p>
+
 ***
 **Language:**    
 [English](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md) | [日本語](README_JP.md) | [Português-Brasil](README_BR.md)
 ***
-
-<a href="https://github.com/One-Core-API/One-Core-API/releases"><img src="Assets/banner.png" width="100%" height="auto" alt="Banner"></a>
 
 **This repositry contains binary releases of the One-Core-API project. These are compatible with Windows Server 2003 SP2, Windows XP SP3 and Windows XP
 x64 SP2.**
@@ -60,72 +63,64 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 
 
 ## Application Compatibility
-- JetBrains Applications up to latest releases (2024);
-- Android Studio up to latest;
-- NetBeans up to latest;
-- Eclipse IDE up to latest;
-- Adobe Applications (Photoshop, Illustrator, Dreamweaver, etc) until 2019;
-- Filezilla (latest);
-- LibreOffice 24.0.x (latest);
+- JetBrains IDE up to the latest releases (2024);
+- Android Studio up to the latest version;
+- NetBeans up to the latest version;
+- Eclipse IDE up to the latest version;
+- Adobe Products (Photoshop, Illustrator, Dreamweaver, etc.) up to the 2019 version;
+- Filezilla (latest version);
+- LibreOffice 24.0.x (latest version);
 - Discord 0.309.0;
-- Legocord (Discord fork) last
+- Legocord (Discord fork) latest;
 - Visual Studio 2012 and Visual Studio 2013;
-- Visual Studio Code up to latest;
-- Codium up to latest;
-- Chrome up to latest;
-- Opera up to latest
-- Firefox up to latest (however, youtube only works fine until version 130);
-- Microsoft Edge up to latest;
-- Brave up to latest;
-- Yandex Browser up to latest;
-- Thorium browser up to latest;
-- Supermium up to latest;
+- Visual Studio Code (and forks like Codium) up to the latest version;
+- Chromium browsers (Chrome, Opera, Edge, and others) up to the latest version;
+- Gecko based (Firefox, Zen Browser) up to the latest versions (however, YouTube only works up to Firefox version 130);
 - Seamonkey up to version 2.53.10;
-- Thunderbird up to latest;
+- Thunderbird up to the latest version;
 - Maxthon up to version 7.1.6;
 - Vivaldi up to the latest version;
-- JDK 1.8 (only Windows XP x64 for now);
-- Java JDK and alternative JDK or OpenJDK until version 24 (maybe others versions works). You can download from: https://bell-sw.com/pages/downloads/#/java-11-lts;
+- JDK 1.8 (Windows XP x64 only for now);
+- Java JDK and alternative JDK or OpenJDK up to version 24 (maybe other versions work as well). You can download from: https://bell-sw.com/pages/downloads/#/java-11-lts;
 - Epic Browser 120;
-- Python 3.6;
+- Python 3.6 (3.8/3.9 may also work, only the [mod](https://mega.nz/folder/KxExlAiC#L9rAQ5kTCtlHgZUwaxMpgw) version);
 - .Net Framework up to 4.8;
+- .NET 6.0
 - Geekbench 4.2;
 - Performance Test;
-- Adobe Reader DC (2014);
+- Adobe Reader DC (up to 2024);
 - Foxit PDF Reader (2023);
 - Windows 7 games;
 - Windows 7 Paint;
 - Windows 7 Wordpad;
-- Windows Vista native Applications;
+- Native applications from Windows Vista;
 - Spotify for Windows 7 and for Windows 10;
-- Yandex browser (latest);
 - Line;
 - Zoom;
-- Several other applications;
 - Node 10.24;
 - Telegram Desktop;
-- Winrar 7.0 Beta 4 (latest);
+- Winrar 7.0 (latest);
 - Postman;
-- Insominia;
+- Insomnia;
 - Dbeaver;
 - TeamViewer 14;
-- Directx 9EX, 10 and 11 games: 
+- Directx 9EX, 10, and 11 games:
   - Need for Speed Most Wanted 2012;
   - Need for Speed The Run;
-  - Street Figther V;
-  - Injustice: Gods among us;
-  - Assassign Creed Black Flag;
-  - Crysis 1,2, and 3 (directx 10-11 mode);
+  - Street Fighter V;
+  - Injustice: Gods Among Us;
+  - Assassin's Creed Black Flag;
+  - Crysis 1, 2, and 3 (directx 10-11 mode);
   - GTA Trilogy;
   - GTA V;
-- Kate 23.08.1 (Windows XP x64 only for now)
+- Kate 23.08.1
   
 ## Known Limitations
 - Youtube on Firefox Starting version 131 not work. So, we recommend use version 115 or 128 ESR.
-- Some applications installers may not work, like some electron apps (MS teams), Office 2013 or GIMP 3.0 RC2 etc crash and application isn't installed. Some installers and applications require AVX support by OS, what isn't supported at no. The, use a pre-installed version, copied from other operating system;
+- Some applications installers may not work, like some electron based apps (MS teams), Office 2013 or GIMP 3.0 RC2 etc crash and application isn't installed. Some installers and applications require AVX support by OS, what isn't supported at no. The, use a pre-installed version, copied from other operating system;
 - The packages cannot be integrate with nlite to Windows ISO, because use a tool called "SFXCAB Substitute", not standard Microsoft version;
 - Standard .Net Framework Installers starting 4.6 ins't supported for now. You need a repacked version like did here: https://github.com/abbodi1406/dotNetFx4xW7. And avaliable like here: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251. Other versions are avaliable too, search on forum topics;
-- New versions of palemon may face side by side configuration error issue.;
+- New versions of palemoon may face side by side configuration error issue.;
 - Opera 39 - 50 may need follow parameters to start: --disable-gpu (to prevent black screen) and --single-process(to prevent eternally first page loading);
 
 ## Before submitting an issue...

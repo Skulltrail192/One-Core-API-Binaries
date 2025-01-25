@@ -1,10 +1,13 @@
-**欢迎使用One-Core-API二进制文件！**
+<p align="center">
+  <a href="https://github.com/One-Core-API/One-Core-API/releases">
+    <img src="Assets/banner.png" width="100%" height="auto" alt="Banner">
+  </a>
+</p>
+
 ***
 **语言:**    
 [English](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md) | [日本語](README_JP.md)
 ***
-
-<a href="https://github.com/One-Core-API/One-Core-API/releases"><img src="Assets/banner.png" width="100%" height="auto" alt="Banner"></a>
 
 该存储库包含One-Core-API项目的二进制发布版本。这些版本兼容于Windows Server 2003 SP2、Windows XP SP3和Windows XP x64 SP2。
 
