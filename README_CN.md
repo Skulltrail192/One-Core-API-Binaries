@@ -6,10 +6,10 @@
 
 ***
 **语言:**    
-[English](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md) | [日本語](README_JP.md)
+[English](README.md) | [简体中文](README_CN.md) | [Русский](README_RU.md) | [Українська](README_UK.md) | [日本語](README_JP.md) | [Português-Brasil](README_BR.md)
 ***
 
-该存储库包含One-Core-API项目的二进制发布版本。这些版本兼容于Windows Server 2003 SP2、Windows XP SP3和Windows XP x64 SP2。
+**该资源库包含 One-Core-API 项目的二进制版本。这些版本与 Windows Server 2003 RTM、SP1 和 SP2、Windows XP RTM、SP1、SP2 和 SP3 以及 Windows XP x64 SP1/SP2。不过，强烈建议使用最新 Service Pack 更新和所有可用更新的系统。**
 
 <!-- **官方Discord服务器**: <h2>https://discord.gg/eRcGuFtn6p</h2> -->
 
@@ -62,7 +62,7 @@
 
 
 ## 应用程序兼容性
-- 最新版本的 JetBrains（2024）;
+- JetBrains 最新版本（2024）;
 - Android Studio 最新版本;
 - NetBeans 最新版本;
 - Eclipse IDE 最新版本;
@@ -94,7 +94,6 @@
 - Windows Vista应用程序;
 - Spotify Windows 7和Windows 10;
 - Zoom;
-- 其他几个应用程序;
 - Node 10.24;
 - Telegram Desktop;
 - Winrar 7.0 (最新);
@@ -172,54 +171,66 @@
 ## 展示/概念验证
 XP/Server 2003:上运行的应用程序的一些屏幕截图
 
-**Chrome 122**
-![Chrome 122](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/6442a5b0-036b-48e0-a6e8-3624825d3882)
+**Minecraft 1.21**
+![MC](https://res.cloudinary.com/duvj31g5n/image/upload/v1738218030/406680698-cfd05f13-617e-49a0-b416-67906d42840b-ezgif.com-jpg-to-avif-converter_ufotkk.avif)
 
-**Edge 122**
-![Edge122](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/734954f4-2540-4657-9a2d-ce6aed809bf5)
+**Chrome 132**
+![Chrome 132](https://res.cloudinary.com/duvj31g5n/image/upload/v1738218367/Chrome132_nrn3tg.avif)
+
+**Edge 134 (Dev)**
+![Edge134](https://res.cloudinary.com/duvj31g5n/image/upload/v1738218355/Edge134_enqpwl.avif)
 
 **Opera 106**
-![Opera106](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/db509ccf-4e66-4e2b-ad4b-fd8512495333)
+![Opera106](https://res.cloudinary.com/duvj31g5n/image/upload/v1738216717/ezgif.com-jpg-to-avif-converter-1_wqaagf.avif)
 
 **Firefox 122**
-![Firefox122](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/db647daf-0960-4ace-ad2f-63469dbf3881)
+![Firefox122](https://res.cloudinary.com/duvj31g5n/image/upload/v1738216711/ezgif.com-jpg-to-avif-converter_ha1uqd.avif)
+
+**Thunderbird 132**
+![image](https://res.cloudinary.com/duvj31g5n/image/upload/v1738219710/Thunderbird_132_ddfb8m.avif)
 
 **Basilisk**
-![image_2022_04_08T21_38_17_976Z](https://user-images.githubusercontent.com/5159776/178077859-079bfca4-bdb6-402e-8991-b88e7dfe387c.png)
+![image_2022_04_08T21_38_17_976Z](https://res.cloudinary.com/duvj31g5n/image/upload/v1738216421/ezgif.com-jpg-to-avif-converter-3_zn8pkm.avif)
 
 **Vivaldi**
-![vivaldi](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/86d5895f-977a-414f-b0d5-0e877a658676)
+![vivaldi](https://res.cloudinary.com/duvj31g5n/image/upload/v1738218768/Vivaldi_rvgoiv.avif)
+
 
 **Spotify (对于Windows 7)**
-![Spotify-Windows7](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/09de7c20-8670-45dc-9471-a6db9349abd0)
+![Spotify-Windows7](https://res.cloudinary.com/duvj31g5n/image/upload/v1738216110/299541254-09de7c20-8670-45dc-9471-a6db9349abd0-ezgif.com-jpg-to-avif-converter_iq1mrs.avif)
 
 **Visual Studio Code 1.81**
-![VisualCode](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/b21748b9-25bb-412d-95b3-2219d2efdf42)
+![VisualCode](https://res.cloudinary.com/duvj31g5n/image/upload/v1738215759/ezgif.com-jpg-to-avif-converter-1_qvexwp.avif)
 
 **Microsoft Chess 3d**
-![Chess3d](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/bd1ad0c6-edde-4ff2-a6e0-074c7379fab6)
+![Chess3d](https://res.cloudinary.com/duvj31g5n/image/upload/v1738215861/ezgif.com-jpg-to-avif-converter-2_kbnswr.avif)
 
 **Telegram Desktop 4.14**
-![Telegram-Desktop](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/73e13167-49b8-4282-81cb-969435046dde)
+![Telegram-Desktop](https://res.cloudinary.com/duvj31g5n/image/upload/v1738215276/ezgif.com-jpg-to-avif-converter-3_br5vfk.avif)
 
-**Libre Office 24 (latest)**
-![LibreOffice](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/11fd191d-270c-428d-8d41-0498e8fafb3b)
+**Libre Office 24 (最新)**
+![LibreOffice](https://res.cloudinary.com/duvj31g5n/image/upload/v1738215420/ezgif.com-jpg-to-avif-converter_u5u4k0.avif)
+![Writer-LibreOffice](https://res.cloudinary.com/duvj31g5n/image/upload/v1738220069/Writer-LibreOffice_z6b85h.avif)
 
 **Discord 0.309**
-![Discord-Login](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/8a4c12b5-19fc-454d-b02a-a1db807d3900)
-![Discord](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/eb673541-4e66-4c76-867e-346edbaaa0af)
+![Discord-Login](https://res.cloudinary.com/duvj31g5n/image/upload/v1738215123/ezgif.com-jpg-to-avif-converter-2_ermhg2.avif)
+![Discord](https://res.cloudinary.com/duvj31g5n/image/upload/v1738215046/ezgif.com-jpg-to-avif-converter_qgznmp.avif)
 
 **Zoom会议**
-![Zoom](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/d002cf1b-c5f4-4c0c-b629-00e031a56765)
+![Zoom](https://res.cloudinary.com/duvj31g5n/image/upload/v1738214680/ezgif.com-jpg-to-avif-converter-1_qvgeqd.avif)
 
 **Java 11**
-![Capturar](https://user-images.githubusercontent.com/5159776/178078132-da504607-a1ca-4f8d-ae25-6a7eb367bdaa.PNG)
+![Capturar](https://res.cloudinary.com/duvj31g5n/image/upload/v1738214356/ezgif.com-jpg-to-avif-converter_p3ivtn.avif)
 
 **Avast和Chromium 68**
-![Avast](https://user-images.githubusercontent.com/5159776/178078208-c13b3448-ee6a-4c56-9d94-d0c62d51949e.PNG)
+![Avast](https://res.cloudinary.com/duvj31g5n/image/upload/v1738214188/ezgif.com-jpg-to-avif-converter-2_spo4tg.avif)
 
 **Windows 7桌面便签**
-![StickyNotes](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/669ba3e4-b831-4a96-ad40-d87e3e9531e2)
+![桌面便签](https://res.cloudinary.com/duvj31g5n/image/upload/v1738214000/ezgif.com-jpg-to-avif-converter-1_sihfr7.avif)
 
 **Windows 7画画(小畫家)**
-![Windows7画画](https://user-images.githubusercontent.com/5159776/192194273-de70c23e-8731-4fb6-96c1-9bee98947269.PNG)
+![Windows7画画](https://res.cloudinary.com/duvj31g5n/image/upload/v1738213693/ezgif.com-jpg-to-avif-converter_2_r6yshx.avif)
+
+**Windows 7写字板**
+![Windows7写字板](https://res.cloudinary.com/duvj31g5n/image/upload/v1738213683/Windows_7%E7%94%BB%E7%94%BB_j3sipr.avif)
+
