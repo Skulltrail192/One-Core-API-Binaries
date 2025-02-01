@@ -114,6 +114,9 @@ Warning: Always if OCA package require restart, do it. If you install all packag
   - Crysis 1, 2, and 3 (directx 10-11 mode);
   - GTA Trilogy;
   - GTA V;
+  - Minecraft 1.21.x
+  - Resident Evil 5 dx10 mode;
+  - Lost Planet
 - Kate 23.08.1
   
 ## Known Limitations
