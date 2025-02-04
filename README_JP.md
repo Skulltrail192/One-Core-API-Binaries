@@ -10,144 +10,196 @@
 ***
 ***この日本語訳は機械翻訳をベースに誤訳などをできる限り修正したものです 間違いがある可能性があります***
 
-このリポジトリには、One-Core-API プロジェクトのバイナリ リリースが含まれています。これらは、Windows Server 2003 SP2、Windows XP SP3、および Windows XP x64 SP2 と互換性があります。
+**このリポジトリには、One-Core-API プロジェクトのバイナリ リリースが含まれています。これらは、Windows Server 2003 RTM、SP1、SP2、Windows XP RTM、SP1、SP2、SP3、および Windows XP
+x64 SP1/SP2 と互換性があります。ただし、最新のサービス パック更新と利用可能なすべての更新を適用したシステムを使用することを強くお勧めします。**
 
-**公式 Discord サーバー**: https://discord.gg/eRcGuFtn6p
+<!-- **Official Discord Server**: <h2>https://discord.gg/eRcGuFtn6p</h2> -->
 
-**警告**
-これは、それぞれのシステムから変更されたファイルを使用し、まだテストまたは実験段階にある他のファイルを含み、開発者が一人しかいないソフトウェアです。言い換えれば、あらゆる種類のコンピューターや仮想マシンで起こりうるすべてのシナリオを予測することは不可能です。XP/2003からVistaの間に、新しいAPI、新しい技術、既存のAPIへの修正が最も飛躍的に進んだため、NT6と同じレベルの互換性をNT5で持つことは非常に困難です。落ち着いて慎重になり、このソフトウェアが悪い、または「クソ」と言う前に、問題をissuesに報告してください。できるだけ早く分析して、問題を修正するように努めます。助けてください。ソフトウェアに不満を言ったり、中傷したりしても、誰の役にも立ちません。
+- [主な特徴](#主な特徴)
+  - [このソフトウェアを使用する前に](#このソフトウェアを使用する前に)
+- [アプリケーションの互換性](#アプリケーションの互換性)
+- [既知の制限](#既知の制限)
+- [Before submitting an issue...](#before-submitting-an-issue)
+- [Repository Structure](#repository-structure)
+- [Extra Information and Links](#extra-information-and-links)
+  - [Official Discord Server](#official-discord-server)
+- [Showcase / Proof of Concept](#showcase--proof-of-concept)
 
-**One-Core-APIの実験的なバージョン**：
-https://github.com/shorthorn-project/One-Core-API-Binaries-Canary
 
-**注意**:
--Windows XP 非公式 SP4 およびおそらく Integral Edition はサポートされていません。
+<!-- **Main information and guid to report of issue and mainly, BSOD (Blue Screen of the Death)**
+   
+- PC configuration: Is VM or Real? What is the processor, ram installed. Is AHCI, IDE, NVME or SCSI?
+- Windows Configuration: What is the edition? Is a custom ISO/build? What installed the updates? What is the service pack? What are the installed programs?
+- What is the iso used? Always provide the link;
+- Steps to reproduce the BSOD. Ex: i installed OCA base, with XP Integral Edition with all options installed/seleted. Or: i installed Avast, or some other Antivirus, then i installed OCA base;
+- Please, enable the complete dump of memory and upload to some drive.
+- Take a picture of the BSOD. If restart automatically, press F8 on windows start, and select "Disable automatic restart" -->
 
-**言語サポート**
-Windows のほとんどの部分で、ポルトガル語 (ブラジル) (私の言語)、ポルトガル語 (ポルトガル)、トルコ語、中国語 (繁体字および簡体字)、フランス語、イタリア語、ハンガリー語、ウクライナ語 (一部)、スペイン語、ポーランド語、ロシア語、韓国語がサポートされています。
+<!-- **Folders in this repository:** -->
 
-**このリポジトリ内のフォルダー:**
-- Documents: プロジェクトのドキュメント、既知のバグ、sfxcab の使用法 (インストーラー作成用) など。
-- Packages\x86 および Packages\x64: パッケージごとに分類されたバイナリ リリース。 ここからパッケージを直接ダウンロードしてインストール/更新できます (つまり、Packages\x86\Base installer\update に移動して update.exe を実行します)。
-- Todo: やるべきタスク
-- Test: テスト用のいくつかのバイナリとドキュメント。
-- release: 新しいバイナリ リリースを生成するスクリプト。
-- Output: バイナリ出力。リリース フォルダーのスクリプトを使用して生成できます。
+<!-- **The One-Core-API Binaries project consists of the following packages:**
+Warning: Always if OCA package require restart, do it. If you install all packages and restart only on the last, Windows will be corrupted.  
+- **Pack Installer**: Main package of One-Core-API and is required by One-Core-API extras; -->
 
-**One-Core-API バイナリ プロジェクトは次のパッケージで構成されています:**
- 警告: OCA パッケージの再起動が必要な場合は、必ず実行してください。すべてのパッケージをインストールし、最後のパッケージだけを再起動すると、Windows が破損します。 
-- **Base**: One-Core-API のメイン パッケージであり、App Compat と Driver Update を除く他のすべてのパッケージで必要であり、このプロジェクトで使用されるすべてのラッパー (kernelbase や ntext など) が含まれています。
-- **Additional Dlls**: Windows の以降のバージョンで導入されたいくつかの新しい DLL。
-- **D3d**: D3D ランタイム (主に WineD3D に基づく DX10 および DX11);
-- **App Compat**: Windows の新しいバージョンからバックポートされたアプリケーション互換性設定。
-- **Driver Update**: ACPI 2.0 をサポートする最新の acpi ドライバー、Storachi (AHCI ドライバー コントローラー用)、NVME (NVME M.2 ドライバー コントローラー用)、USBXHCI (USB 3.0) などの新しいドライバーを導入します。
-- **Branding**: Windows Vista で導入された新しいブランド システム。D3D および Modern Setup パッケージに必要です。
+<!-- **Installation order of packages:**
+- **Common order**: just run One-Core-api-Pack.exe for your current platform: x86 or x64; -->
 
-**パッケージのインストール順序:**
-- **一般的な順序**:  Base-> Additional Dlls -> Branding -> D3d -> Driver Update -> App Compat;
+## 主な特徴
+- **デフォルトで x86 のメモリ サポートを 128 GB、x64 のメモリ サポートを 2 TB に増やします。**
+- **最新の Windows OS 用に設計された新しいプログラムの実行をサポートします。**
+- **新しいドライバー コントローラーを備えた新しいハードウェアをサポートします。**
+- **Windows XP および Windows Server 2003 でサポートされているすべての言語に対する多言語サポート。**
 
-- **スタンドアロン パッケージ (必要な場合のみ、他のパッケージを一緒に使用する必要はありません)**
-   - **App Compat のみ:** このパッケージは、他のパッケージなしでインストールできます。
-   - **Driver Updateのみ**: このパッケージは、他のパッケージなしでインストールできます。
-   - **AppCompat を最初に**: このパッケージは、他のパッケージなしでインストールできます。
+### このソフトウェアを使用する前に
+> このソフトウェアは、各システムから変更されたファイルを利用しており、テスト段階または実験段階のファイルも含まれており、<b>1 人の人物によって開発されています</b>。そのため、さまざまなコンピュータ構成や仮想マシンで起こり得るすべてのシナリオを予測することは不可能です。
+>
+> <h4>Windows XP/2003 から Vista への移行は、新しい API、テクノロジ、および既存の API の変更の開発において大きな飛躍を示しました。このため、NT 5.x と NT 6.x システム間で同じレベルの互換性を実現することは困難です。</h4>
+>
+> 落ち着いて慎重に行動してください。
+> ソフトウェアに欠陥がある、または「品質が悪い」と結論付ける前に、<b>Github Issues または [Discord サーバー](https://discord.gg/eRcGuFtn6p) を通じて、遭遇した問題を報告してください</b>。
+>
+> すべての問題が解決されることを保証することはできませんのでご了承ください。ただし、私はそれらを分析して修正するために全力を尽くします。
+>
+> あなたの協力は貴重なものであり、苦情や否定的なフィードバックは製品の改善に寄与しません。
 
-**主な特徴**：
-- x86では128GB、x64では2TBのメモリをデフォルトでサポート；
-- 最新のWindows OS用に設計された新しいプログラムの実行をサポートする；
-- 新しいドライバーコントローラーを備えた新しいハードウェアをサポートします。
-  
-**One-Core-API を使用すると、次のものを実行できます。**
-- JetBrains アプリケーション 2021.3 まで
-- JetBrains WebStorm 2021
-- Intellij 2021 (他のバージョンも動作する可能性があります)
-- Adob​​e Photoshop CC 2018
-- Filezilla (最新)
-- LibreOffice 24.0.x (最新)
-- Discord 0.309.0
-- Visual Studio 2012
-- Visual Studio Code 1.83.1 まで
-- Codium 1.89.x まで
-- Chrome バージョン 129 まで
-- Opera バージョン 106 まで
-- Firefox バージョン 130 ベータ版まで (一部バグあり)
-- Microsoft Edge バージョン 128 まで
-- Brave バージョン 1.x (Chromium 129) まで
-- Yandex ブラウザーの最新バージョン
-- Thorium ブラウザー 109 まで
-- Supermium バージョン 124 まで
-- Seamonkey バージョン 2.53.10 まで
-- Thunderbird バージョン 121 まで
-- Maxthon バージョン 7.1.6 まで
-- Vivaldi 最新バージョンまで
-- JDK 1.8 (現時点では Windows XP x64 のみ)
-- Java Alternative JDK または OpenJDK バージョン 21 まで (他のバージョンでも動作する可能性があります)。ダウンロードは次のサイトから行えます: https://bell-sw.com/pages/downloads/#/java-11-lts
-- Epic Browser 120
-- Python 3.6
-- .Net Framework バージョン 4.8 まで
-- Geekbench 4.2
+## アプリケーションの互換性
+- JetBrains IDE 最新リリース (2024) まで;
+- Android Studio 最新バージョンまで;
+- NetBeans 最新バージョンまで;
+- Eclipse IDE 最新バージョンまで
+- Adob​​e 製品 (Photoshop、Illustrator、Dreamweaver など) 2019 バージョンまで;
+- Filezilla (最新バージョン);
+- LibreOffice 24.0.x (最新バージョン);
+- Discord 0.309.0;
+- Legocord (Discord フォーク) 最新版;
+- Visual Studio 2012 および Visual Studio 2013;
+- Visual Studio Code (および Codium などのフォーク) 最新バージョンまで;
+- Chromium ブラウザー (Chrome、Opera、Edge など) 最新バージョンまで;
+- Gecko ベース (Firefox、Zen Browser) 最新バージョンまで (ただし、YouTube は Firefox バージョン 130 までしか動作しません);
+- Seamonkey バージョン 2.53.10 まで;
+- Thunderbird 最新バージョンまで;
+- Maxthon バージョン 7.1.6 まで;
+- Vivaldi 最新バージョンまで;
+- JDK 1.8 (現時点では Windows XP x64 のみ);
+- Java JDK および代替 JDK または OpenJDK バージョン 24 まで (他のバージョンも動作する可能性があります)。次の場所からダウンロードできます: https://bell-sw.com/pages/downloads/#/java-11-lts;
+- Epic Browser 120;
+- Python 3.6 (3.8/3.9 も動作する可能性がありますが、[mod](https://mega.nz/folder/KxExlAiC#L9rAQ5kTCtlHgZUwaxMpgw) バージョンのみ);
+- .Net Framework バージョン 4.8 まで;
+- .NET 6.0;
+- Geekbench 4.2;
 - Performance Test;
-- Adob​​e Reader DC (2018)
-- Foxit PDF Reader (2023)
-- Windows 7 ゲーム
-- Windows 7 ペイント
-- Windows 7 ワードパッド
-- Windows Vista ネイティブ アプリケーション
-- Spotify Windows 7;
-- Yandex ブラウザ (最新);
+- Adob​​e Reader DC (2024 年まで);
+- Foxit PDF Reader (2023);
+- Windows 7 ゲーム;
+- Windows 7 ペイント;
+- Windows 7 ワードパッド;
+- Windows Vista のネイティブ アプリケーション;
+- Windows 7 および Windows 10 用の Spotify;
+- Line;
 - Zoom;
-- その他のアプリケーション;
 - Node 10.24;
 - Telegram Desktop;
-- Winrar 7.0 Beta 4 (最新);
+- Winrar 7.0 (最新);
 - Postman;
-- Insominia;
-- Eclise IDE;
+- Insomnia;
 - Dbeaver;
-- Directx 9EX・10・11のゲーム:
+- TeamViewer 14;
+- Directx 9EX、10、および 11 ゲーム:
 - Need for Speed Most Wanted 2012;
 - Need for Speed The Run;
-- Street Figther V;
-- Injustice: Gods among us;
-- Assassign Creed Black Flag;
-- Crysis 1、2、3 (directx 10-11 モード);
-- Kate 23.08.1 (現時点では Windows XP x64 のみ)
+- Street Fighter V;
+- Injustice: Gods Among Us;
+- Assassin's Creed Black Flag;
+- Crysis 1、2、および 3 (directx 10-11 モード);
+- GTA Trilogy;
+- GTA V;
+- Minecraft 1.21.x;
+- バイオハザード 5 dx10 モード;
+- Lost Planet;
+- kate 23.08.1;
   
-**既知の制限事項:**
-- Firefox 56 以降を実行すると、ページの読み込みの問題が発生する可能性があります。これを解決するには、バージョン 55 から 72 では、MOZ_FORCE_DISABLE_E10S という環境変数を作成する必要があります。これはユーザーの環境変数のキーとなり、値は 1 になります。バージョン 73 以降では、値はバージョン番号、つまり 73.0.0 などになります (バージョン番号を確認してください)。
-- ダイアログやウィンドウの一部が英語のみで表示されます。国際化は現在進行中です。インストールされた mui パックに関する問題:
-- Chrome、Maxthon、Discord、Team viewer などの新しいアプリケーションのインストーラーが機能しない場合があります。クラッシュしてアプリケーションがインストールされません。他のオペレーティング システムからコピーされたプリインストール バージョンを使用する必要があります。
-- パッケージは、標準の Microsoft バージョンではなく、「SFXCAB Substitute」というツールを使用しているため、nlite で Windows Iso に統合できません。
-- 4.6 以降の標準 .Net Framework インストーラーは、現時点ではサポートされていません。https://github.com/abbodi1406/dotNetFx4xW7 のように再パックされたバージョンが必要です。また、こちらで入手できます: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251 他のバージョンも入手できます。フォーラムのトピックで検索してください。
-- palemon の新しいバージョンでは、サイド バイ サイド構成エラーの問題が発生する可能性があります。
-- Opera 39 - 50 を起動するには、次のパラメーターが必要になる場合があります: --disable-gpu (黒い画面が表示されないようにするため) および --single-process (最初のページが永遠に読み込まれないようにするため);
+## 既知の制限
+- Firefox のバージョン 131 以降では Youtube は動作しません。そのため、バージョン 115 または 128 ESR の使用をお勧めします。
+- 一部のアプリケーション インストーラーは動作しない場合があります。たとえば、一部の電子ベースのアプリケーション (MS Teams)、Office 2013、GIMP 3.0 RC2 などがクラッシュし、アプリケーションがインストールされません。一部のインストーラーとアプリケーションでは、OS による AVX サポートが必要ですが、現時点ではサポートされていません。その場合は、他のオペレーティング システムからコピーされたプリインストール バージョンを使用します。
+- パッケージは、標準の Microsoft バージョンではなく、「SFXCAB Substitute」というツールを使用しているため、nlite を使用して Windows ISO に統合できません。
+- 4.6 以降の標準 .Net Framework インストーラーは、現時点ではサポートされていません。こちらで行ったように、再パックされたバージョンが必要です: https://github.com/abbodi1406/dotNetFx4xW7。また、次の場所から入手できます: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251。他のバージョンも入手できます。フォーラムのトピックで検索してください。
+- palemoon の新しいバージョンでは、サイドバイサイド構成エラーの問題が発生する可能性があります。;
+- Opera 39 - 50 を起動するには、次のパラメータが必要になる場合があります: --disable-gpu (黒い画面を防ぐため) および --single-process (最初のページが永遠に読み込まれないようにするため)。
+## Before submitting an issue...
 
-**問題のレポート**
-問題を再現するには、**常に**このテンプレートに従うことをお勧めします:
-- 何が起こったかの説明。
-例: Windows をロードしようとすると常に BSOD が発生する。Windows がブート画面で停止する。Windows が常に黒い画面になるなど。
-- VM/PC 構成
-例: Vmware 10、virtualBox 6.1.0 または Core 2 Duo 8400、2Gb DDR2、IDE/SATA ハード ディスク。
-- Windows のエディションと構成
-例: Windows XP Service Pack 3 に POSReady 2009 更新プログラムをインストールし、次のプログラムをインストールしています: Adob​​e、Office 
+**Before reporting an issue, I strongly recommend checking if the problem exists in [One-Core-API-Canary](https://github.com/shorthorn-project/One-Core-API-Binaries-Canary) and carefully reviewing the existing [Issues](https://github.com/Skulltrail192/One-Core-API-Binaries/issues) to see if your problem has already been reported.**
 
-XP/Server 2003 で実行されているアプリケーションのスクリーンショット:
-**Chrome 122**
-![Chrome 122](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/6442a5b0-036b-48e0-a6e8-3624825d3882)
+**If the problem *does* exist in Canary and is not already listed in the current Issues, please provide a detailed report of your issue, including the following information:**
 
-**Edge 122**
-![Edge122](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/734954f4-2540-4657-9a2d-ce6aed809bf5)
+**1. System Configuration:**
+*   **Type** (Physical Hardware/VM)
+*   **Windows OS Edition** (e.g., Windows XP Professional Service Pack 3)
+*   **Post-SP Updates:**
+    *  Were any Post-Service Pack updates installed? (Yes/No)
+       *  If yes, specify if they were installed **before** or **after** installing One-Core-API.
+*    **Installed Software:** List any relevant software that might be related to the issue (e.g., Adobe Photoshop CC 2018, Firefox 132, etc.).
+*   **Technical Specifications**:
+    *   **If Physical Hardware:**  Provide details on the processor, RAM (type, amount), hard drive type, and capacity (e.g., IDE disk, 120 GB).
+    *   **If a Virtual Machine:** Specify the virtual machine configuration details (e.g., Oracle VirtualBox 6.1.0, 2 GB RAM, 120 GB disk, AHCI mode).
+*   **Steps to reproduce the error**
 
-**Opera 106**
-![Opera106](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/db509ccf-4e66-4e2b-ad4b-fd8512495333)
+
+> **IMPORTANT:** If possible, please also **attach any relevant logs** to the issue. This will greatly assist in identifying a solution faster.
+
+>  It is also advisable to attach a video recording of the problem, if feasible.
+>
+> **Please note that the issue will be closed if the problem is not reproducible.**
+
+## Repository Structure
+- Documents: Project documentation, known bugs, sfxcab usage (for making installers), etc.
+- Packages\x86 and Packages\x64: Binary releases categorized by package. You can download and install/update the packages directly from here (i.e. by going to Packages\x86\Base installer\update and runnning update.exe).
+- Todo: To do tasks
+- Test: Some binaries and documents for testing;
+- Release: Scripts to generate a new binaries release;
+- Output: Binaries output, you can generate using scripts on Release folder;
+
+## Extra Information and Links
+**Extended Features for One-Core-API based Systems:**
+
+<b><a href="https://github.com/shorthorn-project/One-Core-API-Extras" style="font-size: 18px">https://github.com/shorthorn-project/One-Core-API-Extras</a></b>
+
+**Tools for new Deployment System for One-Core-API based Systems:**
+
+<b><a href="https://github.com/Skulltrail192/One-Core-API-Tools" style="font-size: 18px">https://github.com/Skulltrail192/One-Core-API-Tools</a></b>
+
+### Official Discord Server
+
+**If you want to join our Official Discord Server of One-Core-API, you can join here:**
+
+<b><a href="https://discord.gg/eRcGuFtn6p" style="font-size: 25px">https://discord.gg/eRcGuFtn6p</a></n>
+
+## Showcase / Proof of Concept
+Some screenshots of Applicaions running on XP/Server 2003:
+
+**Minecraft 1.21**
+![image](https://github.com/user-attachments/assets/cfd05f13-617e-49a0-b416-67906d42840b)
+
+**Chrome 132**
+![image](https://github.com/user-attachments/assets/84e83d53-ea8e-47b9-a566-e0986c91b812)
+
+**Edge 134 (Dev Preview)**
+![image](https://github.com/user-attachments/assets/f0b6a47c-dc37-45b0-beaf-c85002e37386)
+
+**Opera 116**
+![image](https://github.com/user-attachments/assets/ee962193-8de6-458e-8d35-769638e9fbde)
 
 **Firefox 122**
 ![Firefox122](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/db647daf-0960-4ace-ad2f-63469dbf3881)
+
+**Thunderbird 132**
+![image](https://github.com/user-attachments/assets/1ccdd59f-849a-4f1c-86e0-bcc9e1ce02e2)
 
 **Basilisk**
 ![image_2022_04_08T21_38_17_976Z](https://user-images.githubusercontent.com/5159776/178077859-079bfca4-bdb6-402e-8991-b88e7dfe387c.png)
 
 **Vivaldi**
-![vivaldi](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/86d5895f-977a-414f-b0d5-0e877a658676)
+![image](https://github.com/user-attachments/assets/580966ab-f170-42a9-9f9d-3c15fe2ec8b2)
+
 
 **Spotify (For Windows 7)**
 ![Spotify-Windows7](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/09de7c20-8670-45dc-9471-a6db9349abd0)
@@ -161,7 +213,7 @@ XP/Server 2003 で実行されているアプリケーションのスクリー�
 **Telegram 4.14**
 ![Telegram-Desktop](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/73e13167-49b8-4282-81cb-969435046dde)
 
-**Libre Office 24 (最新)**
+**Libre Office 24 (latest)**
 ![LibreOffice](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/11fd191d-270c-428d-8d41-0498e8fafb3b)
 ![Writer-LibreOffice](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/e389a39b-febd-45f6-9c6f-25f64e460142)
 
@@ -189,6 +241,3 @@ XP/Server 2003 で実行されているアプリケーションのスクリー�
 
 **Windows 7 Wordpad**
 ![Wordpad](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/9dac02c7-7139-47fe-8732-ccd9ef91090b)
-
-
-
