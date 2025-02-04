@@ -19,11 +19,11 @@ x64 SP1/SP2 と互換性があります。ただし、最新のサービス パ�
   - [このソフトウェアを使用する前に](#このソフトウェアを使用する前に)
 - [アプリケーションの互換性](#アプリケーションの互換性)
 - [既知の制限](#既知の制限)
-- [Before submitting an issue...](#before-submitting-an-issue)
-- [Repository Structure](#repository-structure)
-- [Extra Information and Links](#extra-information-and-links)
-  - [Official Discord Server](#official-discord-server)
-- [Showcase / Proof of Concept](#showcase--proof-of-concept)
+- [問題を提出する前に…](#問題を提出する前に)
+- [リポジトリの構造](#リポジトリの構造)
+- [追加情報とリンク](#追加情報とリンク)
+  - [公式Discordサーバー](#公式discordサーバー)
+- [ショーケース / 概念実証](#ショーケース--概念実証)
 
 
 <!-- **Main information and guid to report of issue and mainly, BSOD (Blue Screen of the Death)**
@@ -122,59 +122,59 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 - Firefox のバージョン 131 以降では Youtube は動作しません。そのため、バージョン 115 または 128 ESR の使用をお勧めします。
 - 一部のアプリケーション インストーラーは動作しない場合があります。たとえば、一部の電子ベースのアプリケーション (MS Teams)、Office 2013、GIMP 3.0 RC2 などがクラッシュし、アプリケーションがインストールされません。一部のインストーラーとアプリケーションでは、OS による AVX サポートが必要ですが、現時点ではサポートされていません。その場合は、他のオペレーティング システムからコピーされたプリインストール バージョンを使用します。
 - パッケージは、標準の Microsoft バージョンではなく、「SFXCAB Substitute」というツールを使用しているため、nlite を使用して Windows ISO に統合できません。
-- 4.6 以降の標準 .Net Framework インストーラーは、現時点ではサポートされていません。こちらで行ったように、再パックされたバージョンが必要です: https://github.com/abbodi1406/dotNetFx4xW7。また、次の場所から入手できます: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251。他のバージョンも入手できます。フォーラムのトピックで検索してください。
+- 4.6 以降の標準 .Net Framework インストーラーは、現時点ではサポートされていません。こちらで行ったように、再パックされたバージョンが必要です: https://github.com/abbodi1406/dotNetFx4xW7 また、次の場所から入手できます: https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251 他のバージョンも入手できます。フォーラムのトピックで検索してください。
 - palemoon の新しいバージョンでは、サイドバイサイド構成エラーの問題が発生する可能性があります。;
 - Opera 39 - 50 を起動するには、次のパラメータが必要になる場合があります: --disable-gpu (黒い画面を防ぐため) および --single-process (最初のページが永遠に読み込まれないようにするため)。
-## Before submitting an issue...
+## 問題を提出する前に…
 
-**Before reporting an issue, I strongly recommend checking if the problem exists in [One-Core-API-Canary](https://github.com/shorthorn-project/One-Core-API-Binaries-Canary) and carefully reviewing the existing [Issues](https://github.com/Skulltrail192/One-Core-API-Binaries/issues) to see if your problem has already been reported.**
+**問題を報告する前に、その問題が[One-Core-API-Canary](https://github.com/shorthorn-project/One-Core-API-Binaries-Canary)に存在するかどうかを確認し、既存の[Issues](https://github.com/Skulltrail192/One-Core-API-Binaries/issues)を注意深くチェックして、あなたの問題がすでに報告されていないかどうかを確認することを強くお勧めします。**
 
-**If the problem *does* exist in Canary and is not already listed in the current Issues, please provide a detailed report of your issue, including the following information:**
+**問題が Canary に存在し、現在のIssuesにまだリストされていない場合は、次の情報を含めて、問題の詳細なレポートを提供してください。**
 
-**1. System Configuration:**
-*   **Type** (Physical Hardware/VM)
-*   **Windows OS Edition** (e.g., Windows XP Professional Service Pack 3)
-*   **Post-SP Updates:**
-    *  Were any Post-Service Pack updates installed? (Yes/No)
-       *  If yes, specify if they were installed **before** or **after** installing One-Core-API.
-*    **Installed Software:** List any relevant software that might be related to the issue (e.g., Adobe Photoshop CC 2018, Firefox 132, etc.).
-*   **Technical Specifications**:
-    *   **If Physical Hardware:**  Provide details on the processor, RAM (type, amount), hard drive type, and capacity (e.g., IDE disk, 120 GB).
-    *   **If a Virtual Machine:** Specify the virtual machine configuration details (e.g., Oracle VirtualBox 6.1.0, 2 GB RAM, 120 GB disk, AHCI mode).
-*   **Steps to reproduce the error**
+**1. システム構成:**
+* **タイプ** (実機/VM)
+* **Windows OS エディション** (例: Windows XP Professional Service Pack 3)
+* **SP 後の更新:**
+* Service Pack 後の更新はインストールされましたか? (はい/いいえ)
+* はいの場合、One-Core-API のインストール **前** または **後** にインストールされたかどうかを指定します。
+* **インストールされているソフトウェア:** 問題に関連する可能性のある関連ソフトウェアをすべてリストします (例: Adob​​e Photoshop CC 2018、Firefox 132 など)。
+* **技術仕様**:
+* **物理ハードウェアの場合:** プロセッサ、RAM (タイプ、容量)、ハード ドライブ タイプ、容量 (例: IDE ディスク、120 GB) の詳細を提供します。
+* **仮想マシンの場合:** 仮想マシンの構成の詳細を指定します (例: Oracle VirtualBox 6.1.0、2 GB RAM、120 GB ディスク、AHCI モード)。
+* **エラーを再現する手順**
 
 
-> **IMPORTANT:** If possible, please also **attach any relevant logs** to the issue. This will greatly assist in identifying a solution faster.
+> **重要:** 可能であれば、**関連するログも** 問題に添付してください。これにより、解決策をより早く特定するのに大いに役立ちます。
 
->  It is also advisable to attach a video recording of the problem, if feasible.
+> 可能であれば、問題のビデオ録画を添付することもお勧めします。
 >
-> **Please note that the issue will be closed if the problem is not reproducible.**
+> **問題が再現できない場合は、Issueはクローズされますのでご注意ください。**
+> 
+## リポジトリの構造
+- Document: プロジェクト ドキュメント、既知のバグ、sfxcab の使用法 (インストーラーの作成用) など。
+- Packages\x86 および Packages\x64: パッケージ別に分類されたバイナリ リリース。ここからパッケージを直接ダウンロードしてインストール/更新できます (つまり、Packages\x86\Base installer\update に移動して update.exe を実行します)。
+- Todo: 実行するタスク
+- Test: テスト用のバイナリとドキュメント
+- Release: 新しいバイナリ リリースを生成するスクリプト
+- Output: Release フォルダーのスクリプトを使用して生成できるバイナリ出力。
 
-## Repository Structure
-- Documents: Project documentation, known bugs, sfxcab usage (for making installers), etc.
-- Packages\x86 and Packages\x64: Binary releases categorized by package. You can download and install/update the packages directly from here (i.e. by going to Packages\x86\Base installer\update and runnning update.exe).
-- Todo: To do tasks
-- Test: Some binaries and documents for testing;
-- Release: Scripts to generate a new binaries release;
-- Output: Binaries output, you can generate using scripts on Release folder;
-
-## Extra Information and Links
-**Extended Features for One-Core-API based Systems:**
+## 追加情報とリンク
+**One-Core-API ベースのシステムの拡張機能:**
 
 <b><a href="https://github.com/shorthorn-project/One-Core-API-Extras" style="font-size: 18px">https://github.com/shorthorn-project/One-Core-API-Extras</a></b>
 
-**Tools for new Deployment System for One-Core-API based Systems:**
+**One-Core-APIベースのシステムのための新しいデプロイメント・システムのためのツール：**
 
 <b><a href="https://github.com/Skulltrail192/One-Core-API-Tools" style="font-size: 18px">https://github.com/Skulltrail192/One-Core-API-Tools</a></b>
 
-### Official Discord Server
+### 公式Discordサーバー
 
-**If you want to join our Official Discord Server of One-Core-API, you can join here:**
+**One-Core-API の公式 Discord サーバーに参加したい場合は、こちらから参加できます:**
 
 <b><a href="https://discord.gg/eRcGuFtn6p" style="font-size: 25px">https://discord.gg/eRcGuFtn6p</a></n>
 
-## Showcase / Proof of Concept
-Some screenshots of Applicaions running on XP/Server 2003:
+## ショーケース / 概念実証
+XP/Server 2003 で実行されているアプリケーションのスクリーンショット:
 
 **Minecraft 1.21**
 ![image](https://github.com/user-attachments/assets/cfd05f13-617e-49a0-b416-67906d42840b)
