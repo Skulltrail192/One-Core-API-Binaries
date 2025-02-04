@@ -215,13 +215,13 @@ XP/Server 2003 で実行されているアプリケーションのスクリー�
 **Visual Studio Code 1.81**
 ![VisualCode](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/b21748b9-25bb-412d-95b3-2219d2efdf42)
 
-**Microsoft Chess 3d**
+**Microsoft チェス 3d**
 ![Chess3d](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/bd1ad0c6-edde-4ff2-a6e0-074c7379fab6)
 
 **Telegram 4.14**
 ![Telegram-Desktop](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/73e13167-49b8-4282-81cb-969435046dde)
 
-**Libre Office 24 (latest)**
+**Libre Office 24 (最新)**
 ![LibreOffice](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/11fd191d-270c-428d-8d41-0498e8fafb3b)
 ![Writer-LibreOffice](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/e389a39b-febd-45f6-9c6f-25f64e460142)
 
@@ -238,14 +238,14 @@ XP/Server 2003 で実行されているアプリケーションのスクリー�
 **Java 11**
 ![Capturar](https://user-images.githubusercontent.com/5159776/178078132-da504607-a1ca-4f8d-ae25-6a7eb367bdaa.PNG)
 
-**Avast and Chromium 68**
+**Avast と Chromium 68**
 ![Avast](https://user-images.githubusercontent.com/5159776/178078208-c13b3448-ee6a-4c56-9d94-d0c62d51949e.PNG)
 
-**Windows 7 Sticky Notes**
+**Windows 7 付箋**
 ![StickyNotes](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/669ba3e4-b831-4a96-ad40-d87e3e9531e2)
 
-**Windows 7 Paint**
+**Windows 7 ペイント**
 ![Paint](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/81728a44-c9e7-41e8-b68b-8ea7b119ebba)
 
-**Windows 7 Wordpad**
+**Windows 7 ワードパッド**
 ![Wordpad](https://github.com/Skulltrail192/One-Core-API-Binaries/assets/5159776/9dac02c7-7139-47fe-8732-ccd9ef91090b)
