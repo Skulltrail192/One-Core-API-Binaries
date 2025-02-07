@@ -1,8 +1,9 @@
-<p align="center">
+<div align="center">
   <a href="https://github.com/One-Core-API/One-Core-API/releases">
     <img src="Assets/banner.png" width="100%" height="auto" alt="Banner">
   </a>
-</p>
+  <h6>バナーを提供してくれた@pashtetusss777に心から感謝します</h6>
+</div>
 
 ***
 **言語：**
@@ -10,14 +11,10 @@
 ***
 
 
-**日本語版README（README_JP.md）の最終更新日 2025年2月4日 2025年2月1日時点のREADME.mdを基に翻訳**
+**日本語版README（README_JP.md）の最終更新日 2025年2月5日<br>2025年2月1日時点のREADME.mdを基に翻訳**
 
 
- **この日本語訳は機械翻訳をベースに誤訳などをできる限り修正したものです 間違いが含まれる可能性があります。また、元のREADMEの更新に追従できてない場合がありますので、更新日を確認してから読むのを推奨します。**
-
-
-
-
+ **この日本語訳は機械翻訳をベースに誤訳などをできる限り修正したものです 間違いが含まれる可能性があります。<br>また、元のREADMEの更新に追従できてない場合がありますので、更新日を確認してから読むのを推奨します。**<br><br><br><br>
 **このリポジトリには、One-Core-API プロジェクトのバイナリ リリースが含まれています。これらは、Windows Server 2003 RTM、SP1、SP2、Windows XP RTM、SP1、SP2、SP3、および Windows XP
 x64 SP1/SP2 と互換性があります。ただし、最新のサービス パック更新と利用可能なすべての更新を適用したシステムを使用することを強くお勧めします。**
 
