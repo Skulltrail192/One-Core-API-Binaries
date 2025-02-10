@@ -28,7 +28,7 @@
 
 ## 核心功能
 - **默认支持 x86 系统 128 GB 内存和 x64 系统 2 TB 内存**
-- **支持运行为现代 Windows 系统设计的新程序**
+- **支持通过设置兼容性模式运行为现代 Windows 系统设计的新程序**
 - **支持搭载新硬件控制器驱动的现代硬件**
 - **全面支持 Windows XP 和 Windows Server 2003 的所有语言版本**
 
@@ -54,17 +54,17 @@
 - Legocord（Discord 分支）最新版
 - Visual Studio 2012 / 2013
 - Visual Studio Code（及 Codium 等分支）至最新版
-- Chromium 内核浏览器（Chrome / Opera /Edge 等）至最新版
+- Chromium 内核浏览器（Chrome / Opera / Edge 等）至最新版
 - Gecko 内核浏览器（Firefox / Zen Browser）至最新版（对于 Firefox，YouTube 仅支持至 130 版。北京谋智火狐开发的本地版本同样支持。）
 - Seamonkey 至 2.53.10 版
-- Thunderbird 至最新版
+- Thunderbird（雷鸟）至最新版
 - Maxthon 至 7.1.6 版
 - Vivaldi 至最新版
 - JDK 1.8（当前仅限 Windows XP x64）
 - Java JDK 及 OpenJDK 至 24 版（其他版本可能兼容），下载地址：https://bell-sw.com/pages/downloads/#/java-11-lts
 - Epic Browser 120
 - Python 3.6（3.8 / 3.9 需使用[修改版](https://mega.nz/folder/KxExlAiC#L9rAQ5kTCtlHgZUwaxMpgw)）
-- .Net Framework 至 4.8 版
+- .NET Framework 至 4.8 版
 - .NET 6.0
 - Geekbench 4.2
 - Performance Test
@@ -106,7 +106,7 @@
   - 参考：https://github.com/abbodi1406/dotNetFx4xW7
   - 下载：https://www.wincert.net/forum/topic/13805-microsoft-net-framework-472-full-x86x64-incl-language-packs-by-ricktendo/#comment-123251
 - PaleMoon 新版可能遭遇并行配置错误
-- Opera 39 - 50 需添加启动参数：--disable-gpu（防止黑屏）和 --single-process（解决页面加载卡顿）
+- Opera 39 - 50 需在快捷方式文件路径后添加以下参数才可稳定运行：--disable-gpu（防止黑屏）和 --single-process（解决页面加载卡顿）
 
 ## 提交问题前
 
@@ -122,7 +122,7 @@
        *  若是，请说明在安装 One-Core-API 前/后安装
 *    **已安装软件**：列出可能相关的软件（例：Adobe Photoshop CC 2018、Firefox 132 等）
 * **2. 硬件规格**：
-    *   **物理机**：提供处理器型号、内存（类型/容量）、硬盘类型/容量（例：IDE 硬盘 120 GB）
+    *   **物理机**：提供处理器型号、内存（类型/容量）、硬盘类型/容量（例：希捷 IDE 机械硬盘 120 GB）
     *   **虚拟机**：说明虚拟机配置（例：Oracle VirtualBox 6.1.0，2 GB 内存，120 GB 硬盘，AHCI 模式）
 * **3. 问题复现步骤**
 
@@ -133,7 +133,7 @@
 > **注意：无法复现的问题将被关闭。**
 
 ## 仓库结构
-- Documents：项目文档、已知问题、sfxcab 使用指南（制作安装程序）等
+- Documents：项目文档、已知问题、SFXCAB 使用指南（制作安装程序）等
 - Packages\x86 和 Packages\x64：按平台分类的发行包，可直接下载安装/更新（如进入 Packages\x86\Base installer\update 运行 update.exe）
 - Todo：待办事项
 - Test：测试用二进制文件和文档
