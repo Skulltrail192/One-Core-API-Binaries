@@ -69,7 +69,7 @@
 - Geekbench 4.2
 - Performance Test
 - Adobe Acrobat Reader DC（至 2024 版）
-- 福昕 PDF 阅读器（2023 版）
+- 福昕 PDF 阅读器至最新版
 - Windows 7 原生游戏
 - Windows 7 画图
 - Windows 7 写字板
