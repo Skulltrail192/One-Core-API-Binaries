@@ -20,6 +20,7 @@ x64 SP1/SP2. However, it is highly recommended to use the system with its latest
 - [Application Compatibility](#application-compatibility)
 - [Known Limitations](#known-limitations)
 - [Before submitting an issue...](#before-submitting-an-issue)
+- [How Install One-Core-API?...](#how-install-one-core-api)
 - [Repository Structure](#repository-structure)
 - [Extra Information and Links](#extra-information-and-links)
   - [Official Discord Server](#official-discord-server)
@@ -169,11 +170,17 @@ Wait for:
   - Injustice: Gods Among Us;
   - Assassin's Creed Black Flag;
   - Crysis 1, 2, and 3 (directx 10-11 mode);
-  - GTA Trilogy;
+  - GTA Trilogy Definitive Edition;
   - GTA V;
   - Minecraft 1.21.x
   - Resident Evil 5 dx10 mode;
-  - Lost Planet
+  - Lost Planet;
+  - Far Cry 4;
+  - Far Cry Primal;
+  - Tropico 5;
+  - Metro Last Night;
+  - Cuphead;
+  - Horizon Turbo;
 - Kate 23.08.1
   
 ## Known Limitations
