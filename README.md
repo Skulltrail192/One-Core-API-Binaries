@@ -17,10 +17,11 @@ x64 SP1/SP2. However, it is highly recommended to use the system with its latest
 
 - [Main Features](#main-features)
   - [Before Using This Software](#before-using-this-software)
+- [How to install One-Core-API?](#how-to-install-one-core-api)
+- [How to uninstall One-Core-API?](#how-to-uninstall-one-core-api)
 - [Application Compatibility](#application-compatibility)
 - [Known Limitations](#known-limitations)
 - [Before submitting an issue...](#before-submitting-an-issue)
-- [How Install One-Core-API?](#how-install-one-core-api)
 - [Repository Structure](#repository-structure)
 - [Extra Information and Links](#extra-information-and-links)
   - [Official Discord Server](#official-discord-server)
@@ -65,7 +66,7 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 
 ## How to install One-Core-API?
 
-The One-Core-API API uses the hotfix installation technology used up to Windows NT 5.x. In this way, you will notice that it is very similar to the installation of a Service Pack. You should go to the Releases section, choose the version you want to test and download the zipped file (.zip). After downloading, unzip the file and you will see that there are two folders, one for each supported platform: x64 and x86. Inside each folder, there will be an executable file with the name: One-Core-API-Pack.exe. Double-click on this file and follow the installation steps, which are basically: "Next, select accept the license, Next and finish". It's that simple.
+The One-Core-API uses the hotfix installation technology used up to Windows NT 5.x. In this way, you will notice that it is very similar to the installation of a Service Pack. You should go to the [Releases](https://github.com/Shorthorn-project/One-Core-API-Binaries/releases) section, choose the version you want to test and download the zipped file (.zip). After downloading, unzip the file and you will see that there are two folders, one for each supported platform: x64 and x86. Inside each folder, there will be an executable file with the name: One-Core-API-Pack.exe. Double-click on this file and follow the installation steps, which are basically: "Next, select accept the license, Next and finish". It's that simple.
 
 **Download:**
 
@@ -106,16 +107,16 @@ As mentioned, One-Core-API uses the Hotfix installation technology of the Window
 **Mark "Show Updates:"**
 ![image](https://github.com/user-attachments/assets/83bdef02-9704-4e77-a0b0-cba70a4de80a)
 
-The update will show up. Scroll down until show One-Core-API:
+**The update will show up. Scroll down until show One-Core-API:**
 ![image](https://github.com/user-attachments/assets/2ff6137f-b621-4dff-9516-b45f83c3a013)
 
-Click on One-Core-API Pack and then, Remove button:
+**Click on One-Core-API Pack and then, Remove button:**
 ![image](https://github.com/user-attachments/assets/c66909ae-2e3a-4871-a320-e60c66210db9)
 
-The uninstall Windows will show up. Click in Next:
+**The uninstall Windows will show up. Click in Next:**
 ![image](https://github.com/user-attachments/assets/71343989-6e16-48b4-982d-173a4b15774d)
 
-Wait for:
+**Wait for:**
 ![image](https://github.com/user-attachments/assets/01401f4f-e4be-4e8a-82d2-3480f143fedd)
 
 **Click in finish and then the Windows will restart:**
