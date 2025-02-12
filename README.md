@@ -94,7 +94,31 @@ The One-Core-API API uses the hotfix installation technology used up to Windows 
 
 ## How to uninstall One-Core-API?
 
-As mentioned, One-Core-API uses the Hotfix installation technology of the Windows NT family up to version 5.x. Therefore, to uninstall it, you must go to the Control Panel -> Add/Remove Programs and select the "Show updates" option. After selecting this option, several updates will be displayed (if installed), including One-Core-API. Scroll down the window until One-Core-API is displayed, and click on it. An "Uninstall" button will appear. Click on the button and follow the uninstallation steps (basically, Next->Finish)
+As mentioned, One-Core-API uses the Hotfix installation technology of the Windows NT family up to version 5.x. Therefore, to uninstall it, you must go to the Control Panel -> Add/Remove Programs and select the "Show updates" option. After selecting this option, several updates will be displayed (if installed), including One-Core-API. Scroll down the window until One-Core-API is displayed, and click on it. An "Remove" button will appear. Click on the button and follow the uninstallation steps (basically, Next->Finish)
+
+**Go to Control Panel:**
+![image](https://github.com/user-attachments/assets/ceaf9dc2-135c-4f6b-8b22-ce5eb3f8d421)
+
+**Click on Add Or Remove Programs:**
+![image](https://github.com/user-attachments/assets/b0d6406a-db6b-4ca8-b2b9-cc020df17950)
+
+**Mark "Show Updates:"**
+![image](https://github.com/user-attachments/assets/83bdef02-9704-4e77-a0b0-cba70a4de80a)
+
+The update will show up. Scroll down until show One-Core-API:
+![image](https://github.com/user-attachments/assets/2ff6137f-b621-4dff-9516-b45f83c3a013)
+
+Click on One-Core-API Pack and then, Remove button:
+![image](https://github.com/user-attachments/assets/c66909ae-2e3a-4871-a320-e60c66210db9)
+
+The uninstall Windows will show up. Click in Next:
+![image](https://github.com/user-attachments/assets/71343989-6e16-48b4-982d-173a4b15774d)
+
+Wait for:
+![image](https://github.com/user-attachments/assets/01401f4f-e4be-4e8a-82d2-3480f143fedd)
+
+**Click in finish and then the Windows will restart:**
+![image](https://github.com/user-attachments/assets/b6f06465-786f-4503-b71b-30e9224ad9fc)
 
 ## Application Compatibility
 - JetBrains IDE up to the latest releases (2024);
