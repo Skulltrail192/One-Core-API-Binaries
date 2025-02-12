@@ -35,6 +35,10 @@ x64 SP1/SP2. However, it is highly recommended to use the system with its latest
 - Please, enable the complete dump of memory and upload to some drive.
 - Take a picture of the BSOD. If restart automatically, press F8 on windows start, and select "Disable automatic restart" -->
 
+**How to install One-Core-API?**
+
+The One-Core-API API uses the hotfix installation technology used up to Windows NT 5.x. In this way, you will notice that it is very similar to the installation of a Service Pack. You should go to the Releases section, choose the version you want to test and download the zipped file (.zip). After downloading, unzip the file and you will see that there are two folders, one for each supported platform: x64 and x86. Inside each folder, there will be an executable file with the name: One-Core-API-Pack.exe. Double-click on this file and follow the installation steps, which are basically: "Next, select accept the license, Next and finish". It's that simple.
+
 <!-- **Folders in this repository:** -->
 
 <!-- **The One-Core-API Binaries project consists of the following packages:**
