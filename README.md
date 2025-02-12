@@ -20,7 +20,7 @@ x64 SP1/SP2. However, it is highly recommended to use the system with its latest
 - [Application Compatibility](#application-compatibility)
 - [Known Limitations](#known-limitations)
 - [Before submitting an issue...](#before-submitting-an-issue)
-- [How Install One-Core-API?...](#how-install-one-core-api)
+- [How Install One-Core-API?](#how-install-one-core-api)
 - [Repository Structure](#repository-structure)
 - [Extra Information and Links](#extra-information-and-links)
   - [Official Discord Server](#official-discord-server)
