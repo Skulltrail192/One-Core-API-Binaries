@@ -66,6 +66,32 @@ Warning: Always if OCA package require restart, do it. If you install all packag
 
 The One-Core-API API uses the hotfix installation technology used up to Windows NT 5.x. In this way, you will notice that it is very similar to the installation of a Service Pack. You should go to the Releases section, choose the version you want to test and download the zipped file (.zip). After downloading, unzip the file and you will see that there are two folders, one for each supported platform: x64 and x86. Inside each folder, there will be an executable file with the name: One-Core-API-Pack.exe. Double-click on this file and follow the installation steps, which are basically: "Next, select accept the license, Next and finish". It's that simple.
 
+**Download:**
+
+![image](https://github.com/user-attachments/assets/09322142-2655-47d2-9723-26fe6fb67494)
+
+**Extract:**
+![image](https://github.com/user-attachments/assets/7fbba140-5a87-45b3-bec0-a5236a676b04)
+
+**Open the extracted content and choose your architecture. If the banner haven't x64, it is x86**
+![image](https://github.com/user-attachments/assets/6bdd8a39-9aac-4ee1-88fd-9fda4db144ea)
+
+**Double click on executable:**
+![image](https://github.com/user-attachments/assets/e5e03ff2-4de5-475a-bbd8-755df687b187)
+
+**Next:**
+![image](https://github.com/user-attachments/assets/2fd62bd9-b1a8-4e1d-8769-92b9bbcf2a6b)
+
+**Accept and Next:**
+![image](https://github.com/user-attachments/assets/ca62c9a2-9995-45cd-929e-b7613f9b389e)
+
+**Wait for:**
+![image](https://github.com/user-attachments/assets/06b6fa4c-67dd-4149-9b97-bdee52c60bdb)
+
+**Finish and enjoy!**
+![image](https://github.com/user-attachments/assets/8210f667-5f51-4d36-a4a5-7b5a4f24b278)
+
+
 ## How to uninstall One-Core-API?
 
 As mentioned, One-Core-API uses the Hotfix installation technology of the Windows NT family up to version 5.x. Therefore, to uninstall it, you must go to the Control Panel -> Add/Remove Programs and select the "Show updates" option. After selecting this option, several updates will be displayed (if installed), including One-Core-API. Scroll down the window until One-Core-API is displayed, and click on it. An "Uninstall" button will appear. Click on the button and follow the uninstallation steps (basically, Next->Finish)
