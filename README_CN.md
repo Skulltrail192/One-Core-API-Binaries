@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://github.com/shorthorn-project/One-Core-API-Binaries/releases">
-    <img src="Assets/banner.png" width="100%" height="auto" alt="本项目的横幅。背景是经过模糊处理的 Windows XP 默认壁纸“Bliss”，能够看出蓝天和草地。横幅中部从左到右依次为 Windows XP 徽标，“OneCoreAPI”字样和 Windows 10 徽标。横幅下部有一行小字道：“欢迎来到 One-Core-API 项目的二进制发行仓库！（注：点击该横幅可以进入发行版页面）”">
+    <img src="Assets/banner.png" width="100%" height="auto" alt="本项目的横幅。背景是经过模糊处理的 Windows XP 默认壁纸“Bliss”，能够看出蓝天和草地。横幅中部从左到右依次为 Windows XP 徽标，“OneCoreAPI”字样和 Windows 10 徽标。横幅下部有一行小字道：“欢迎来到 One-Core-API 项目的二进制发行仓库！”（注：点击该横幅可以进入发行版页面）">
   </a>
   <h6>特别感谢 @pashtetusss777 设计的横幅</h6>
 </div>
@@ -35,68 +35,72 @@
 - **全面支持 Windows XP 和 Windows Server 2003 的所有语言版本**
 
 ### 使用前须知
-- 本软件使用了来自各系统的修改文件，包含尚处于测试或实验阶段的内容，且<b>由作者一个人开发维护</b>。由于不同计算机配置或虚拟环境的复杂性，无法预测所有可能场景。
+- 本软件使用了来自各系统的修改文件，包含尚处于测试或实验阶段的内容，且**由作者一个人开发维护**。由于不同计算机配置或虚拟环境的复杂性，无法预测所有可能场景。
 
-- <h4>从 Windows XP / Server 2003 到 Vista 的过渡带来了大量新 API、技术革新和现有 API 的调整，这使得在 NT 5.x 与 NT 6.x 系统间实现完全兼容极具挑战。</h4>
+- **从 Windows XP / Server 2003 到 Vista 的过渡带来了大量新 API、技术革新和现有 API 的调整，这使得在 NT 5.x 与 NT 6.x 系统间实现完全兼容极具挑战。**
 
-- 希望你保持冷静与谨慎，践行开源精神。在判定软件存在缺陷或“质量低劣”之前，<b>请通过 [GitHub Issues](https://github.com/Shorthorn-project/One-Core-API-Binaries/issues) 或 [Discord 服务器](https://discord.gg/eRcGuFtn6p)</b> 反馈问题。
+- 希望你保持冷静与谨慎，践行开源精神。在判定软件存在缺陷或“质量低劣”之前，**请通过 [GitHub Issues](https://github.com/Shorthorn-project/One-Core-API-Binaries/issues) 或 [Discord 服务器](https://discord.gg/eRcGuFtn6p)** 反馈问题。
 
 - 请注意，我无法保证解决所有问题，但会认真分析并尽力修复。你的帮助至关重要，抱怨与负面评价无益于项目改进。
 
 ## 如何安装 One-Core-API？
 
-One-Core-API 采用 Windows NT 5.x 及更早系统的补丁安装技术，其安装过程与服务包更新类似。请前往 [Releases](https://github.com/shorthorn-project/One-Core-API-Binaries/releases) 页面选择版本并下载压缩包（`.zip`）。解压后可见按平台分类的 x64 和 x86 文件夹，内含 `One-Core-API-Pack.exe` 安装程序。双击运行并按向导指引操作即可（下一步 -> 接受协议 -> 完成）。
+One-Core-API 采用 Windows NT 5.x 及更早系统的补丁安装技术，其安装过程与服务包更新类似。请前往[发行版](https://github.com/shorthorn-project/One-Core-API-Binaries/releases)页面选择版本并下载压缩包（`.zip`）。解压后可见按平台分类的 `x64` 和 `x86` 文件夹，内含 `One-Core-API-Pack.exe` 安装程序。双击运行并按向导指引操作即可（下一步 -> 接受协议 -> 完成）。
 
-**下载示例：**
+### 图解
+
+1. **下载示例：**
 ![含有 One-Core-API 压缩包的 Windows XP 桌面。](https://github.com/user-attachments/assets/09322142-2655-47d2-9723-26fe6fb67494)
 
-**解压文件：**
+2. **解压文件：**
 ![Windows XP 系统解压缩界面。](https://github.com/user-attachments/assets/7fbba140-5a87-45b3-bec0-a5236a676b04)
 
-**选择架构（无 x64 标识则为 x86）：**
+3. **选择架构（无 x64 标识则为 x86）：**
 ![打开了文件资源管理器、任务管理器及其关于页面的 Windows XP。关于页面显示系统安装了 SP3，但是非 x64。](https://github.com/user-attachments/assets/6bdd8a39-9aac-4ee1-88fd-9fda4db144ea)
 
-**双击安装程序：**
+4. **双击安装程序：**
 ![安装程序解压文件窗口。](https://github.com/user-attachments/assets/e5e03ff2-4de5-475a-bbd8-755df687b187)
 
-**进入向导：**
+5. **进入向导：**
 ![One-Core-API 安装向导欢迎页。](https://github.com/user-attachments/assets/2fd62bd9-b1a8-4e1d-8769-92b9bbcf2a6b)
 
-**接受协议并继续：**
+6. **接受协议并继续：**
 ![One-Core-API 安装向导协议页。](https://github.com/user-attachments/assets/ca62c9a2-9995-45cd-929e-b7613f9b389e)
 
-**等待安装完成：**
+7. **等待安装完成：**
 ![One-Core-API 安装向导安装页。](https://github.com/user-attachments/assets/06b6fa4c-67dd-4149-9b97-bdee52c60bdb)
 
-**完成安装并重启：**
+8. **完成安装并重启：**
 ![One-Core-API 安装向导完成页。](https://github.com/user-attachments/assets/8210f667-5f51-4d36-a4a5-7b5a4f24b278)
 
 ## 如何卸载 One-Core-API？
 
 通过控制面板的更新管理功能卸载：打开 **控制面板 -> 添加/删除程序**，勾选 **“显示更新”**，在列表中找到“One-Core-API Pack”并点击 **“删除”** 按钮，按向导指引操作即可。
 
-**打开控制面板：**
+### 图解
+
+1. **打开控制面板：**
 ![Windows XP 控制面板首页。](https://github.com/user-attachments/assets/ceaf9dc2-135c-4f6b-8b22-ce5eb3f8d421)
 
-**进入“添加或删除程序”：**
+2. **进入“添加或删除程序”：**
 ![Windows XP 控制面板首页，选中了“添加或删除程序”。](https://github.com/user-attachments/assets/b0d6406a-db6b-4ca8-b2b9-cc020df17950)
 
-**勾选显示更新：**
+3. **勾选显示更新：**
 ![Windows XP 控制面板“添加或删除程序”界面，红框突出了“显示更新”复选框。](https://github.com/user-attachments/assets/83bdef02-9704-4e77-a0b0-cba70a4de80a)
 
-**定位 One-Core-API 条目：**
+4. **定位 One-Core-API 条目：**
 ![Windows XP 控制面板“添加或删除程序”界面，启用了“显示更新”功能。](https://github.com/user-attachments/assets/2ff6137f-b621-4dff-9516-b45f83c3a013)
 
-**点击删除按钮：**
+5. **点击删除按钮：**
 ![Windows XP 控制面板“添加或删除程序”界面，选中了“One-Core-API Pack”更新包。](https://github.com/user-attachments/assets/c66909ae-2e3a-4871-a320-e60c66210db9)
 
-**进入卸载向导：**
+6. **进入卸载向导：**
 ![One-Core-API 卸载向导确认页。](https://github.com/user-attachments/assets/71343989-6e16-48b4-982d-173a4b15774d)
 
-**等待卸载完成：**
+7. **等待卸载完成：**
 ![One-Core-API 卸载向导卸载页。](https://github.com/user-attachments/assets/01401f4f-e4be-4e8a-82d2-3480f143fedd)
 
-**完成卸载并重启：**
+8. **完成卸载并重启：**
 ![One-Core-API 卸载向导完成页。](https://github.com/user-attachments/assets/b6f06465-786f-4503-b71b-30e9224ad9fc)
 
 ## 应用程序兼容性
